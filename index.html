@@ -400,6 +400,28 @@ select option{background:#1a1208}
 <body>
 <div id="toast-container"></div>
 
+<!-- API Key Banner -->
+<div id="api-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#3a1a0a;border-bottom:1px solid var(--gold-dim);padding:8px 16px;z-index:99000;text-align:center;font-size:12px;font-family:Cinzel,serif;letter-spacing:.06em">
+  <span style="color:var(--gold)">AI features need an API key.</span>
+  <span style="color:var(--muted);margin:0 8px">Enter it in</span>
+  <button onclick="openApiKeyModal()" style="background:none;border:1px solid var(--gold-dim);color:var(--gold);padding:2px 10px;border-radius:3px;cursor:pointer;font-family:Cinzel,serif;font-size:11px">Settings</button>
+  <button onclick="$cl('api-banner').add('hidden');document.getElementById('api-banner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">&#10005;</button>
+</div>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="api-key-modal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-title">API KEY</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Required for AI features (statblock generation, item forging, session recaps, etc.). Get yours free at <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">console.anthropic.com</a></p>
+    <span class="field-label">Anthropic API Key</span>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." style="margin-bottom:12px;font-family:monospace">
+    <div class="modal-btns">
+      <button class="btn-gold" style="flex:1" onclick="saveApiKey()">Save Key</button>
+      <button class="btn-ghost" onclick="closeModal('api-key-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Global Search Overlay -->
 <div id="gsearch-overlay" onclick="if(event.target===this)closeGSearch()">
   <div id="gsearch-box">
@@ -444,6 +466,7 @@ select option{background:#1a1208}
   <span id="current-tab-label" style="font-family:Cinzel,serif;font-size:11px;letter-spacing:.15em;color:var(--gold)">HOME</span>
   <span id="current-tab-desc" style="font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
   <button class="btn-ghost btn-sm" onclick="enterTab('welcome')" style="font-size:10px;padding:3px 8px;color:var(--muted)">&#8962; Home</button>
+  <button class="btn-ghost btn-sm" onclick="openApiKeyModal()" style="font-size:10px;padding:3px 8px;color:var(--muted)" title="Set API Key">&#9881;</button>
 </div>
 <div class="nav-drawer hidden" id="nav-drawer">
   <button class="main-tab" data-tab="forge" onclick="enterTab('forge')">&#9874;&#xFE0E; Forge</button>
@@ -555,6 +578,11 @@ select option{background:#1a1208}
       <button class="landing-tile" onclick="enterTab('naval')"><span class="landing-icon">&#9875;&#xFE0E;</span><span class="landing-name">Naval</span></button>
       <button class="landing-tile" onclick="enterTab('music')"><span class="landing-icon">&#9836;&#xFE0E;</span><span class="landing-name">Music</span></button>
       <button class="landing-tile" onclick="enterTab('crafting')"><span class="landing-icon">&#128220;&#xFE0E;</span><span class="landing-name">Reference</span></button>
+      <button class="landing-tile" onclick="enterTab('inventory')"><span class="landing-icon">&#127809;&#xFE0E;</span><span class="landing-name">Inventory</span></button>
+      <button class="landing-tile" onclick="enterTab('sessions-main')"><span class="landing-icon">&#128221;&#xFE0E;</span><span class="landing-name">Sessions</span></button>
+      <button class="landing-tile" onclick="enterTab('rumours-main')"><span class="landing-icon">&#128065;&#xFE0E;</span><span class="landing-name">Rumours</span></button>
+      <button class="landing-tile" onclick="enterTab('sessions-main')"><span class="landing-icon">&#128221;&#xFE0E;</span><span class="landing-name">Sessions</span></button>
+      <button class="landing-tile" onclick="enterTab('rumours-main')"><span class="landing-icon">&#128065;&#xFE0E;</span><span class="landing-name">Rumours</span></button>
     </div>
   </div>
 
@@ -2446,7 +2474,7 @@ function saveTlCards(c) { localStorage.setItem('fg_tlcards',JSON.stringify(c)); 
 function loadCombatHistory() { try{return JSON.parse(localStorage.getItem('fg_combats')||'[]');}catch(e){return [];} }
 function saveCombatHistory(h) { localStorage.setItem('fg_combats',JSON.stringify(h)); }
 function getApiKey() { return localStorage.getItem('fg_api_key')||''; }
-function saveApiKey() { var k=document.getElementById('api-key-input').value.trim(); if(!k)return; localStorage.setItem('fg_api_key',k); (document.getElementById('api-banner')||document.createElement('div')).classList.remove('show'); alert('API key saved!'); }
+
 
 var _s = loadSett();
 var scores = _s.scores;
@@ -5034,27 +5062,37 @@ function enterTab(name) {
   // Prevent ghost clicks on Home button when nav bar appears
   var homeBtn = document.querySelector('#main-nav-bar button[onclick*="welcome"]');
   if(homeBtn) { homeBtn.style.pointerEvents = 'none'; setTimeout(function(){ homeBtn.style.pointerEvents = ''; }, 400); }
+
   var navBar = document.getElementById('main-nav-bar');
   var header = document.querySelector('.grimoire-header');
   var welcome = document.getElementById('tab-welcome');
-  if(navBar) { navBar.style.opacity='0'; navBar.classList.remove('hidden'); setTimeout(function(){ if(navBar) navBar.style.opacity=''; }, 350); }
-  if(header) header.style.display='none';
-  if(welcome) welcome.classList.remove('active');
-  // Activate the tab pane
-  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+
+  if(name === 'welcome') {
+    if(navBar) navBar.classList.add('hidden');
+    if(header) header.style.display = '';
+  } else {
+    if(navBar) navBar.classList.remove('hidden');
+    if(header) header.style.display = 'none';
+  }
+
+  // Hide ALL tab panes (both class and inline style)
+  document.querySelectorAll('.tab-pane').forEach(function(p){
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
+
+  // Show the target pane
   var pane = document.getElementById('tab-'+name);
   if(pane) {
     pane.classList.add('active');
     pane.style.display = 'block';
-    pane.style.visibility = 'visible';
-    pane.style.opacity = '1';
-    pane.style.zIndex = '10';
-    pane.style.position = 'relative';
   }
+
   // Update nav active state
   document.querySelectorAll('.nav-drawer .main-tab[data-tab]').forEach(function(b){
     b.classList.toggle('active', b.getAttribute('data-tab')===name);
   });
+
   // Update label bar
   var label = document.getElementById('current-tab-label');
   var desc = document.getElementById('current-tab-desc');
@@ -5064,7 +5102,8 @@ function enterTab(name) {
     welcome:'HOME','sessions-main':'SESSIONS','rumours-main':'RUMOURS'};
   if(label) label.textContent = labels[name]||name.toUpperCase();
   if(typeof TAB_DESCS!=='undefined' && desc) desc.textContent = TAB_DESCS[name]||'';
-  // Per-tab render
+
+  // Per-tab render calls
   if(name==='npcs'){ populateRegionFilter(); populateLocationFilterForRegion(''); renderNpcs(); }
   if(name==='pcs') renderPcs();
   if(name==='settlement'){ renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); loadGoldToPanel(); }
@@ -5080,6 +5119,7 @@ function enterTab(name) {
   if(name==='rumours-main') setTimeout(renderRumoursStandalone,0);
   if(name==='factions') renderFactions();
   if(name==='welcome') { if(typeof renderDashboard!=='undefined') renderDashboard(); }
+
   // Tab memory + page title
   try { if(name!=='welcome') localStorage.setItem('fg_last_tab',name); } catch(e){}
   var campName = localStorage.getItem('fg_campaign_name')||'Lorebound';
@@ -10840,6 +10880,23 @@ function exportAnnotatedPrep() {
   if(typeof showToast !== 'undefined') showToast('Annotated prep exported ✓','success');
 }
 
+
+// ── API Key management ────────────────────────────────────────
+function openApiKeyModal() {
+  var modal = document.getElementById('api-key-modal');
+  var input = document.getElementById('api-key-input');
+  if(modal) modal.classList.add('show');
+  if(input) { input.value = getApiKey(); input.focus(); }
+}
+function saveApiKey() {
+  var input = document.getElementById('api-key-input');
+  if(!input || !input.value.trim()) return;
+  localStorage.setItem('fg_api_key', input.value.trim());
+  closeModal('api-key-modal');
+  var banner = document.getElementById('api-banner');
+  if(banner) banner.style.display = 'none';
+  if(typeof showToast !== 'undefined') showToast('API key saved ✓', 'success');
+}
 </script>
 
 
