@@ -2587,7 +2587,7 @@ function renderResult(item) {
   var rc='rarity-'+item.r.replace(' ','-');
   var props=item.properties.map(function(p){return '<li>'+p+'</li>';}).join('');
   var _lastForgedItem = item;
-  document.getElementById('result-content').innerHTML='<p class="item-name">'+item.n+'</p><div class="item-meta"><span>'+item.type+'</span><span class="rarity '+rc+'">'+item.r+'</span><span>'+item.attunement+'</span></div><p class="item-section">Description</p><p class="item-desc">'+item.description+'</p><hr class="item-divider"><p class="item-section">Properties</p><ul class="item-props">'+props+'</ul><hr class="item-divider"><p class="item-section">Lore</p><p class="item-lore">'+item.lore+'</p><div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn-ghost" onclick="copyResult()">Copy</button><button class="btn-gold btn-sm" onclick="saveForgedItemToHomebrew(_lastForgedItem)">&#128220; Save to Homebrew</button><button class="btn-ghost btn-sm" onclick="saveForgedToInventory(_lastForgedItem)" style="color:var(--gold);border-color:var(--gold-dim)">&#127809; Add to Inventory</button></div>';
+  ($id('result-content')).innerHTML='<p class="item-name">'+item.n+'</p><div class="item-meta"><span>'+item.type+'</span><span class="rarity '+rc+'">'+item.r+'</span><span>'+item.attunement+'</span></div><p class="item-section">Description</p><p class="item-desc">'+item.description+'</p><hr class="item-divider"><p class="item-section">Properties</p><ul class="item-props">'+props+'</ul><hr class="item-divider"><p class="item-section">Lore</p><p class="item-lore">'+item.lore+'</p><div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn-ghost" onclick="copyResult()">Copy</button><button class="btn-gold btn-sm" onclick="saveForgedItemToHomebrew(_lastForgedItem)">&#128220; Save to Homebrew</button><button class="btn-ghost btn-sm" onclick="saveForgedToInventory(_lastForgedItem)" style="color:var(--gold);border-color:var(--gold-dim)">&#127809; Add to Inventory</button></div>';
 }
 function copyResult() {
   var el=document.getElementById('result-content');
@@ -2661,7 +2661,7 @@ function renderSettlement() {
     card.onclick=(function(n){return function(){selectBiome(n);};})(biome.name);
     bl.appendChild(card);
   });
-  document.getElementById('event-table').innerHTML='<div class="panel"><div class="panel-label">Event Table</div>'+EVENTS.map(function(e){return '<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #1a1208"><span style="font-size:13px;color:var(--muted);width:38px">'+e.roll+'</span><span style="font-size:14px;color:'+e.color+'">'+e.label+'</span></div>';}).join('')+'</div>';
+  ($id('event-table')).innerHTML='<div class="panel"><div class="panel-label">Event Table</div>'+EVENTS.map(function(e){return '<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #1a1208"><span style="font-size:13px;color:var(--muted);width:38px">'+e.roll+'</span><span style="font-size:14px;color:'+e.color+'">'+e.label+'</span></div>';}).join('')+'</div>';
 }
 function setScore(key,val){scores[key]=val;saveSett();renderSettlement();}
 function selectBiome(name){
@@ -4274,7 +4274,7 @@ function renderCombatResult(analysis, players, enemies) {
   var tooEasy = (analysis.if_too_easy||[]).map(function(t){return '<div class="adjustment-item">'+t+'</div>';}).join('');
   var tooHard = (analysis.if_too_hard||[]).map(function(t){return '<div class="adjustment-item">'+t+'</div>';}).join('');
 
-  document.getElementById('combat-result-content').innerHTML = scalingWarn +
+  ($id('combat-result-content')).innerHTML = scalingWarn +
     '<div style="margin-bottom:12px">'
     + '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">'+playerNames+' vs '+enemyDesc+'</div>'
     + '<span class="difficulty-badge '+diffClass+'">'+analysis.difficulty+'</span>'
@@ -8791,7 +8791,7 @@ var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanne
   var resetBtn = document.getElementById('reset-analysis-btn');
   if(resetBtn) resetBtn.addEventListener('click', function(){
     $cl('combat-result').add('hidden');
-    document.getElementById('combat-result-content').innerHTML = '';
+    ($id('combat-result-content')).innerHTML = '';
   });
 })();
 
@@ -8874,7 +8874,7 @@ var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanne
   var resetBtn = document.getElementById('reset-analysis-btn');
   if(resetBtn) resetBtn.addEventListener('click', function(){
     $cl('combat-result').add('hidden');
-    document.getElementById('combat-result-content').innerHTML = '';
+    ($id('combat-result-content')).innerHTML = '';
   });
 })();
 
@@ -9517,12 +9517,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ── Empty states wired ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function(){
-  // Wire gold panel on settlement tab
-  var _origSettle = window.enterTab;
-  if(_origSettle) window.enterTab = function(name) {
-    _origSettle(name);
-    if(name==='settlement') loadGoldToPanel();
-  };
+  // (settlement gold panel now handled in base enterTab)
 
   // Wire buy buttons in store
   var _origRenderStore = window.renderStore;
@@ -10423,27 +10418,7 @@ function shareApp() {
 }
 
 // ── Final nav active state fix for all tab IDs ────────────────
-(function(){
-  var _origEnter = window.enterTab;
-  if(_origEnter) {
-    window.enterTab = function(name) {
-      _origEnter(name);
-      // Update nav active state including new tabs
-      document.querySelectorAll('.nav-drawer .main-tab[data-tab]').forEach(function(b) {
-        b.classList.toggle('active', b.getAttribute('data-tab') === name);
-      });
-      // Update page title
-      var campName = localStorage.getItem('fg_campaign_name') || 'Lorebound';
-      var tabLabel = {
-        forge:'Forge',settlement:'Settlement',pcs:'Characters',npcs:'NPCs',
-        timeline:'Timeline',combat:'Combat',crafting:'Reference',store:'Store',
-        inventory:'Inventory',factions:'Factions',music:'Music',naval:'Naval',
-        'sessions-main':'Sessions','rumours-main':'Rumours',welcome:'Home'
-      };
-      document.title = (tabLabel[name]||name) + ' · ' + campName + ' — Lorebound';
-    };
-  }
-})();
+// (nav active state and title now handled in base enterTab)
 
   list.push({id:id, name:name, created:'Original'});
     saveCampaignList(list);
@@ -10856,23 +10831,6 @@ function copySessionRecapAsMarkdown() {
   }
 }
 
-// ── 5. Prep doc export as annotated text ─────────────────────
-function exportAnnotatedPrep() {
-  var annotated = document.getElementById('prep-annotated');
-  var filename = (window._prepFileName||'prep').replace(/\.[^.]+$/,'') + '_annotated.txt';
-  if(!annotated || !annotated.textContent.trim()) {
-    if(typeof showToast !== 'undefined') showToast('No annotated prep to export','error');
-    return;
-  }
-  // Convert HTML to clean text preserving markers
-  var text = annotated.innerText || annotated.textContent;
-  var blob = new Blob([text], {type:'text/plain'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  if(typeof showToast !== 'undefined') showToast('Annotated prep exported ✓','success');
-}
 
 
 // ── Dashboard status panel toggle ────────────────────────────
@@ -10883,6 +10841,28 @@ function toggleDashStatus() {
   var chev = document.getElementById('dash-status-chev');
   if(body) body.style.display = _dashStatusOpen ? 'block' : 'none';
   if(chev) chev.style.transform = _dashStatusOpen ? '' : 'rotate(-90deg)';
+}
+
+
+
+
+// ── Dashboard status panel toggle ────────────────────────────
+
+// ── Prep doc export ──────────────────────────────────────────
+function exportAnnotatedPrep() {
+  var annotated = document.getElementById('prep-annotated');
+  var filename = (window._prepFileName||'prep').replace(/\.[^.]+$/,'') + '_annotated.txt';
+  if(!annotated || !annotated.textContent.trim()) {
+    if(typeof showToast !== 'undefined') showToast('No annotated prep to export','error');
+    return;
+  }
+  var text = annotated.innerText || annotated.textContent;
+  var blob = new Blob([text], {type:'text/plain'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  if(typeof showToast !== 'undefined') showToast('Annotated prep exported ✓','success');
 }
 
 </script>
