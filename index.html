@@ -3225,7 +3225,13 @@ function handlePcUpdateUpload(event) {
 
 // ═══════════════════════════ PLAYER CHARACTERS ═══════════════════════════
 function renderPcs() {
-  var _plist=document.getElementById('pc-list'); if(!_plist) return;
+  var _plist=document.getElementById('pc-list'); 
+  if(!_plist) { console.log('[Lorebound] pc-list NOT FOUND'); return; }
+  console.log('[Lorebound] renderPcs running, pc-list found');
+  // Force visible test content
+  _plist.style.cssText = 'background:blue;color:white;padding:20px;font-size:18px;display:block!important';
+  _plist.innerHTML = '<div style="background:red;color:yellow;padding:30px;font-size:24px;font-weight:bold">RENDER TEST - IF YOU SEE THIS IT WORKS</div>';
+  return;
   var q=(document.getElementById('pc-search').value||'').toLowerCase();
   var pcs=loadPcs().filter(function(p){return !q||p.name.toLowerCase().includes(q)||(p.pcClass||'').toLowerCase().includes(q)||(p.player||'').toLowerCase().includes(q);});
   var list=_plist;
