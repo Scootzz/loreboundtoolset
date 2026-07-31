@@ -379,7 +379,7 @@ select option{background:#1a1208}
   .panel-body.collapsed{display:none}
   .tracker-hp-bar{height:3px;border-radius:2px;margin-top:4px;background:var(--border);overflow:hidden}
   .tracker-hp-fill{height:100%;border-radius:2px;transition:width .3s}
-  #session-clock{position:fixed;top:10px;right:54px;font-family:Cinzel,serif;font-size:10px;color:var(--muted);letter-spacing:.08em;z-index:7000;cursor:pointer;user-select:none;padding:2px 6px;border-radius:3px}
+  #session-clock{position:fixed;top:10px;right:12px;font-family:Cinzel,serif;font-size:10px;color:var(--muted);letter-spacing:.08em;z-index:9000;cursor:pointer;user-select:none;padding:3px 8px;border-radius:3px;background:rgba(14,11,7,0.85);border:1px solid var(--border);backdrop-filter:blur(4px)}
   #session-clock.running{color:var(--gold);background:rgba(212,168,67,.1)}
   .empty-state-full{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;color:var(--muted)}
   .empty-state-full .es-icon{font-size:32px;margin-bottom:10px;opacity:.4}
@@ -418,7 +418,7 @@ select option{background:#1a1208}
 </div>
 
 <!-- Session Clock -->
-<div id="session-clock" title="Click to start/stop session timer" onclick="toggleSessionClock()">&#9679; 0:00:00</div>
+<div id="session-clock" title="Click to start/stop session timer" onclick="toggleSessionClock()">&#9679; TIMER</div>
 
 <!-- Dice Roller Widget -->
 <div id="dice-roller" style="position:fixed;bottom:24px;left:16px;z-index:7500;background:var(--panel);border:1px solid var(--border-lit);border-radius:6px;padding:8px 10px;font-family:Cinzel,serif;box-shadow:0 4px 20px rgba(0,0,0,.7);display:none">
@@ -472,7 +472,7 @@ select option{background:#1a1208}
         <div id="dash-campaign-sub" style="font-family:Georgia,serif;font-size:13px;color:var(--muted);margin-top:2px;font-style:italic">The Complete DM's Toolset</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <div id="dash-session-clock" onclick="toggleSessionClock()" style="font-family:Cinzel,serif;font-size:11px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:4px;cursor:pointer;letter-spacing:.08em" title="Click to start session timer">&#9679; SESSION TIMER</div>
+        
         
         
         <button class="btn-ghost btn-sm" onclick="openModuleImporter()" style="letter-spacing:.06em" title="Import a published module">&#128218; Import Module</button>
@@ -485,9 +485,9 @@ select option{background:#1a1208}
   <div class="panel" style="margin-bottom:12px">
     <div onclick="toggleDashStatus()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">
       <div class="panel-label" style="margin:0">&#128214; Campaign Status</div>
-      <span id="dash-status-chev" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block">&#9660;</span>
+      <span id="dash-status-chev" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
     </div>
-    <div id="dash-status-body" style="margin-top:12px">
+    <div id="dash-status-body" style="margin-top:12px;display:none">
 
       <!-- Last Session -->
       <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
@@ -2616,6 +2616,7 @@ function renderSettlement() {
   loadWeatherUI();
   var tier=SETTLEMENT_TIERS[getTierIdx()];
   var badge=document.getElementById('sett-tier-badge');
+  if(!badge) return;
   badge.textContent=tier.name; badge.style.color=tier.color; badge.style.borderColor=tier.color;
   document.getElementById('sett-tier-desc').textContent=tier.subtitle+' - Pop: '+tier.pop+' - Max craft: '+(tier.maxRarity||'None');
   // Show override indicator
@@ -2683,7 +2684,7 @@ function rollEvent(){
 
 // ═══════════════════════════ NPCS ═══════════════════════════
 function renderNpcs() {
-  if(!document.getElementById('npc-search')) return;
+  var _nlist=document.getElementById('npc-list'); if(!_nlist) return;
   populateLocationFilter();
   var q=(document.getElementById('npc-search').value||'').toLowerCase();
   var locFilter=document.getElementById('npc-location-filter');
@@ -2694,7 +2695,7 @@ function renderNpcs() {
     var matchL=!locId||(n.locationId===locId);
     return matchQ&&matchL;
   });
-  var list=document.getElementById('npc-list');
+  var list=_nlist;
   if(!npcs.length){list.innerHTML='<div class="empty-state">'+(q||locId?'No NPCs match your filters.':'No NPCs yet. Add one or import from a PDF.')+'</div>';return;}
   list.innerHTML='';
   // Group by location if no filter applied
@@ -3224,10 +3225,10 @@ function handlePcUpdateUpload(event) {
 
 // ═══════════════════════════ PLAYER CHARACTERS ═══════════════════════════
 function renderPcs() {
-  if(!document.getElementById('pc-search')) return;
+  var _plist=document.getElementById('pc-list'); if(!_plist) return;
   var q=(document.getElementById('pc-search').value||'').toLowerCase();
   var pcs=loadPcs().filter(function(p){return !q||p.name.toLowerCase().includes(q)||(p.pcClass||'').toLowerCase().includes(q)||(p.player||'').toLowerCase().includes(q);});
-  var list=document.getElementById('pc-list');
+  var list=_plist;
   if(!pcs.length){list.innerHTML='<div class="empty-state">'+(q?'No characters match your search.':'No player characters yet. Add one to get started.')+'</div>';return;}
   list.innerHTML='';
   pcs.forEach(function(pc){
@@ -3984,7 +3985,7 @@ function renderTlPlotSummary() {
 function renderCrafting() {
   if(!document.getElementById('craft-professions')) return;
   var q=(document.getElementById('craft-search').value||'').toLowerCase();
-  var prof=document.getElementById('craft-professions'); prof.innerHTML='';
+  var prof=document.getElementById('craft-professions'); if(!prof) return; prof.innerHTML='';
   PROFESSIONS.filter(function(p){return !q||p.name.toLowerCase().includes(q);}).forEach(function(p,i){
     var key='prof-'+i; var open=expandedProf===key;
     var d=document.createElement('div'); d.className='panel profession-card';
@@ -9136,11 +9137,8 @@ function updateFloatWidget() {
   };
   // Restore last tab on load
   document.addEventListener('DOMContentLoaded', function(){
-    var last = localStorage.getItem('fg_last_tab');
-    if(last && last !== 'welcome') {
-      var btn = document.querySelector('.nav-drawer [data-tab="'+last+'"]');
-      if(btn) setTimeout(function(){ enterTab(last); }, 100);
-    }
+    // Always show home on load - DM opens to welcome screen
+    // var last = localStorage.getItem('fg_last_tab');
     // Add global search button to nav
     var drawer = document.getElementById('nav-drawer');
     if(drawer) {
@@ -10837,7 +10835,7 @@ function copySessionRecapAsMarkdown() {
 
 
 // ── Dashboard status panel toggle ────────────────────────────
-var _dashStatusOpen = true;
+var _dashStatusOpen = false;
 function toggleDashStatus() {
   _dashStatusOpen = !_dashStatusOpen;
   var body = document.getElementById('dash-status-body');
