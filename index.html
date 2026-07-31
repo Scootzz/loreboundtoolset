@@ -2440,7 +2440,7 @@ function saveTlCards(c) { localStorage.setItem('fg_tlcards',JSON.stringify(c)); 
 function loadCombatHistory() { try{return JSON.parse(localStorage.getItem('fg_combats')||'[]');}catch(e){return [];} }
 function saveCombatHistory(h) { localStorage.setItem('fg_combats',JSON.stringify(h)); }
 function getApiKey() { return localStorage.getItem('fg_api_key')||''; }
-function saveApiKey() { var k=document.getElementById('api-key-input').value.trim(); if(!k)return; localStorage.setItem('fg_api_key',k); document.getElementById('api-banner').classList.remove('show'); alert('API key saved!'); }
+function saveApiKey() { var k=document.getElementById('api-key-input').value.trim(); if(!k)return; localStorage.setItem('fg_api_key',k); (document.getElementById('api-banner')||document.createElement('div')).classList.remove('show'); alert('API key saved!'); }
 
 var _s = loadSett();
 var scores = _s.scores;
@@ -2498,9 +2498,10 @@ function initCreatureFilter() {
   types.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
 }
 function renderCreatures() {
+  if(!document.getElementById('creature-search')) return;
   var q=document.getElementById('creature-search').value.toLowerCase();
   var type=document.getElementById('type-filter').value;
-  var grid=document.getElementById('creature-grid'); grid.innerHTML='';
+  var grid=document.getElementById('creature-grid'); if(!grid) return; grid.innerHTML='';
   var entries=Object.entries(CREATURES).filter(function(e){return(!q||e[0].toLowerCase().includes(q))&&(!type||e[1].type===type);}).sort(function(a,b){return a[0].localeCompare(b[0]);});
   if(!entries.length){grid.innerHTML='<span style="color:var(--muted);font-style:italic;font-size:13px">No creatures found</span>';return;}
   entries.forEach(function(e){
@@ -2550,7 +2551,7 @@ function forgeItem() {
   var intent=document.getElementById('item-intent').value.trim();
   var apiKey=getApiKey();
   if(!concept){document.getElementById('item-concept').focus();return;}
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');return;}
   var tier=document.getElementById('craft-tier').value;
   var cData=CREATURES[selectedCreature]; var comp=selectedComponent;
   var rg={Common:'minor convenience, no attunement, one simple property',Uncommon:'minor magical benefit, may require attunement, 1-2 properties',Rare:'notable power, usually requires attunement, 2-3 meaningful properties','Very Rare':'powerful ability, requires attunement, 3-4 strong properties',Legendary:'legendary power, requires attunement, 4-5 campaign-defining properties',Artifact:'world-altering artifact, requires attunement, multiple unique legendary properties'};
@@ -2607,6 +2608,7 @@ function setTierOverride(val){
   saveSett(); renderSettlement();
 }
 function renderSettlement() {
+  if(!document.getElementById('sett-tier-badge')) return;
   loadWeatherUI();
   var tier=SETTLEMENT_TIERS[getTierIdx()];
   var badge=document.getElementById('sett-tier-badge');
@@ -2677,6 +2679,7 @@ function rollEvent(){
 
 // ═══════════════════════════ NPCS ═══════════════════════════
 function renderNpcs() {
+  if(!document.getElementById('npc-search')) return;
   populateLocationFilter();
   var q=(document.getElementById('npc-search').value||'').toLowerCase();
   var locFilter=document.getElementById('npc-location-filter');
@@ -2876,7 +2879,7 @@ document.getElementById('npc-modal').addEventListener('click',function(e){if(e.t
 function openGenerateNpcModal() {
   var apiKey=getApiKey();
   if(!requiresApi(document.getElementById('pdf-import-status'))){return;}
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');alert('Please enter your API key first.');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');alert('Please enter your API key first.');return;}
   document.getElementById('gen-species').value='';
   document.getElementById('gen-profession').value='';
   document.getElementById('gen-extra').value='';
@@ -2956,7 +2959,7 @@ function handlePdfUpload(event) {
   var file=event.target.files[0]; if(!file)return;
   var apiKey=getApiKey();
   if(!requiresApi(document.getElementById('pdf-import-status'))){return;}
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');alert('Please enter your API key first.');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');alert('Please enter your API key first.');return;}
   var status=document.getElementById('pdf-import-status');
   if(status){ status.classList.remove('hidden'); status.textContent='Reading '+file.name+'...'; }
   var name=file.name.toLowerCase();
@@ -3068,7 +3071,7 @@ function handlePcPdfUpload(event) {
   var files = Array.from(event.target.files); if(!files.length) return;
   var apiKey = getApiKey();
   if(!requiresApi(document.getElementById('pdf-import-status'))){return;}
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');alert('Please enter your API key first.');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');alert('Please enter your API key first.');return;}
   var status = document.getElementById('pc-import-status');
   status.classList.remove('hidden');
   var isPdf = files[0].name.toLowerCase().endsWith('.pdf');
@@ -3179,7 +3182,7 @@ function handlePcUpdateUpload(event) {
   var file = event.target.files[0]; if(!file) return;
   var pcId = event.target.getAttribute('data-pcid');
   var apiKey = getApiKey();
-  if(!apiKey){document.getElementById('api-banner').classList.add('show'); return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return;}
   var status = document.getElementById('pc-import-status');
   status.classList.remove('hidden'); status.textContent = 'Reading updated character sheet...';
   var reader = new FileReader();
@@ -3217,6 +3220,7 @@ function handlePcUpdateUpload(event) {
 
 // ═══════════════════════════ PLAYER CHARACTERS ═══════════════════════════
 function renderPcs() {
+  if(!document.getElementById('pc-search')) return;
   var q=(document.getElementById('pc-search').value||'').toLowerCase();
   var pcs=loadPcs().filter(function(p){return !q||p.name.toLowerCase().includes(q)||(p.pcClass||'').toLowerCase().includes(q)||(p.player||'').toLowerCase().includes(q);});
   var list=document.getElementById('pc-list');
@@ -3974,6 +3978,7 @@ function renderTlPlotSummary() {
 
 // ═══════════════════════════ CRAFTING REFERENCE ═══════════════════════════
 function renderCrafting() {
+  if(!document.getElementById('craft-professions')) return;
   var q=(document.getElementById('craft-search').value||'').toLowerCase();
   var prof=document.getElementById('craft-professions'); prof.innerHTML='';
   PROFESSIONS.filter(function(p){return !q||p.name.toLowerCase().includes(q);}).forEach(function(p,i){
@@ -4075,11 +4080,11 @@ function renderCombatHistory() {
 }
 
 function renderCombatTab() {
-  // Build PC checkboxes
-  var pcs = loadPcs();
   var container = document.getElementById('combat-pc-checkboxes');
+  if(!container) return;
+  var pcs = loadPcs();
   container.innerHTML = '';
-  if (!pcs.length) {
+  if (!pcs || !pcs.length) {
     container.innerHTML = '<div class="empty-state" style="padding:10px 0">No characters yet. Add some in the Characters tab.</div>';
     return;
   }
@@ -4173,7 +4178,7 @@ function addEnemyRow() {
 
 async function analyseEncounter() {
   var apiKey = getApiKey();
-  if (!apiKey) { document.getElementById('api-banner').classList.add('show'); return; }
+  if (!apiKey) { (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var pcs = loadPcs();
   var selected = pcs.filter(function(p) { return selectedCombatPcs[p.id]; });
   if (!selected.length) { alert('Select at least one player character.'); return; }
@@ -4357,6 +4362,7 @@ var snTab = 'upcoming';
 
 function switchSessionNoteTab(type, btn) {
   snTab = type;
+  if(!document.getElementById('sn-tab-upcoming')) return;
   document.getElementById('sn-tab-upcoming').classList.toggle('active', type==='upcoming');
   document.getElementById('sn-tab-past').classList.toggle('active', type==='past');
   renderSessionNotes();
@@ -4563,7 +4569,7 @@ function deleteSessionNote() {
 function handleSessionNoteUpload(event) {
   var file = event.target.files[0]; if(!file) return;
   var apiKey = getApiKey();
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');return;}
   var status = document.getElementById('sn-status-craft') || document.getElementById('session-note-upload-status');
   if(status){ status.classList.remove('hidden'); status.textContent='Reading '+file.name+'...'; }
   var fname = file.name.toLowerCase();
@@ -4680,6 +4686,7 @@ var editingHbId=null;
 var expandedHb=null;
 
 function renderHomebrew() {
+  if(!document.getElementById('homebrew-search')) return;
   var q=(document.getElementById('homebrew-search').value||'').toLowerCase();
   var sections=loadHomebrew().filter(function(s){return !q||s.title.toLowerCase().includes(q)||s.content.toLowerCase().includes(q);});
   var container=document.getElementById('homebrew-sections');
@@ -4895,7 +4902,7 @@ function autoDrawRelationshipLinks(npcId, rels) {
 // ═══════════════════════════ RANDOM ENCOUNTER ═══════════════════════════
 function generateRandomEncounter() {
   var apiKey = getApiKey();
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');return;}
   var biome = document.getElementById('regen-biome').value;
   var diff = document.getElementById('regen-diff').value;
   var pcs = loadPcs();
@@ -4926,7 +4933,7 @@ function generateRandomEncounter() {
 function useRandomEncounter(creatures) {
   enemyRows = creatures.map(function(c){return {creature:c.name in CREATURES?c.name:Object.keys(CREATURES)[0], qty:c.qty||1};});
   renderEnemyRows();
-  document.getElementById('regen-result').classList.add('hidden');
+  var _rr=document.getElementById('regen-result'); if(_rr) _rr.classList.add('hidden');
   document.getElementById('analyse-btn').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
@@ -5042,7 +5049,7 @@ function enterTab(name) {
   if(name==='pcs') renderPcs();
   if(name==='settlement'){ renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); loadGoldToPanel(); }
   if(name==='timeline'){ if(!webCanvas){initWeb();}else{renderTimeline();} }
-  if(name==='crafting'){ renderCrafting(); switchCraftTab(craftSubTab||'professions', document.getElementById('craft-tab-'+(craftSubTab||'professions'))); }
+  if(name==='crafting'){ renderCrafting(); var _ctBtn=document.getElementById('craft-tab-'+(craftSubTab||'professions')); if(_ctBtn) switchCraftTab(craftSubTab||'professions', _ctBtn); }
   if(name==='combat') renderCombatTab();
   if(name==='homebrew') renderHomebrew();
   if(name==='music') renderMusic();
@@ -5450,6 +5457,7 @@ var CONDITION_COLORS = {
 };
 
 function renderTracker() {
+  if(!document.getElementById('tracker-bar-inner')) return;
   var bar = document.getElementById('tracker-bar-inner');
   if(!bar) return;
   bar.innerHTML = '';
@@ -6108,7 +6116,7 @@ var _lastGeneratedName = '';
 
 function generateName() {
   var apiKey = getApiKey();
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');return;}
   var race = document.getElementById('name-gen-race').value.trim()||'Human';
   var gender = document.getElementById('name-gen-gender').value;
   var resultDiv = document.getElementById('name-gen-result');
@@ -6152,7 +6160,7 @@ function useGeneratedName() {
 var _origGenerateNpc = generateNpc;
 generateNpc = function() {
   var apiKey = getApiKey();
-  if(!apiKey){document.getElementById('api-banner').classList.add('show');return;}
+  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');return;}
   var species=document.getElementById('gen-species').value.trim()||'any species';
   var gender=document.getElementById('gen-gender').value;
   var age=document.getElementById('gen-age').value;
@@ -6236,7 +6244,7 @@ function generateStatblock() {
   if(!desc){ document.getElementById('statblock-desc').focus(); return; }
   var size = document.getElementById('statblock-size').value;
   var apiKey = getApiKey();
-  if(!apiKey){ document.getElementById('api-banner').classList.add('show'); return; }
+  if(!apiKey){ (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var status = document.getElementById('statblock-status');
   var result = document.getElementById('statblock-result');
   status.classList.remove('hidden'); status.textContent = 'Generating '+desc+'...';
@@ -6714,7 +6722,7 @@ function askRulesQuestionCraft() {
   var question = craftQ ? craftQ.value.trim() : '';
   if(!question) return;
   var apiKey = getApiKey();
-  if(!apiKey){ document.getElementById('api-banner').classList.add('show'); return; }
+  if(!apiKey){ (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var answerDiv = document.getElementById('rules-answer-craft') || document.getElementById('rules-answer');
   if(!answerDiv) return;
   answerDiv.classList.remove('hidden');
@@ -6765,7 +6773,7 @@ function requiresApi(statusEl) {
     if(statusEl) { statusEl.classList.remove('hidden'); statusEl.textContent = 'Run via localhost to use AI features. See banner above.'; }
     return false;
   }
-  if(!getApiKey()) { document.getElementById('api-banner').classList.add('show'); return false; }
+  if(!getApiKey()) { var _b=document.getElementById('api-banner'); if(_b)_b.classList.add('show'); return false; }
   return true;
 }
 
@@ -7629,7 +7637,7 @@ function generateLoot() {
   var level = document.getElementById('loot-party-level').value||'3';
   if(!enemies) { document.getElementById('loot-enemies').focus(); return; }
   var apiKey = getApiKey();
-  if(!apiKey) { document.getElementById('api-banner').classList.add('show'); return; }
+  if(!apiKey) { (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var status = document.getElementById('loot-status');
   var result = document.getElementById('loot-result');
   var content = document.getElementById('loot-content');
@@ -7987,6 +7995,7 @@ function loadUpgrades() { try{return JSON.parse(localStorage.getItem('fg_naval_u
 function saveUpgrades(u) { localStorage.setItem('fg_naval_upgrades', JSON.stringify(u)); }
 
 function renderNaval() {
+  if(!document.getElementById('naval-ship-type')) return;
   var d = loadNaval();
   var typeEl = document.getElementById('naval-ship-type');
   var nameEl = document.getElementById('naval-ship-name');
@@ -8174,7 +8183,7 @@ function renderCrewList() {
 
 function generateCrew() {
   var apiKey = getApiKey();
-  if(!apiKey) { document.getElementById('api-banner').classList.add('show'); return; }
+  if(!apiKey) { (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var shipType = (document.getElementById('naval-ship-type')||{}).value||'sailing ship';
   var shipName = (document.getElementById('naval-ship-name')||{}).value||'the vessel';
   var prompt = 'Generate 5 diverse crew members for a D&D 5e seafaring campaign ship called "'+shipName+'" ('+shipType+').'
@@ -8323,7 +8332,7 @@ function handlePrepUpload(event) {
   var file = event.target.files[0];
   if(!file) return;
   var apiKey = getApiKey();
-  if(!apiKey) { document.getElementById('api-banner').classList.add('show'); return; }
+  if(!apiKey) { (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var nameEl = document.getElementById('prep-filename');
   var statusEl = document.getElementById('prep-status');
   var resultEl = document.getElementById('prep-result');
@@ -8734,7 +8743,7 @@ function switchTabByName(name) {
   if(btn) switchTab(name, btn);
 }
 
-if(!getApiKey())document.getElementById('api-banner').classList.add('show');
+var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanner) _apiBanner.classList.add('show');
 
 // ── Wire NPC location modal buttons ──
 (function(){
@@ -9733,6 +9742,7 @@ function saveInventory(items) { localStorage.setItem('fg_inventory', JSON.string
 
 function renderInventory(filter) {
   var listEl = document.getElementById('inventory-list');
+  if(!listEl) return;
   var goldEl = document.getElementById('inv-gold');
   var countEl = document.getElementById('inv-count');
   var valueEl = document.getElementById('inv-value');
