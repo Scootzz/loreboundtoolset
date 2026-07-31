@@ -5027,10 +5027,14 @@ var TAB_DESCS = {
 // Update patchSwitchTab to also set description
 function enterTab(name) {
   console.log('[Lorebound] enterTab called:', name);
+  if(name === 'welcome') { console.trace('[Lorebound] welcome called from:'); }
+  // Prevent ghost clicks on Home button when nav bar appears
+  var homeBtn = document.querySelector('#main-nav-bar button[onclick*="welcome"]');
+  if(homeBtn) { homeBtn.style.pointerEvents = 'none'; setTimeout(function(){ homeBtn.style.pointerEvents = ''; }, 400); }
   var navBar = document.getElementById('main-nav-bar');
   var header = document.querySelector('.grimoire-header');
   var welcome = document.getElementById('tab-welcome');
-  if(navBar) navBar.classList.remove('hidden');
+  if(navBar) { navBar.style.opacity='0'; navBar.classList.remove('hidden'); setTimeout(function(){ if(navBar) navBar.style.opacity=''; }, 350); }
   if(header) header.style.display='none';
   if(welcome) welcome.classList.remove('active');
   // Activate the tab pane
