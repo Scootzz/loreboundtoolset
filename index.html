@@ -499,7 +499,7 @@ select option{background:#1a1208}
         
         
         <button class="btn-ghost btn-sm" onclick="openModuleImporter()" style="letter-spacing:.06em" title="Import a published module">&#128218; Import Module</button>
-        <button class="btn-ghost btn-sm" onclick="document.getElementById('campaign-selector-modal').classList.add('show');renderCampaignSelector()" style="letter-spacing:.06em" title="Switch campaigns">&#9812; Campaigns</button>
+        <button class="btn-ghost btn-sm" onclick="openCampaignSelector()" style="letter-spacing:.06em" title="Switch campaigns">&#9812; Campaigns</button>
       </div>
     </div>
   </div>
@@ -10945,6 +10945,12 @@ function renameCampaign() {
   renderCampaignSelector();
   if(typeof showToast !== 'undefined') showToast('Campaign renamed to "' + name + '" ✓', 'success');
 }
+
+function openCampaignSelector() {
+  var modal = document.getElementById('campaign-selector-modal');
+  if(modal) { modal.classList.add('show'); renderCampaignSelector(); }
+  else { console.error('campaign-selector-modal not found'); }
+}
 </script>
 
 
@@ -10987,11 +10993,12 @@ function renameCampaign() {
 
 
 
+
+
 <!-- Campaign Selector Modal -->
 <div class="modal-overlay" id="campaign-selector-modal">
   <div class="modal-box" style="max-width:460px">
     <div class="modal-title">&#9812; CAMPAIGNS</div>
-    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px">Each campaign has its own NPCs, locations, factions, sessions and timeline. Switching saves your current data automatically.</p>
     <div id="campaign-selector-list" style="margin-bottom:12px"></div>
     <div class="modal-btns">
       <button class="btn-gold" style="flex:1" onclick="createCampaign()">+ New Campaign</button>
