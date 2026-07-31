@@ -2878,7 +2878,7 @@ function deleteNpc() {
   saveNpcs(loadNpcs().filter(function(n){return n.id!==editingNpcId;}));
   closeModal('npc-modal'); renderNpcs();
 }
-document.getElementById('npc-modal').addEventListener('click',function(e){if(e.target===this)closeModal('npc-modal');});
+var _el_npc_modal=document.getElementById('npc-modal'); if(_el_npc_modal) _el_npc_modal.addEventListener('click',function(e){if(e.target===this)closeModal('npc-modal');});
 
 function openGenerateNpcModal() {
   var apiKey=getApiKey();
@@ -2952,11 +2952,11 @@ function generateNpc() {
     btn.disabled=false;
   });
 }
-document.getElementById('generate-npc-modal').addEventListener('click',function(e){if(e.target===this)closeModal('generate-npc-modal');});
-document.getElementById('web-node-modal').addEventListener('click',function(e){if(e.target===this)closeModal('web-node-modal');});
-document.getElementById('web-link-modal').addEventListener('click',function(e){if(e.target===this)closeModal('web-link-modal');});
-document.getElementById('web-node-modal').addEventListener('click',function(e){if(e.target===this)closeModal('web-node-modal');});
-document.getElementById('web-link-modal').addEventListener('click',function(e){if(e.target===this)closeModal('web-link-modal');});
+var _el_generate_npc_modal=document.getElementById('generate-npc-modal'); if(_el_generate_npc_modal) _el_generate_npc_modal.addEventListener('click',function(e){if(e.target===this)closeModal('generate-npc-modal');});
+var _el_web_node_modal=document.getElementById('web-node-modal'); if(_el_web_node_modal) _el_web_node_modal.addEventListener('click',function(e){if(e.target===this)closeModal('web-node-modal');});
+var _el_web_link_modal=document.getElementById('web-link-modal'); if(_el_web_link_modal) _el_web_link_modal.addEventListener('click',function(e){if(e.target===this)closeModal('web-link-modal');});
+var _el_web_node_modal=document.getElementById('web-node-modal'); if(_el_web_node_modal) _el_web_node_modal.addEventListener('click',function(e){if(e.target===this)closeModal('web-node-modal');});
+var _el_web_link_modal=document.getElementById('web-link-modal'); if(_el_web_link_modal) _el_web_link_modal.addEventListener('click',function(e){if(e.target===this)closeModal('web-link-modal');});
 
 // PDF Import
 function handlePdfUpload(event) {
@@ -3296,7 +3296,7 @@ function deletePc() {
   savePcs(loadPcs().filter(function(p){return p.id!==editingPcId;}));
   closeModal('pc-modal'); renderPcs();
 }
-document.getElementById('pc-modal').addEventListener('click',function(e){if(e.target===this)closeModal('pc-modal');});
+var _el_pc_modal=document.getElementById('pc-modal'); if(_el_pc_modal) _el_pc_modal.addEventListener('click',function(e){if(e.target===this)closeModal('pc-modal');});
 
 // Plot Points
 function openPlotModal(pcId, plotIdx) {
@@ -3327,7 +3327,7 @@ function deletePlot() {
   // Re-sync web nodes so active plots appear/disappear
   if(webCanvas){webNodes=syncWebNodes();webLinks=loadWebLinks();drawWeb();}
 }
-document.getElementById('plot-modal').addEventListener('click',function(e){if(e.target===this)closeModal('plot-modal');});
+var _el_plot_modal=document.getElementById('plot-modal'); if(_el_plot_modal) _el_plot_modal.addEventListener('click',function(e){if(e.target===this)closeModal('plot-modal');});
 
 // ═══════════════════════════ RELATIONSHIP WEB ═══════════════════════════
 // Node types: pc, npc, event, plot
@@ -4668,7 +4668,7 @@ function sendSessionNoteToAPI(textContent, fileName, isPdf, base64, status, even
     if(event) event.target.value='';
   });
 }
-document.getElementById('session-note-modal').addEventListener('click',function(e){if(e.target===this)closeModal('session-note-modal');});
+var _el_session_note_modal=document.getElementById('session-note-modal'); if(_el_session_note_modal) _el_session_note_modal.addEventListener('click',function(e){if(e.target===this)closeModal('session-note-modal');});
 
 // ═══════════════════════════ RULES LOOKUP ═══════════════════════════
 
@@ -4739,7 +4739,7 @@ function deleteHomebrewSection() {
   saveHomebrew(loadHomebrew().filter(function(s){return s.id!==editingHbId;}));
   closeModal('homebrew-modal'); renderHomebrew();
 }
-document.getElementById('homebrew-modal').addEventListener('click',function(e){if(e.target===this)closeModal('homebrew-modal');});
+var _el_homebrew_modal=document.getElementById('homebrew-modal'); if(_el_homebrew_modal) _el_homebrew_modal.addEventListener('click',function(e){if(e.target===this)closeModal('homebrew-modal');});
 
 // ═══════════════════════════ MOBILE NAV ═══════════════════════════
 var navDrawerOpen = false;
@@ -5703,7 +5703,7 @@ function saveEnemyToTracker() {
   closeModal('add-enemy-tracker-modal');
   renderTracker();
 }
-document.getElementById('add-enemy-tracker-modal').addEventListener('click',function(e){if(e.target===this)closeModal('add-enemy-tracker-modal');});
+var _el_add_enemy_tracker_modal=document.getElementById('add-enemy-tracker-modal'); if(_el_add_enemy_tracker_modal) _el_add_enemy_tracker_modal.addEventListener('click',function(e){if(e.target===this)closeModal('add-enemy-tracker-modal');});
 
 function openCombatantModal(idx) {
   editingCombatantIdx = idx;
@@ -5870,7 +5870,7 @@ function resetTracker() {
   trackerCombatants=[]; trackerRound=1; trackerActiveTurn=0;
   renderTracker();
 }
-document.getElementById('combatant-modal').addEventListener('click',function(e){if(e.target===this)closeModal('combatant-modal');});
+var _el_combatant_modal=document.getElementById('combatant-modal'); if(_el_combatant_modal) _el_combatant_modal.addEventListener('click',function(e){if(e.target===this)closeModal('combatant-modal');});
 
 // ═══════════════════════════ MUSIC ═══════════════════════════
 var MOOD_ICONS = {tavern:'&#127867;',combat:'&#9876;',dungeon:'&#128336;',exploration:'&#127758;',tense:'&#9889;',dramatic:'&#127927;',ambient:'&#127807;',celebration:'&#127881;'};
@@ -5986,7 +5986,7 @@ function deletePlaylist() {
   closeModal('playlist-modal');
   renderPlaylists();
 }
-document.getElementById('playlist-modal').addEventListener('click',function(e){if(e.target===this)closeModal('playlist-modal');});
+var _el_playlist_modal=document.getElementById('playlist-modal'); if(_el_playlist_modal) _el_playlist_modal.addEventListener('click',function(e){if(e.target===this)closeModal('playlist-modal');});
 
 function handleLocalAudio(event) {
   var files = Array.from(event.target.files);
@@ -8924,14 +8924,17 @@ var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanne
   var snInput = document.getElementById('session-note-upload');
   if(snBtn && snInput) snBtn.addEventListener('click', function(){ snInput.click(); });
 })();
-patchSwitchTab();
-// Pre-load store data
-if(document.getElementById('store-list')) renderStore();
-initCreatureFilter();
-renderCreatures();
-document.getElementById('sett-name').value=loadSett().name;
-renderSettlement();
-renderCrafting();
+document.addEventListener('DOMContentLoaded', function() {
+  patchSwitchTab();
+  // Pre-load store data
+  if(document.getElementById('store-list')) renderStore();
+  initCreatureFilter();
+  renderCreatures();
+  var settName = document.getElementById('sett-name');
+  if(settName) settName.value = loadSett().name;
+  renderSettlement();
+  renderCrafting();
+});
 
 </script>
 
@@ -9038,7 +9041,7 @@ function closeGSearch() {
   var ov = document.getElementById('gsearch-overlay');
   if(ov) ov.classList.remove('show');
 }
-document.getElementById('gsearch-input').addEventListener('input', function(){ renderGSearchResults(this.value); });
+var _gsi=document.getElementById('gsearch-input'); if(_gsi) _gsi.addEventListener('input', function(){ renderGSearchResults(_gsi.value); });
 
 function renderGSearchResults(q) {
   var list = document.getElementById('gsearch-results');
