@@ -2454,7 +2454,10 @@ var tierOverride = (_s.tierOverride !== undefined && _s.tierOverride !== null) ?
 // ═══════════════════════════ TABS ═══════════════════════════
 function switchTab(name, btn) {
   document.querySelectorAll('.main-tab').forEach(function(b){b.classList.remove('active');});
-  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-pane').forEach(function(p){
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
   var welcome = document.getElementById('tab-welcome'); if(welcome) welcome.classList.remove('active');
   btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
@@ -3225,13 +3228,7 @@ function handlePcUpdateUpload(event) {
 
 // ═══════════════════════════ PLAYER CHARACTERS ═══════════════════════════
 function renderPcs() {
-  var _plist=document.getElementById('pc-list'); 
-  if(!_plist) { console.log('[Lorebound] pc-list NOT FOUND'); return; }
-  console.log('[Lorebound] renderPcs running, pc-list found');
-  // Force visible test content
-  _plist.style.cssText = 'background:blue;color:white;padding:20px;font-size:18px;display:block!important';
-  _plist.innerHTML = '<div style="background:red;color:yellow;padding:30px;font-size:24px;font-weight:bold">RENDER TEST - IF YOU SEE THIS IT WORKS</div>';
-  return;
+  var _plist=document.getElementById('pc-list'); if(!_plist) return;
   var q=(document.getElementById('pc-search').value||'').toLowerCase();
   var pcs=loadPcs().filter(function(p){return !q||p.name.toLowerCase().includes(q)||(p.pcClass||'').toLowerCase().includes(q)||(p.player||'').toLowerCase().includes(q);});
   var list=_plist;
@@ -5044,7 +5041,14 @@ function enterTab(name) {
   // Activate the tab pane
   document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
   var pane = document.getElementById('tab-'+name);
-  if(pane) pane.classList.add('active');
+  if(pane) {
+    pane.classList.add('active');
+    pane.style.display = 'block';
+    pane.style.visibility = 'visible';
+    pane.style.opacity = '1';
+    pane.style.zIndex = '10';
+    pane.style.position = 'relative';
+  }
   // Update nav active state
   document.querySelectorAll('.nav-drawer .main-tab[data-tab]').forEach(function(b){
     b.classList.toggle('active', b.getAttribute('data-tab')===name);
