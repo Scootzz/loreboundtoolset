@@ -10342,27 +10342,57 @@ function renderCampaignSelector() {
   var list = loadCampaignList();
   var cur = getCurrentCampaign();
   var curName = localStorage.getItem('fg_campaign_name') || 'Lorebound';
-  if(!list.length && !cur) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0">No saved campaigns. Your current data is the active campaign.</div>';
-    return;
-  }
-  // Ensure current shows up
-  var allCamps = list.slice();
-  if(!cur && !allCamps.find(function(c){return c.id===cur;})) {
-    // No explicit campaign — treat as default
-  }
+
   el.innerHTML = '';
-  allCamps.forEach(function(camp) {
-    var isActive = camp.id === cur;
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)';
-    row.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:'+(isActive?'var(--gold)':'var(--border)')+';flex-shrink:0"></div>'
-      + '<span style="flex:1;font-size:13px;color:'+(isActive?'var(--gold)':'var(--text)')+'">'+camp.name+'</span>'
-      + '<span style="font-size:10px;color:var(--muted)">'+camp.created+'</span>'
-      + (!isActive?'<button class="btn-ghost btn-sm" style="font-size:10px;padding:2px 8px" onclick="switchCampaign(\''+camp.id+'\')">Switch</button>':'<span style="font-size:10px;color:var(--gold);font-family:Cinzel,serif">ACTIVE</span>')
-      + '<button class="btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--danger);border-color:var(--danger)" onclick="deleteCampaign(\''+camp.id+'\')">&#10005;</button>';
-    el.appendChild(row);
-  });
+
+  // Always show current campaign at top
+  var curRow = document.createElement('div');
+  curRow.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:8px';
+  curRow.innerHTML = '<div style="font-size:10px;font-family:Cinzel,serif;color:var(--accent);letter-spacing:.08em;margin-bottom:6px">CURRENT CAMPAIGN</div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<span style="width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0"></span>'
+    + '<span style="font-size:14px;color:var(--gold);font-family:Cinzel,serif;flex:1">' + curName + '</span>'
+    + '</div>';
+  el.appendChild(curRow);
+
+  // Rename current campaign
+  var renameRow = document.createElement('div');
+  renameRow.style.cssText = 'margin-bottom:12px';
+  renameRow.innerHTML = '<div style="font-size:10px;font-family:Cinzel,serif;color:var(--muted);letter-spacing:.06em;margin-bottom:4px">RENAME</div>'
+    + '<div style="display:flex;gap:6px">'
+    + '<input type="text" id="camp-rename-input" value="' + curName + '" style="flex:1;font-size:13px">'
+    + '<button class="btn-gold btn-sm" onclick="renameCampaign()">Save</button>'
+    + '</div>';
+  el.appendChild(renameRow);
+
+  // Other campaigns
+  if(list.length > 0) {
+    var othersLabel = document.createElement('div');
+    othersLabel.style.cssText = 'font-size:10px;font-family:Cinzel,serif;color:var(--accent);letter-spacing:.08em;margin-bottom:6px;border-top:1px solid var(--border);padding-top:10px';
+    othersLabel.textContent = 'OTHER CAMPAIGNS';
+    el.appendChild(othersLabel);
+
+    list.forEach(function(camp) {
+      if(camp.id === cur) return; // skip current
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)';
+      row.innerHTML = '<span style="flex:1;font-size:13px;color:var(--text)">' + camp.name + '</span>'
+        + '<span style="font-size:10px;color:var(--muted)">' + (camp.created||'') + '</span>';
+      var switchBtn = document.createElement('button');
+      switchBtn.className = 'btn-ghost btn-sm';
+      switchBtn.style.cssText = 'font-size:10px;padding:2px 8px';
+      switchBtn.textContent = 'Switch';
+      (function(id){ switchBtn.onclick = function(){ switchCampaign(id); }; })(camp.id);
+      var delBtn = document.createElement('button');
+      delBtn.className = 'btn-ghost btn-sm';
+      delBtn.style.cssText = 'font-size:10px;padding:2px 6px;color:var(--danger,#cd4a4a);border-color:var(--danger,#cd4a4a)';
+      delBtn.textContent = '✕';
+      (function(id){ delBtn.onclick = function(){ deleteCampaign(id); }; })(camp.id);
+      row.appendChild(switchBtn);
+      row.appendChild(delBtn);
+      el.appendChild(row);
+    });
+  }
 }
 
 // On DOMContentLoaded — register current campaign if not tracked
@@ -10897,6 +10927,24 @@ function saveApiKey() {
   if(banner) banner.style.display = 'none';
   if(typeof showToast !== 'undefined') showToast('API key saved ✓', 'success');
 }
+
+function renameCampaign() {
+  var input = document.getElementById('camp-rename-input');
+  if(!input || !input.value.trim()) return;
+  var name = input.value.trim();
+  localStorage.setItem('fg_campaign_name', name);
+  // Update campaign list entry
+  var list = loadCampaignList();
+  var cur = getCurrentCampaign();
+  var camp = list.find(function(c){return c.id===cur;});
+  if(camp) { camp.name = name; saveCampaignList(list); }
+  // Update dashboard header
+  var nameEl = document.getElementById('dash-campaign-name');
+  if(nameEl) nameEl.innerHTML = '&#9812; ' + name;
+  document.title = name + ' — Lorebound';
+  renderCampaignSelector();
+  if(typeof showToast !== 'undefined') showToast('Campaign renamed to "' + name + '" ✓', 'success');
+}
 </script>
 
 
@@ -10937,6 +10985,8 @@ function saveApiKey() {
 </div>
 
 
+
+
 <!-- Campaign Selector Modal -->
 <div class="modal-overlay" id="campaign-selector-modal">
   <div class="modal-box" style="max-width:460px">
@@ -10949,6 +10999,5 @@ function saveApiKey() {
     </div>
   </div>
 </div>
-
 </body>
 </html>
