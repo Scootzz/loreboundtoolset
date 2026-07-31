@@ -40,7 +40,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .sub-tab{flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Cinzel',serif;font-size:9px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;margin-bottom:-1px;transition:color .2s,border-color .2s}
 .sub-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 .tab-pane{display:none}
-.tab-pane.active{display:block;min-height:200px;background:rgba(255,0,0,0.1);border-top:3px solid red}
+.tab-pane.active{display:block;position:relative;z-index:2}
 /* Panels */
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:16px;margin-bottom:12px}
 .panel-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px}
@@ -800,7 +800,7 @@ select option{background:#1a1208}
 </div>
 
 <!-- ═══ PLAYER CHARACTERS TAB ═══ -->
-<div id="tab-pcs" class="tab-pane"><div style="color:white;font-size:24px;padding:20px;background:blue">TAB-PCS IS RENDERING</div>
+<div id="tab-pcs" class="tab-pane">
   <div class="panel">
     <div class="panel-label">Player Characters</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Track each player character and their personal story plot points.</p>
@@ -5026,8 +5026,6 @@ var TAB_DESCS = {
 
 // Update patchSwitchTab to also set description
 function enterTab(name) {
-  console.log('[Lorebound] enterTab called:', name);
-  if(name === 'welcome') { console.trace('[Lorebound] welcome called from:'); }
   // Prevent ghost clicks on Home button when nav bar appears
   var homeBtn = document.querySelector('#main-nav-bar button[onclick*="welcome"]');
   if(homeBtn) { homeBtn.style.pointerEvents = 'none'; setTimeout(function(){ homeBtn.style.pointerEvents = ''; }, 400); }
@@ -5040,9 +5038,7 @@ function enterTab(name) {
   // Activate the tab pane
   document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
   var pane = document.getElementById('tab-'+name);
-  console.log('[Lorebound] pane found:', !!pane, 'for tab-'+name);
   if(pane) pane.classList.add('active');
-  console.log('[Lorebound] active tabs after:', Array.from(document.querySelectorAll('.tab-pane.active')).map(function(el){return el.id;}));
   // Update nav active state
   document.querySelectorAll('.nav-drawer .main-tab[data-tab]').forEach(function(b){
     b.classList.toggle('active', b.getAttribute('data-tab')===name);
