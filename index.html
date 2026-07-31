@@ -40,7 +40,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .sub-tab{flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Cinzel',serif;font-size:9px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;margin-bottom:-1px;transition:color .2s,border-color .2s}
 .sub-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 .tab-pane{display:none}
-.tab-pane.active{display:block}
+.tab-pane.active{display:block;min-height:200px;background:rgba(255,0,0,0.1);border-top:3px solid red}
 /* Panels */
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:16px;margin-bottom:12px}
 .panel-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px}
@@ -800,7 +800,7 @@ select option{background:#1a1208}
 </div>
 
 <!-- ═══ PLAYER CHARACTERS TAB ═══ -->
-<div id="tab-pcs" class="tab-pane">
+<div id="tab-pcs" class="tab-pane"><div style="color:white;font-size:24px;padding:20px;background:blue">TAB-PCS IS RENDERING</div>
   <div class="panel">
     <div class="panel-label">Player Characters</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Track each player character and their personal story plot points.</p>
@@ -5026,6 +5026,7 @@ var TAB_DESCS = {
 
 // Update patchSwitchTab to also set description
 function enterTab(name) {
+  console.log('[Lorebound] enterTab called:', name);
   var navBar = document.getElementById('main-nav-bar');
   var header = document.querySelector('.grimoire-header');
   var welcome = document.getElementById('tab-welcome');
@@ -5035,7 +5036,9 @@ function enterTab(name) {
   // Activate the tab pane
   document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
   var pane = document.getElementById('tab-'+name);
+  console.log('[Lorebound] pane found:', !!pane, 'for tab-'+name);
   if(pane) pane.classList.add('active');
+  console.log('[Lorebound] active tabs after:', Array.from(document.querySelectorAll('.tab-pane.active')).map(function(el){return el.id;}));
   // Update nav active state
   document.querySelectorAll('.nav-drawer .main-tab[data-tab]').forEach(function(b){
     b.classList.toggle('active', b.getAttribute('data-tab')===name);
@@ -8846,57 +8849,16 @@ var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanne
 })();
 
 // ── Wire timeline delete node button ──
-(function(){
-  var cmpWnBtn = document.getElementById('complete-web-node-btn');
-  if(cmpWnBtn) cmpWnBtn.addEventListener('click', function(){
-    if(!webSelectedNode) return;
-    completeWebNode(webSelectedNode);
-  });
-  var delWnBtn = document.getElementById('delete-web-node-btn');
-  if(delWnBtn) delWnBtn.addEventListener('click', function(){
-    if(!webSelectedNode) return;
-    var node = webNodes.find(function(n){return n.id===webSelectedNode;});
-    if(!node) return;
-    if(!confirm('Delete node "'+node.label+'"? Its connections will also be removed.')) return;
-    webNodes = webNodes.filter(function(n){return n.id!==webSelectedNode;});
-    webLinks = webLinks.filter(function(l){return l.from!==webSelectedNode&&l.to!==webSelectedNode;});
-    // Also remove from tlCards if it's an event/plot node
-    var cards = loadTlCards().filter(function(c){return c.id!==webSelectedNode;});
-    saveTlCards(cards);
-    saveWebNodes(webNodes); saveWebLinks(webLinks);
-    webSelectedNode = null;
-    $cl('web-node-detail').add('hidden');
-    drawWeb();
-  });
-})();
+
 
 // ── Wire analysis reset button ──
-(function(){
-  var resetBtn = document.getElementById('reset-analysis-btn');
-  if(resetBtn) resetBtn.addEventListener('click', function(){
-    $cl('combat-result').add('hidden');
-    ($id('combat-result-content')).innerHTML = '';
-  });
-})();
+
 
 // ── Wire scenario buttons ──
-(function(){
-  var saveScBtn = document.getElementById('save-scenario-btn');
-  var delScBtn = document.getElementById('delete-scenario-btn');
-  var scSel = document.getElementById('scenario-select');
-  if(saveScBtn) saveScBtn.addEventListener('click', saveCurrentScenario);
-  if(delScBtn) delScBtn.addEventListener('click', deleteScenario);
-  if(scSel) scSel.addEventListener('change', function(){ loadScenario(this.value); });
-  renderScenarioSelect();
-})();
+
 
 // ── Wire NPC select mode buttons ──
-(function(){
-  var selBtn = document.getElementById('npc-select-mode-btn');
-  var delBtn = document.getElementById('npc-delete-selected-btn');
-  if(selBtn) selBtn.addEventListener('click', function(){ toggleNpcSelectMode(); });
-  if(delBtn) delBtn.addEventListener('click', function(){ deleteSelectedNpcs(); });
-})();
+
 
 // Rules ask buttons use inline onclick - works from localhost
 
