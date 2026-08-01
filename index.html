@@ -499,8 +499,8 @@ select option{background:#1a1208}
         
         
         
-        <button class="btn-ghost btn-sm" onclick="(function(){var m=document.getElementById('module-importer-modal');if(m){m.style.display='flex';m.classList.add('show');}else{alert('module modal not found');}})();" style="letter-spacing:.06em" title="Import a published module">&#128218; Import Module</button>
-        <button class="btn-ghost btn-sm" onclick="(function(){var m=document.getElementById('campaign-selector-modal');if(m){m.style.display='flex';m.classList.add('show');renderCampaignSelector();}else{alert('modal not found');}})();" style="letter-spacing:.06em" title="Switch campaigns">&#9812; Campaigns</button>
+        <button class="btn-ghost btn-sm" onmousedown="console.log('IMPORT MOUSEDOWN')" onclick="console.log('IMPORT CLICK');(function(){var m=document.getElementById('module-importer-modal');if(m){m.style.display='flex';m.classList.add('show');}else{alert('module modal not found');}})();" style="letter-spacing:.06em" title="Import a published module">&#128218; Import Module</button>
+        <button class="btn-ghost btn-sm" onmousedown="console.log('CAMPAIGN MOUSEDOWN')" onclick="console.log('CAMPAIGN CLICK');(function(){var m=document.getElementById('campaign-selector-modal');if(m){m.style.display='flex';m.classList.add('show');renderCampaignSelector();}else{alert('modal not found');}})();" style="letter-spacing:.06em" title="Switch campaigns">&#9812; Campaigns</button>
       </div>
     </div>
   </div>
