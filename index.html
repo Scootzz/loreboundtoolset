@@ -1410,22 +1410,62 @@ select option{background:#1a1208}
 
 <!-- ═══ SESSION NOTES TAB ═══ -->
 <div id="tab-sessions" class="tab-pane">
+
+  <!-- SECTION 1: UPCOMING SESSION ANALYSIS -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-label">&#128221; Upcoming Session Prep</div>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:14px">Upload your session prep notes. Claude will analyse the plan, flag potential oversights based on your party's skills and abilities, and highlight key considerations with annotations.</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn-gold btn-sm" onclick="document.getElementById('sn-upcoming-upload').click()">&#128196; Upload Prep Notes</button>
+      <input type="file" id="sn-upcoming-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleUpcomingSessionUpload(event)">
+      <span style="font-size:11px;color:var(--muted)">PDF, Word or text</span>
+    </div>
+
+    <div id="sn-upcoming-status" style="display:none;padding:10px;background:rgba(212,168,67,0.08);border:1px solid var(--border);border-radius:4px;margin-bottom:12px;font-size:13px;color:var(--muted);font-style:italic"></div>
+
+    <!-- Analysis result -->
+    <div id="sn-upcoming-result" style="display:none">
+      <div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:.1em;color:var(--accent);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px">ANALYSIS</div>
+
+      <!-- Annotated prep text -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-family:Cinzel,serif;color:var(--muted);letter-spacing:.08em;margin-bottom:6px">YOUR PREP — ANNOTATED</div>
+        <div id="sn-annotated-text" style="font-size:13px;line-height:1.7;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:4px;padding:14px;white-space:pre-wrap;color:var(--text)"></div>
+      </div>
+
+      <!-- Insights grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-size:10px;font-family:Cinzel,serif;color:var(--gold);letter-spacing:.08em;margin-bottom:8px">&#9888; POTENTIAL OVERSIGHTS</div>
+          <div id="sn-oversights" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:Cinzel,serif;color:var(--accent);letter-spacing:.08em;margin-bottom:8px">&#128161; CONSIDERATIONS</div>
+          <div id="sn-considerations" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-ghost btn-sm" onclick="saveUpcomingAsNote()">&#128190; Save to Past Sessions</button>
+        <button class="btn-ghost btn-sm" onclick="clearUpcomingAnalysis()">&#10005; Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: PAST SESSIONS LOG -->
   <div class="panel">
-    <div class="panel-label">Session Notes</div>
-    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Upload or write notes for upcoming and past sessions. Supports PDF and Word documents.</p>
-    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <button class="btn-gold btn-sm" onclick="openSessionNoteModal(null)">+ New Note</button>
-      <button class="btn-ghost btn-sm" onclick="document.getElementById('session-note-upload').click()">&#128196; Upload PDF / Word</button>
-      <input type="file" id="session-note-upload" accept=".pdf,.doc,.docx" style="display:none" onchange="handleSessionNoteUpload(event)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="panel-label" style="margin:0">&#128218; Past Sessions</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost btn-sm" onclick="document.getElementById('sn-past-upload').click()">&#128196; Upload Past Session</button>
+        <button class="btn-ghost btn-sm" onclick="openSessionNoteModal(null)">+ Write Note</button>
+        <input type="file" id="sn-past-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handlePastSessionUpload(event)">
+      </div>
     </div>
-    <div id="session-note-upload-status" class="hidden" style="padding:10px;background:rgba(212,168,67,0.08);border:1px solid var(--border);border-radius:4px;margin-bottom:10px;font-size:13px;color:var(--muted);font-style:italic"></div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="sub-tab active" id="sn-tab-upcoming" onclick="switchSessionNoteTab('upcoming',this)">Upcoming</button>
-      <button class="sub-tab" id="sn-tab-past" onclick="switchSessionNoteTab('past',this)">Past Sessions</button>
-    </div>
+    <div id="sn-past-status" style="display:none;padding:10px;background:rgba(212,168,67,0.08);border:1px solid var(--border);border-radius:4px;margin-bottom:10px;font-size:13px;color:var(--muted);font-style:italic"></div>
     <div id="session-notes-list"></div>
   </div>
-</div>
 
 <!-- Session Note Modal -->
 <div class="modal-overlay" id="session-note-modal">
@@ -2918,8 +2958,11 @@ var _el_npc_modal=document.getElementById('npc-modal'); if(_el_npc_modal) _el_np
 
 function openGenerateNpcModal() {
   var apiKey=getApiKey();
-  if(!requiresApi(document.getElementById('pdf-import-status'))){return;}
-  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');alert('Please enter your API key first.');return;}
+  var statusEl = document.getElementById('pc-import-status');
+  if(!getApiKey()) {
+    if(statusEl) { statusEl.classList.remove('hidden'); statusEl.textContent = 'No API key set. Click the ⚙ Settings button in the nav bar to add your Anthropic API key.'; }
+    return;
+  }
   document.getElementById('gen-species').value='';
   document.getElementById('gen-profession').value='';
   document.getElementById('gen-extra').value='';
@@ -3222,7 +3265,7 @@ function handlePcUpdateUpload(event) {
   var file = event.target.files[0]; if(!file) return;
   var pcId = event.target.getAttribute('data-pcid');
   var apiKey = getApiKey();
-  if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return;}
+  if(!apiKey){ var _s=document.getElementById('pc-import-status'); if(_s){_s.classList.remove('hidden');_s.textContent='No API key set. Click ⚙ Settings to add your key.';} return; }
   var status = document.getElementById('pc-import-status');
   status.classList.remove('hidden'); status.textContent = 'Reading updated character sheet...';
   var reader = new FileReader();
@@ -8956,9 +8999,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// ══════════════════ POLISHED UI — BLOCK 4 ══════════════════
+// -------------------- POLISHED UI — BLOCK 4 --------------------
 
-// ── Toast notifications ──────────────────────────────────────
+// -- Toast notifications --------------------------------------
 function showToast(msg, type, duration) {
   var ct = document.getElementById('toast-container');
   if(!ct) return;
@@ -8981,7 +9024,7 @@ function showToast(msg, type, duration) {
   }
 })();
 
-// ── Session clock ────────────────────────────────────────────
+// -- Session clock --------------------------------------------
 var _clockStart = null, _clockInterval = null, _clockTotal = 0;
 function toggleSessionClock() {
   var el = document.getElementById('session-clock');
@@ -9006,7 +9049,7 @@ function formatClock(ms) {
   return h + ':' + (m<10?'0':'') + m + ':' + (ss<10?'0':'') + ss;
 }
 
-// ── Keyboard shortcuts ────────────────────────────────────────
+// -- Keyboard shortcuts ----------------------------------------
 document.addEventListener('keydown', function(e) {
   // Escape → close top modal
   if(e.key === 'Escape') {
@@ -9046,7 +9089,7 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// ── Global search ─────────────────────────────────────────────
+// -- Global search ---------------------------------------------
 function openGSearch() {
   var ov = document.getElementById('gsearch-overlay');
   var inp = document.getElementById('gsearch-input');
@@ -9122,7 +9165,7 @@ function renderGSearchResults(q) {
   });
 }
 
-// ── Floating combat widget ────────────────────────────────────
+// -- Floating combat widget ------------------------------------
 function updateFloatWidget() {
   var fw = document.getElementById('combat-float');
   if(!fw) return;
@@ -9144,7 +9187,7 @@ function updateFloatWidget() {
   if(_orig) window.nextTrackerTurn = function(){ _orig(); updateFloatWidget(); };
 })();
 
-// ── Tab memory ────────────────────────────────────────────────
+// -- Tab memory ------------------------------------------------
 (function(){
   var _origSwitch = window.switchTab;
   if(_origSwitch) window.switchTab = function(name, btn) {
@@ -9176,7 +9219,7 @@ function updateFloatWidget() {
   });
 })();
 
-// ── HP bars in combat tracker ────────────────────────────────
+// -- HP bars in combat tracker --------------------------------
 // Patch renderTracker to append hp bars after rendering
 (function(){
   var _origRender = window.renderTracker;
@@ -9197,7 +9240,7 @@ function updateFloatWidget() {
   };
 })();
 
-// ── Empty states for tabs without them ───────────────────────
+// -- Empty states for tabs without them -----------------------
 function makeEmptyState(icon, title, sub, btnLabel, btnFn) {
   var d = document.createElement('div');
   d.className = 'empty-state-full';
@@ -9214,7 +9257,7 @@ function makeEmptyState(icon, title, sub, btnLabel, btnFn) {
   return d;
 }
 
-// ── Panel collapse ────────────────────────────────────────────
+// -- Panel collapse --------------------------------------------
 function makeCollapsible(panelLabelEl) {
   if(!panelLabelEl || panelLabelEl.classList.contains('collapsible')) return;
   var panel = panelLabelEl.parentElement;
@@ -9250,7 +9293,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }, 500);
 });
 
-// ── Print view ────────────────────────────────────────────────
+// -- Print view ------------------------------------------------
 function printView(type) {
   var content = '';
   if(type === 'npcs') {
@@ -9270,14 +9313,14 @@ function printView(type) {
 }
 
 
-// ── Backdrop-click to close modals ───────────────────────────
+// -- Backdrop-click to close modals ---------------------------
 document.addEventListener('click', function(e) {
   if(!e.target.classList.contains('modal-overlay')) return;
   if(e.target.id === 'location-map-modal') return; // fullscreen - no backdrop zone
   e.target.classList.remove('show');
 });
 
-// ── Campaign name ─────────────────────────────────────────────
+// -- Campaign name ---------------------------------------------
 (function(){
   var name = localStorage.getItem('fg_campaign_name');
   var subtitle = localStorage.getItem('fg_campaign_subtitle');
@@ -9313,11 +9356,11 @@ function editCampaignName() {
   showToast && showToast('Campaign name updated ✓','success');
 }
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // REMAINING FEATURES — injected into Block 4
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
-// ── Party Gold ───────────────────────────────────────────────
+// -- Party Gold -----------------------------------------------
 function loadPartyGold() { return parseInt(localStorage.getItem('fg_party_gold')||'0')||0; }
 function savePartyGold() {
   var el = document.getElementById('party-gold');
@@ -9358,7 +9401,7 @@ function buyItem(itemName, itemCost) {
   adjustGold(-itemCost);
 }
 
-// ── Session Recap + Cliffhanger ──────────────────────────────
+// -- Session Recap + Cliffhanger ------------------------------
 function generateSessionRecap() {
   var apiKey = typeof getApiKey !== 'undefined' ? getApiKey() : localStorage.getItem('fg_api_key');
   if(!apiKey) { if(typeof showToast!=='undefined') showToast('API key required', 'error'); return; }
@@ -9414,7 +9457,7 @@ function generateSessionRecap() {
   };
 })();
 
-// ── NPC Voice field ──────────────────────────────────────────
+// -- NPC Voice field ------------------------------------------
 (function(){
   var _origOpenNpc = window.openNpcModal;
   if(_origOpenNpc) window.openNpcModal = function(id) {
@@ -9472,7 +9515,7 @@ function generateSessionRecap() {
   };
 })();
 
-// ── Dice Roller ───────────────────────────────────────────────
+// -- Dice Roller -----------------------------------------------
 var _diceHistory = [];
 function rollDice(sides) {
   var result = Math.floor(Math.random() * sides) + 1;
@@ -9490,7 +9533,7 @@ function rollDice(sides) {
   if(typeof showToast !== 'undefined') showToast('d'+sides+': '+result+(result===sides?' \u2605 MAX!':result===1?' (nat 1)':''));
 }
 
-// ── Map Zoom & Pan ────────────────────────────────────────────
+// -- Map Zoom & Pan --------------------------------------------
 var _mapScale = 1, _mapPanX = 0, _mapPanY = 0, _mapDragging = false, _mapDragStartX = 0, _mapDragStartY = 0;
 
 function updateMapTransform() {
@@ -9532,7 +9575,7 @@ document.addEventListener('DOMContentLoaded', function(){
   };
 });
 
-// ── Empty states wired ────────────────────────────────────────
+// -- Empty states wired ----------------------------------------
 document.addEventListener('DOMContentLoaded', function(){
   // (settlement gold panel now handled in base enterTab)
 
@@ -9569,7 +9612,7 @@ document.addEventListener('DOMContentLoaded', function(){
   };
 });
 
-// ── Rumours NPC linking ───────────────────────────────────────
+// -- Rumours NPC linking ---------------------------------------
 function linkRumourToNpc(rumourId) {
   var npcs = typeof loadNpcs !== 'undefined' ? loadNpcs() : [];
   if(!npcs.length) { if(typeof showToast!=='undefined') showToast('No NPCs to link','error'); return; }
@@ -9583,7 +9626,7 @@ function linkRumourToNpc(rumourId) {
   if(r) { r.npcLink=npc.id; r.npcName=npc.name; if(typeof saveRumours!=='undefined') saveRumours(rumours); if(typeof renderRumoursList!=='undefined') renderRumoursList(); }
 }
 
-// ── Loot save to session ──────────────────────────────────────
+// -- Loot save to session --------------------------------------
 function saveLootToSession() {
   var loot = document.getElementById('loot-content');
   if(!loot || !loot.textContent.trim()) { if(typeof showToast!=='undefined') showToast('No loot to save','error'); return; }
@@ -9597,7 +9640,7 @@ function saveLootToSession() {
   if(typeof showToast!=='undefined') showToast('Loot saved to log \u2713','success');
 }
 
-// ── Encounter history annotations ────────────────────────────
+// -- Encounter history annotations ----------------------------
 function annotateEncounter(id) {
   var hist = JSON.parse(localStorage.getItem('fg_combat_history')||'[]');
   var enc = hist.find(function(h){return h.id===id;});
@@ -9611,9 +9654,9 @@ function annotateEncounter(id) {
 }
 
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // CAMPAIGN DASHBOARD
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
 function renderDashboard() {
   renderDashHeader();
@@ -9749,9 +9792,9 @@ function renderDashCombat() {
 // (clock sync consolidated into enterTab)
 
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // PARTY INVENTORY
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
 function loadInventory() { try{return JSON.parse(localStorage.getItem('fg_inventory')||'[]');}catch(e){return[];} }
 function saveInventory(items) { localStorage.setItem('fg_inventory', JSON.stringify(items)); }
@@ -9871,9 +9914,9 @@ if(typeof _origSaveLoot !== 'undefined') {
   };
 }
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // STANDALONE SESSIONS + RUMOURS TABS
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
 function renderSessionsStandalone() {
   var el = document.getElementById('sessions-standalone-list');
@@ -9943,9 +9986,9 @@ function addRumourStandalone() {
   if(typeof showToast !== 'undefined') showToast('Rumour added \u2713','success');
 }
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // MODULE IMPORTER
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
 function openModuleImporter() {
   var modal = document.getElementById('module-importer-modal');
@@ -10162,7 +10205,7 @@ function buyItemAndAdd(itemName, itemCost) {
   if(typeof showToast!=='undefined') showToast(itemName+' purchased and added to inventory \u2713','success');
 }
 
-// ── saveForgedToInventory ─────────────────────────────────────
+// -- saveForgedToInventory -------------------------------------
 function saveForgedToInventory(item) {
   if(!item) { if(typeof showToast!=='undefined') showToast('No item to save','error'); return; }
   var items = JSON.parse(localStorage.getItem('fg_inventory')||'[]');
@@ -10176,7 +10219,7 @@ function saveForgedToInventory(item) {
   if(typeof showToast!=='undefined') showToast((item.n||'Item')+' added to inventory \u2713','success');
 }
 
-// ── linkCombatToSession ───────────────────────────────────────
+// -- linkCombatToSession ---------------------------------------
 function linkCombatToSession(combatId) {
   var sessions = typeof loadSessions !== 'undefined' ? loadSessions() : [];
   if(!sessions.length) { if(typeof showToast!=='undefined') showToast('No sessions yet','error'); return; }
@@ -10195,7 +10238,7 @@ function linkCombatToSession(combatId) {
   }
 }
 
-// ── Loot log view on Inventory tab ───────────────────────────
+// -- Loot log view on Inventory tab ---------------------------
 function renderLootLog() {
   var el = document.getElementById('loot-log-list');
   if(!el) return;
@@ -10209,7 +10252,7 @@ function renderLootLog() {
   }).join('');
 }
 
-// ── Linear timeline era tick marks ───────────────────────────
+// -- Linear timeline era tick marks ---------------------------
 var _origRenderLinear = window.renderLinearTimeline;
 if(typeof _origRenderLinear !== 'undefined') {
   window.renderLinearTimeline = function() {
@@ -10240,7 +10283,7 @@ if(typeof _origRenderLinear !== 'undefined') {
   };
 }
 
-// ── Empty states for new tabs ─────────────────────────────────
+// -- Empty states for new tabs ---------------------------------
 document.addEventListener('DOMContentLoaded', function(){
   // Wire loot log tab if it exists
   var origRenderInv = window.renderInventory;
@@ -10253,9 +10296,9 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // MULTI-CAMPAIGN SUPPORT
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
 var _campaignPrefix = '';
 
@@ -10406,19 +10449,19 @@ document.addEventListener('DOMContentLoaded', function(){
   if(!cur && name && !list.length) {
     var id = 'camp_default';
   
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // DEPLOYMENT & FINAL POLISH
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
-// ── Service worker registration (offline support hint) ────────
+// -- Service worker registration (offline support hint) --------
 // Not registering SW since this is a single file — just note
 // that the app works offline once loaded (all data is local)
 
-// ── Keyboard shortcut reminder ────────────────────────────────
+// -- Keyboard shortcut reminder --------------------------------
 // Ctrl+K = search, Space = next turn, Escape = close modal
 // These are already wired — just ensure they don't conflict
 
-// ── Campaign selector on modal open ──────────────────────────
+// -- Campaign selector on modal open --------------------------
 document.addEventListener('DOMContentLoaded', function(){
   var campModal = document.getElementById('campaign-selector-modal');
   if(campModal) {
@@ -10455,7 +10498,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-// ── One-click share (copy file URL to clipboard) ─────────────
+// -- One-click share (copy file URL to clipboard) -------------
 function shareApp() {
   if(navigator.clipboard) {
     navigator.clipboard.writeText(window.location.href)
@@ -10464,7 +10507,7 @@ function shareApp() {
   }
 }
 
-// ── Final nav active state fix for all tab IDs ────────────────
+// -- Final nav active state fix for all tab IDs ----------------
 // (nav active state and title now handled in base enterTab)
 
   list.push({id:id, name:name, created:'Original'});
@@ -10474,11 +10517,11 @@ function shareApp() {
 });
 
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // FINAL FEATURE POLISH
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
-// ── Auto-roll initiative ─────────────────────────────────────
+// -- Auto-roll initiative -------------------------------------
 function autoRollInitiative() {
   if(!trackerCombatants.length) { if(typeof showToast!=='undefined') showToast('Add combatants first','error'); return; }
   trackerCombatants.forEach(function(c) {
@@ -10491,7 +10534,7 @@ function autoRollInitiative() {
   if(typeof showToast !== 'undefined') showToast('Initiative rolled \u2713','success');
 }
 
-// ── PC spell slots — wire save/load ──────────────────────────
+// -- PC spell slots — wire save/load --------------------------
 (function(){
   var _origOpenPc = window.openPcModal;
   if(_origOpenPc) window.openPcModal = function(id) {
@@ -10529,7 +10572,7 @@ function autoRollInitiative() {
   };
 })();
 
-// ── World map direct access ───────────────────────────────────
+// -- World map direct access -----------------------------------
 function openWorldMapDirect() {
   // Temporarily clear location/region filters to get world map
   var locSel = document.getElementById('npc-location-filter');
@@ -10546,7 +10589,7 @@ function openWorldMapDirect() {
   }, 100);
 }
 
-// ── Quick ref drawer — add spell slots + conditions ───────────
+// -- Quick ref drawer — add spell slots + conditions -----------
 var _origBuildQR = window.buildQuickRef;
 if(typeof _origBuildQR !== 'undefined') {
   window.buildQuickRef = function() {
@@ -10569,7 +10612,7 @@ if(typeof _origBuildQR !== 'undefined') {
   };
 }
 
-// ── Initiative tracker — ensure conditions visible ────────────
+// -- Initiative tracker — ensure conditions visible ------------
 // Conditions are already shown as chips (added to renderTracker)
 // Also show them in the floating combat widget
 var _origUpdateFloat = window.updateFloatWidget;
@@ -10588,7 +10631,7 @@ if(typeof _origUpdateFloat !== 'undefined') {
   };
 }
 
-// ── Reference tab — ensure all sub-tabs render correctly ─────
+// -- Reference tab — ensure all sub-tabs render correctly -----
 // Combat and Magic ref sub-tabs use 'combat-ref' and 'magic-ref' IDs
 // but switchCraftTab uses 'combat-ref' and 'magic-ref'
 // Verify the craft-tab-combat and craft-tab-magic buttons point correctly
@@ -10606,17 +10649,17 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-// ── Ensure fg_sessions_main renders correctly ────────────────
+// -- Ensure fg_sessions_main renders correctly ----------------
 // The sessions-main and rumours-main tabs should open properly
 // Wire their enterTab calls if somehow missed
 // (override consolidated into base enterTab)
 
 
-// ══════════════════════════════════════════════════════════════
+// --------------------
 // DIRECTION 2 — DEEPENED FEATURES
-// ══════════════════════════════════════════════════════════════
+// --------------------
 
-// ── 1. Statblock quick-reference panel ───────────────────────
+// -- 1. Statblock quick-reference panel -----------------------
 function openStatblockQuickRef(combatant) {
   var sb = combatant.statblock;
   if(!sb) return;
@@ -10726,7 +10769,7 @@ function openStatblockQuickRef(combatant) {
   document.body.appendChild(overlay);
 }
 
-// ── 2. Condition visual reminder system ──────────────────────
+// -- 2. Condition visual reminder system ----------------------
 function updateConditionReminderBar() {
   var bar = document.getElementById('condition-reminder-bar');
   var nameEl = document.getElementById('condition-reminder-name');
@@ -10764,7 +10807,7 @@ function updateConditionReminderBar() {
   };
 })();
 
-// ── 3. NPC auto-relationship suggestions ─────────────────────
+// -- 3. NPC auto-relationship suggestions ---------------------
 function suggestNpcRelationships() {
   var npcs = typeof loadNpcs !== 'undefined' ? loadNpcs() : [];
   var nodes = typeof loadWebNodes !== 'undefined' ? loadWebNodes() : [];
@@ -10854,7 +10897,7 @@ function openRelationshipSuggestionsModal() {
   document.body.appendChild(overlay);
 }
 
-// ── 4. Session recap — copy as markdown ──────────────────────
+// -- 4. Session recap — copy as markdown ----------------------
 function copySessionRecapAsMarkdown() {
   var recapEl = document.getElementById('session-recap-result');
   var nameEl = document.getElementById('session-name');
@@ -10880,7 +10923,7 @@ function copySessionRecapAsMarkdown() {
 
 
 
-// ── Dashboard status panel toggle ────────────────────────────
+// -- Dashboard status panel toggle ----------------------------
 var _dashStatusOpen = false;
 function toggleDashStatus() {
   _dashStatusOpen = !_dashStatusOpen;
@@ -10893,9 +10936,234 @@ function toggleDashStatus() {
 
 
 
-// ── Dashboard status panel toggle ────────────────────────────
+// -- Dashboard status panel toggle --
+// -- Session Notes v2 -----------------------------------------
 
-// ── Prep doc export ──────────────────────────────────────────
+function handleUpcomingSessionUpload(event) {
+  var file = event.target.files[0]; if(!file) return;
+  var apiKey = getApiKey();
+  if(!apiKey) { showToast('Set your API key in Settings first','error'); return; }
+  var status = document.getElementById('sn-upcoming-status');
+  var result = document.getElementById('sn-upcoming-result');
+  if(status) { status.style.display='block'; status.textContent='Reading file...'; }
+  if(result) result.style.display='none';
+
+  // Load PCs for context
+  var pcs = typeof loadPcs !== 'undefined' ? loadPcs() : [];
+  var pcContext = pcs.length ? pcs.map(function(p){ return p.name + ' (' + (p.pcClass||'') + (p.level?' Lv'+p.level:'') + ')'; }).join(', ') : 'No characters yet';
+
+  // Read file
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = '';
+    if(file.name.endsWith('.txt')) {
+      text = e.target.result;
+      analyseUpcomingSession(text, pcContext, status, result);
+    } else {
+      // Use mammoth for docx, basic text extract for pdf
+      try {
+        if(typeof mammoth !== 'undefined' && (file.name.endsWith('.docx') || file.name.endsWith('.doc'))) {
+          mammoth.extractRawText({arrayBuffer: e.target.result}).then(function(r){
+            analyseUpcomingSession(r.value, pcContext, status, result);
+          });
+        } else {
+          // PDF - try to get text
+          text = 'Session prep file uploaded: ' + file.name;
+          analyseUpcomingSession(text, pcContext, status, result);
+        }
+      } catch(err) {
+        if(status) status.textContent = 'Could not read file: ' + err.message;
+      }
+    }
+  };
+  if(file.name.endsWith('.txt')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
+  if(statusEl) statusEl.textContent = 'Analysing session prep...';
+  
+  var prompt = 'You are an expert DM assistant. Analyse this session prep.\n\nParty: ' + pcContext + '\n\nPrep:\n' + prepText.slice(0,5000) + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills), considerations (array of 3-5 tips). No markdown.';;
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    var text = (data.content||[]).map(function(c){ return c.text||''; }).join('');
+    try {
+      var clean = text.replace(/```json|```/g,'').trim();
+      var parsed = JSON.parse(clean);
+
+      // Annotated text - style [INSIGHT: ...] markers
+      var annotated = (parsed.annotated || prepText).replace(
+        /\[INSIGHT:\s*([^\]]+)\]/g,
+        '<mark style="background:rgba(212,168,67,0.2);border-radius:3px;padding:1px 4px;cursor:help" title="$1">&#128161; [insight]</mark>'
+      );
+      var annotEl = document.getElementById('sn-annotated-text');
+      if(annotEl) annotEl.innerHTML = annotated;
+
+      // Oversights
+      var ovEl = document.getElementById('sn-oversights');
+      if(ovEl && parsed.oversights) {
+        ovEl.innerHTML = parsed.oversights.map(function(o){
+          return '<div style="margin-bottom:8px;padding:8px;background:rgba(205,74,74,0.08);border-left:2px solid rgba(205,74,74,0.5);border-radius:0 4px 4px 0;font-size:12px">&#9888; ' + o + '</div>';
+        }).join('');
+      }
+
+      // Considerations
+      var conEl = document.getElementById('sn-considerations');
+      if(conEl && parsed.considerations) {
+        conEl.innerHTML = parsed.considerations.map(function(c){
+          return '<div style="margin-bottom:8px;padding:8px;background:rgba(212,168,67,0.06);border-left:2px solid var(--gold-dim);border-radius:0 4px 4px 0;font-size:12px">&#128161; ' + c + '</div>';
+        }).join('');
+      }
+
+      if(statusEl) statusEl.style.display = 'none';
+      if(resultEl) resultEl.style.display = 'block';
+
+      // Store for saving
+      window._snUpcomingText = prepText;
+      window._snUpcomingAnalysis = parsed;
+
+    } catch(err) {
+      if(statusEl) statusEl.textContent = 'Analysis error: ' + err.message + ' | Raw: ' + text.slice(0,200);
+    }
+  })
+  .catch(function(err) {
+    if(statusEl) statusEl.textContent = 'Request failed: ' + err.message;
+  });
+}
+
+function saveUpcomingAsNote() {
+  var text = window._snUpcomingText || '';
+  if(!text) { showToast('Nothing to save','error'); return; }
+  var notes = loadSessionNotes ? loadSessionNotes() : [];
+  var note = {
+    id: 'sn_' + Date.now(),
+    title: 'Session Prep — ' + new Date().toLocaleDateString(),
+    type: 'past',
+    sessionRef: '',
+    content: text,
+    analysis: window._snUpcomingAnalysis || null,
+    created: Date.now()
+  };
+  notes.push(note);
+  if(typeof saveSessionNotes !== 'undefined') saveSessionNotes(notes);
+  renderSessionNotesList();
+  showToast('Saved to Past Sessions ✓', 'success');
+  clearUpcomingAnalysis();
+}
+
+function clearUpcomingAnalysis() {
+  var result = document.getElementById('sn-upcoming-result');
+  var status = document.getElementById('sn-upcoming-status');
+  if(result) result.style.display = 'none';
+  if(status) { status.style.display = 'none'; status.textContent = ''; }
+  window._snUpcomingText = null;
+  window._snUpcomingAnalysis = null;
+  document.getElementById('sn-upcoming-upload').value = '';
+}
+
+function handlePastSessionUpload(event) {
+  var file = event.target.files[0]; if(!file) return;
+  var status = document.getElementById('sn-past-status');
+  if(status) { status.style.display='block'; status.textContent='Reading file...'; }
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var saveNote = function(text) {
+      var notes = typeof loadSessionNotes !== 'undefined' ? loadSessionNotes() : [];
+      var note = {
+        id: 'sn_' + Date.now(),
+        title: file.name.replace(/\.[^.]+$/, ''),
+        type: 'past',
+        sessionRef: new Date().toLocaleDateString(),
+        content: text,
+        created: Date.now()
+      };
+      notes.push(note);
+      if(typeof saveSessionNotes !== 'undefined') saveSessionNotes(notes);
+      renderSessionNotesList();
+      if(status) { status.style.display='none'; }
+      showToast('Past session saved ✓', 'success');
+      event.target.value = '';
+    };
+
+    if(file.name.endsWith('.txt')) {
+      saveNote(e.target.result);
+    } else if(typeof mammoth !== 'undefined' && (file.name.endsWith('.docx') || file.name.endsWith('.doc'))) {
+      mammoth.extractRawText({arrayBuffer: e.target.result}).then(function(r){ saveNote(r.value); });
+    } else {
+      saveNote('[File: ' + file.name + '] — Uploaded ' + new Date().toLocaleString());
+    }
+  };
+  if(file.name.endsWith('.txt')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function renderSessionNotesList() {
+  var el = document.getElementById('session-notes-list');
+  if(!el) return;
+  var notes = typeof loadSessionNotes !== 'undefined' ? loadSessionNotes() : [];
+  var past = notes.filter(function(n){ return n.type === 'past' || !n.type; });
+  past.sort(function(a,b){ return (b.created||0)-(a.created||0); });
+  if(!past.length) {
+    el.innerHTML = '<div class="empty-state">No past sessions yet.</div>';
+    return;
+  }
+  el.innerHTML = '';
+  past.forEach(function(note, idx) {
+    var date = note.sessionRef || (note.created ? new Date(note.created).toLocaleDateString() : '');
+    var card = document.createElement('div');
+    card.className = 'panel';
+    card.style.cssText = 'margin-bottom:10px;padding:0;overflow:hidden';
+    var bodyId = 'sn-body-' + idx;
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none';
+    (function(bid){ hdr.onclick = function(){ toggleSnCard(bid); }; })(bodyId);
+    var titleDiv = document.createElement('div');
+    titleDiv.innerHTML = '<div style="font-family:Cinzel,serif;font-size:12px;color:var(--gold);letter-spacing:.06em">' + (note.title||'Untitled') + '</div>' + (date ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + date + '</div>' : '');
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn-ghost btn-sm';
+    delBtn.innerHTML = '&#10005;';
+    delBtn.style.cssText = 'font-size:10px;padding:2px 8px';
+    (function(nid){ delBtn.onclick = function(e){ e.stopPropagation(); deleteSessionNote2(nid); }; })(note.id);
+    hdr.appendChild(titleDiv);
+    hdr.appendChild(delBtn);
+    var body = document.createElement('div');
+    body.id = bodyId;
+    body.style.cssText = 'display:none;padding:14px;border-top:1px solid var(--border);font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap';
+    body.textContent = note.content || '';
+    card.appendChild(hdr);
+    card.appendChild(body);
+    el.appendChild(card);
+  });
+}
+
+function toggleSnCard(id) {
+  var el = document.getElementById(id);
+  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function deleteSessionNote2(id) {
+  if(!confirm('Delete this session note?')) return;
+  var notes = typeof loadSessionNotes !== 'undefined' ? loadSessionNotes() : [];
+  notes = notes.filter(function(n){ return n.id !== id; });
+  if(typeof saveSessionNotes !== 'undefined') saveSessionNotes(notes);
+  renderSessionNotesList();
+}
+
+// Alias for enterTab render call
+function renderSessionsNotes() { renderSessionNotesList(); }
+
+// -- Prep doc export ------------------------------------------
 function exportAnnotatedPrep() {
   var annotated = document.getElementById('prep-annotated');
   var filename = (window._prepFileName||'prep').replace(/\.[^.]+$/,'') + '_annotated.txt';
@@ -10913,7 +11181,7 @@ function exportAnnotatedPrep() {
 }
 
 
-// ── API Key management ────────────────────────────────────────
+// -- API Key management ----------------------------------------
 function openApiKeyModal() {
   var modal = document.getElementById('api-key-modal');
   var input = document.getElementById('api-key-input');
