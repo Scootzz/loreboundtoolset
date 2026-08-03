@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0e0b07">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-/* v2.1 */
+/* v2.2 */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -3203,7 +3203,7 @@ function handlePcPdfUpload(event) {
   Promise.all(promises).then(function(results){
     status.textContent = 'Asking Claude to extract character details...';
     var sheetDesc = isPdf ? 'a PDF' : (results.length > 1 ? results.length+' images' : 'an image');
-    var prompt = 'This is a D&D character sheet shown as '+sheetDesc+'. Extract the player character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name (e.g. Fighter, Rogue)","level":"level as number string e.g. 5","player":"player name if shown, else empty","hp":"current max HP as a number","ac":"armour class as a number","notes":"brief summary of race, background, subclass and key traits in 1-2 sentences"}';
+    var prompt = 'This is a D&D character sheet shown as '+sheetDesc+'. Extract the player character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name (e.g. Fighter, Rogue)","level":"level as number string e.g. 5","player":"player name if shown, else empty","hp":"current max HP as a number","ac":"armour class as a number","pp":"passive perception as a number (10 + Perception modifier, or read directly from sheet)","notes":"brief summary of race, background, subclass and key traits in 1-2 sentences"}';
     var contentBlocks = [];
     if(isPdf){
       contentBlocks.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:results[0].base64}});
@@ -3249,9 +3249,9 @@ function handlePcPdfUpload(event) {
       var pc = JSON.parse(clean.slice(jsonStart, jsonEnd+1));
       if(!pc.name) throw new Error('No character name found. Is this a character sheet?');
       var pcs=loadPcs();
-      pcs.push({id:'pc_'+Date.now(),name:pc.name,pcClass:pc.pcClass||'',level:pc.level||'',player:pc.player||'',notes:pc.notes||'',plots:[],pdfData:isPdf?results[0].base64:null,hp:parseInt(pc.hp)||null,ac:parseInt(pc.ac)||null});
+      pcs.push({id:'pc_'+Date.now(),name:pc.name,pcClass:pc.pcClass||'',level:pc.level||'',player:pc.player||'',notes:pc.notes||'',plots:[],pdfData:isPdf?results[0].base64:null,hp:parseInt(pc.hp)||null,ac:parseInt(pc.ac)||null,pp:parseInt(pc.pp)||null});
       savePcs(pcs);
-      status.textContent='Imported: '+pc.name+(pc.pcClass?' the '+pc.pcClass:'')+(pc.level?' (Level '+pc.level+')':'')+(pc.hp?' | HP '+pc.hp:'')+(pc.ac?' | AC '+pc.ac:'');
+      status.textContent='Imported: '+pc.name+(pc.pcClass?' the '+pc.pcClass:'')+(pc.level?' (Level '+pc.level+')':'')+(pc.hp?' | HP '+pc.hp:'')+(pc.ac?' | AC '+pc.ac:'')+(pc.pp?' | PP '+pc.pp:'');
       renderPcs(); event.target.value='';
       setTimeout(function(){status.classList.add('hidden');},5000);
     })
