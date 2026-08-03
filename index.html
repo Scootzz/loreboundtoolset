@@ -2527,7 +2527,7 @@ function switchCraftTab(name, btn) {
   if(name==='rumours') renderRumoursInCraft();
   if(name==='professions'||name==='buildings') renderCrafting();
 }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function closeModal(id) { var m=document.getElementById(id); if(m){ m.classList.remove('show'); m.style.display=''; } }
 
 // ═══════════════════════════ FORGE ═══════════════════════════
 function initCreatureFilter() {
