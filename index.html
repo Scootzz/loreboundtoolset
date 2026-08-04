@@ -869,6 +869,7 @@ select option{background:#1a1208}
       <select id="npc-region-filter" onchange="onRegionFilterChange()" style="font-size:13px;min-width:110px">
         <option value="">All Regions</option>
       </select>
+      <button class="btn-ghost btn-sm" onclick="openManageLocationsModal()" style="font-size:11px;white-space:nowrap" title="Manage locations and assign them to regions">&#127968; Locations &amp; Regions</button>
       <select id="npc-location-filter" onchange="renderNpcs()" style="font-size:13px;min-width:120px">
         <option value="">All Locations</option>
       </select>
@@ -11237,6 +11238,172 @@ function openCampaignSelector() {
   var modal = document.getElementById('campaign-selector-modal');
   if(modal) { modal.classList.add('show'); renderCampaignSelector(); }
   else { console.error('campaign-selector-modal not found'); }
+}
+
+// ── Location & Region Management ─────────────────────────────
+function openManageLocationsModal() {
+  var modal = document.getElementById('manage-locations-modal');
+  if(!modal) {
+    modal = document.createElement('div');
+    modal.id = 'manage-locations-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box" style="max-width:500px">'
+      + '<div class="modal-title">&#127968; LOCATIONS &amp; REGIONS</div>'
+      + '<div style="display:flex;gap:8px;margin-bottom:14px">'
+      + '<input type="text" id="new-loc-name" placeholder="New location name..." style="flex:1">'
+      + '<button class="btn-gold btn-sm" onclick="addLocationFromModal()">+ Add</button>'
+      + '</div>'
+      + '<div style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em;margin-bottom:4px">REGIONS</div>'
+      + '<div style="display:flex;gap:8px;margin-bottom:10px">'
+      + '<input type="text" id="new-region-name" placeholder="New region name..." style="flex:1">'
+      + '<button class="btn-ghost btn-sm" onclick="addRegionFromModal()">+ Add Region</button>'
+      + '</div>'
+      + '<div id="manage-locs-list" style="max-height:320px;overflow-y:auto"></div>'
+      + '<div class="modal-btns" style="margin-top:12px">'
+      + '<button class="btn-ghost" style="flex:1" id="close-locs-modal-btn">Done</button>'
+      + '</div></div>';
+    document.body.appendChild(modal);
+  }
+  renderManageLocationsList();
+  modal.style.display = 'flex';
+  modal.classList.add('show');
+  var closeBtn = document.getElementById('close-locs-modal-btn');
+  if(closeBtn) closeBtn.onclick = function(){ closeModal('manage-locations-modal'); populateRegionFilter(); renderNpcs(); };
+  setTimeout(function(){ var i=document.getElementById('new-loc-name'); if(i) i.focus(); }, 100);
+}
+
+function addLocationFromModal() {
+  var inp = document.getElementById('new-loc-name');
+  if(!inp || !inp.value.trim()) return;
+  var loc = addLocation(inp.value.trim());
+  if(!loc) { showToast('Location already exists', 'error'); return; }
+  inp.value = '';
+  renderManageLocationsList();
+  populateLocationFilter();
+  showToast('Location added ✓', 'success');
+}
+
+function addRegionFromModal() {
+  var inp = document.getElementById('new-region-name');
+  if(!inp || !inp.value.trim()) return;
+  var regions = loadRegions();
+  if(regions.find(function(r){return r.name.toLowerCase()===inp.value.trim().toLowerCase();})) {
+    showToast('Region already exists', 'error'); return;
+  }
+  regions.push({id:'reg_'+Date.now(), name:inp.value.trim()});
+  saveRegions(regions);
+  inp.value = '';
+  renderManageLocationsList();
+  populateRegionFilter();
+  showToast('Region added ✓', 'success');
+}
+
+function renderManageLocationsList() {
+  var list = document.getElementById('manage-locs-list');
+  if(!list) return;
+  var locs = loadLocations();
+  var regions = loadRegions();
+  var npcs = loadNpcs();
+  list.innerHTML = '';
+
+  if(!locs.length) {
+    list.innerHTML = '<div class="empty-state">No locations yet. Add one above.</div>';
+    return;
+  }
+
+  // Group by region
+  var byRegion = {};
+  var unassigned = [];
+  locs.forEach(function(loc) {
+    if(loc.regionId) {
+      if(!byRegion[loc.regionId]) byRegion[loc.regionId] = [];
+      byRegion[loc.regionId].push(loc);
+    } else {
+      unassigned.push(loc);
+    }
+  });
+
+  function makeLocRow(loc) {
+    var npcCount = npcs.filter(function(n){return n.locationId===loc.id;}).length;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)';
+    
+    var nameDiv = document.createElement('div');
+    nameDiv.style.cssText = 'flex:1;font-size:13px;color:var(--text)';
+    nameDiv.textContent = loc.name + (npcCount ? ' (' + npcCount + ' NPC' + (npcCount===1?'':'s') + ')' : '');
+    
+    var regSel = document.createElement('select');
+    regSel.style.cssText = 'font-size:11px;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:3px 6px;max-width:130px';
+    regSel.innerHTML = '<option value="">No region</option>';
+    regions.forEach(function(r) {
+      var o = document.createElement('option');
+      o.value = r.id; o.textContent = r.name;
+      if(loc.regionId === r.id) o.selected = true;
+      regSel.appendChild(o);
+    });
+    (function(lid){ regSel.onchange = function(){ assignLocationToRegion(lid, this.value); renderManageLocationsList(); populateRegionFilter(); showToast('Saved ✓','success'); }; })(loc.id);
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn-ghost btn-sm';
+    delBtn.style.cssText = 'color:var(--danger);border-color:var(--danger);padding:2px 6px;font-size:11px';
+    delBtn.innerHTML = '&#10005;';
+    (function(lid, lname, count){
+      delBtn.onclick = function() {
+        var msg = 'Delete "' + lname + '"?';
+        if(count > 0) msg += ' This will also delete ' + count + ' NPC' + (count===1?'':'s') + '.';
+        if(!confirm(msg)) return;
+        var ls = loadLocations().filter(function(l){return l.id!==lid;});
+        saveLocations(ls);
+        var ns = loadNpcs().filter(function(n){return n.locationId!==lid;});
+        saveNpcs(ns);
+        renderManageLocationsList();
+        renderNpcs();
+        populateLocationFilter();
+        showToast('Location deleted', 'success');
+      };
+    })(loc.id, loc.name, npcCount);
+    
+    row.appendChild(nameDiv);
+    row.appendChild(regSel);
+    row.appendChild(delBtn);
+    return row;
+  }
+
+  // Render by region
+  regions.forEach(function(r) {
+    var regionLocs = byRegion[r.id] || [];
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0 4px;margin-top:6px';
+    hdr.innerHTML = '<span style="font-family:Cinzel,serif;font-size:10px;color:var(--gold);letter-spacing:.1em;flex:1">' + r.name.toUpperCase() + ' (' + regionLocs.length + ')</span>';
+    var delRegBtn = document.createElement('button');
+    delRegBtn.className = 'btn-ghost btn-sm';
+    delRegBtn.style.cssText = 'color:var(--danger);border-color:var(--danger);padding:2px 6px;font-size:10px';
+    delRegBtn.innerHTML = '&#10005; Region';
+    (function(rid, rname){ delRegBtn.onclick = function(){
+      if(!confirm('Delete region "' + rname + '"? Locations will become unassigned.')) return;
+      saveRegions(loadRegions().filter(function(r2){return r2.id!==rid;}));
+      var ls = loadLocations(); ls.forEach(function(l){if(l.regionId===rid)l.regionId=null;}); saveLocations(ls);
+      renderManageLocationsList(); populateRegionFilter();
+    };})(r.id, r.name);
+    hdr.appendChild(delRegBtn);
+    list.appendChild(hdr);
+    regionLocs.forEach(function(loc){ list.appendChild(makeLocRow(loc)); });
+    if(!regionLocs.length) {
+      var empty = document.createElement('div');
+      empty.style.cssText = 'font-size:12px;color:var(--muted);padding:4px 0;font-style:italic';
+      empty.textContent = 'No locations assigned';
+      list.appendChild(empty);
+    }
+  });
+
+  // Unassigned locations
+  if(unassigned.length) {
+    var uhdr = document.createElement('div');
+    uhdr.style.cssText = 'font-family:Cinzel,serif;font-size:10px;color:var(--muted);letter-spacing:.08em;padding:10px 0 4px;margin-top:6px';
+    uhdr.textContent = 'UNASSIGNED LOCATIONS';
+    list.appendChild(uhdr);
+    unassigned.forEach(function(loc){ list.appendChild(makeLocRow(loc)); });
+  }
 }
 </script>
 
