@@ -2491,11 +2491,14 @@ function loadNpcs() { try{return JSON.parse(localStorage.getItem('fg_npcs')||'[]
 function loadLocations() { try{return JSON.parse(localStorage.getItem('fg_locations')||'[]');}catch(e){return [];} }
 function saveLocations(l) { localStorage.setItem('fg_locations',JSON.stringify(l)); }
 function deleteLocation(locId) {
-  if(!confirm('Remove this location? NPCs assigned here will become unassigned.')) return;
-  saveLocations(loadLocations().filter(function(l){return l.id!==locId;}));
   var npcs = loadNpcs();
-  npcs.forEach(function(n){ if(n.locationId===locId) n.locationId=null; });
-  saveNpcs(npcs);
+  var npcCount = npcs.filter(function(n){ return n.locationId===locId; }).length;
+  var msg = 'Remove this location?';
+  if(npcCount > 0) msg += ' This will also delete ' + npcCount + ' NPC' + (npcCount===1?'':'s') + ' assigned here.';
+  if(!confirm(msg)) return;
+  saveLocations(loadLocations().filter(function(l){return l.id!==locId;}));
+  var remaining = npcs.filter(function(n){ return n.locationId!==locId; });
+  saveNpcs(remaining);
   renderNpcs();
 }
 
