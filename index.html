@@ -1029,6 +1029,32 @@ select option{background:#1a1208}
       <button class="btn-gold btn-sm" id="end-combat-btn" onclick="endCombat()" style="border-color:#cd4a4a;background:#cd4a4a;color:#fff;display:none">&#9760; End Combat</button>
       <button class="btn-ghost btn-sm" onclick="resetTracker()" style="border-color:var(--danger);color:var(--danger)">&#8635; Reset</button>
     </div>
+
+<!-- SECTION 6: Loot Generator -->
+  <div class="panel" id="loot-generator-panel" style="margin-top:12px;display:none">
+    <div class="panel-label">Loot Generator</div>
+    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Generate contextual loot based on defeated enemies. Considers creature type, CR, and components.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1">
+        <span class="field-label" style="display:block;margin-bottom:3px">Enemies defeated</span>
+        <input type="text" id="loot-enemies" placeholder="e.g. 3x Bandit, 1x Bandit Captain" style="width:100%;box-sizing:border-box">
+      </div>
+      <div>
+        <span class="field-label" style="display:block;margin-bottom:3px">Party level</span>
+        <input type="number" id="loot-party-level" value="3" min="1" max="20" style="width:70px">
+      </div>
+      <button class="btn-gold btn-sm" onclick="generateLoot()">&#127775; Generate Loot</button>
+    </div>
+    <div id="loot-status" class="hidden" style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">Generating...</div>
+    <div id="loot-result" class="hidden" style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:12px">
+      <div id="loot-content"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-ghost btn-sm" onclick="copyLoot()">&#128203; Copy</button>
+        <button class="btn-ghost btn-sm" onclick="saveLootToSession()" style="color:var(--gold);border-color:var(--gold-dim)">&#128190; Save</button>
+        <button class="btn-ghost btn-sm" onclick="document.getElementById('loot-result').classList.add('hidden')">Clear</button>
+      </div>
+    </div>
+  </div>
     <div style="font-sisize:13px;color:var(--gold);letter-spacing:.1em;font-family:Cinzel,serif;margin-bottom:10px">ROUND <span id="tracker-round">1</span> &nbsp;<span id="tracker-active-name" style="font-size:12px;color:var(--muted);font-style:italic;font-family:EB Garamond,serif;letter-spacing:0"></span></div-initiative-bar" style="overflow-x:auto;padding-bottom:8px;min-height:80px">
       <div id="condition-reminder-bar" class="hidden" style="background:rgba(212,168,67,0.06);border:1px solid var(--gold-dim);border-radius:4px;padding:8px 12px;margin-bottom:8px;font-size:12px">
         <span style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em">CONDITIONS &#8212; </span><span id="condition-reminder-name" style="font-family:Cinzel,serif;font-size:10px;color:var(--gold)"></span>
@@ -1657,31 +1683,7 @@ select option{background:#1a1208}
     </div>
   </div>
 </div>
-  <!-- SECTION 6: Loot Generator -->
-  <div class="panel" id="loot-generator-panel" style="margin-top:12px">
-    <div class="panel-label">Loot Generator</div>
-    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Generate contextual loot based on defeated enemies. Considers creature type, CR, and components.</p>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end">
-      <div style="flex:1">
-        <span class="field-label" style="display:block;margin-bottom:3px">Enemies defeated</span>
-        <input type="text" id="loot-enemies" placeholder="e.g. 3x Bandit, 1x Bandit Captain" style="width:100%;box-sizing:border-box">
-      </div>
-      <div>
-        <span class="field-label" style="display:block;margin-bottom:3px">Party level</span>
-        <input type="number" id="loot-party-level" value="3" min="1" max="20" style="width:70px">
-      </div>
-      <button class="btn-gold btn-sm" onclick="generateLoot()">&#127775; Generate Loot</button>
-    </div>
-    <div id="loot-status" class="hidden" style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">Generating...</div>
-    <div id="loot-result" class="hidden" style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:12px">
-      <div id="loot-content"></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn-ghost btn-sm" onclick="copyLoot()">&#128203; Copy</button>
-        <button class="btn-ghost btn-sm" onclick="saveLootToSession()" style="color:var(--gold);border-color:var(--gold-dim)">&#128190; Save</button>
-        <button class="btn-ghost btn-sm" onclick="document.getElementById('loot-result').classList.add('hidden')">Clear</button>
-      </div>
-    </div>
-  </div>
+  
 
 </div>
 
@@ -5968,7 +5970,10 @@ function endCombat() {
     var lootEl = document.getElementById('loot-enemies');
     var lootPanel = document.getElementById('loot-generator-panel');
     if(lootEl && enemyText) lootEl.value = enemyText;
-    if(lootPanel) lootPanel.scrollIntoView({behavior:'smooth', block:'start'});
+    if(lootPanel) {
+      lootPanel.style.display = 'block';
+      lootPanel.scrollIntoView({behavior:'smooth', block:'start'});
+    }
   }, 300);
 }
 
