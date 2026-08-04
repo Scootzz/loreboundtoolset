@@ -1261,14 +1261,20 @@ select option{background:#1a1208}
 
 <!-- NPC Modal -->
 <div class="modal-overlay" id="npc-modal">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:500px">
     <div class="modal-title" id="npc-modal-title">ADD NPC</div>
     <span class="field-label">Name *</span>
     <input type="text" id="npc-name" placeholder="e.g. Mira the Smith" style="margin-bottom:9px">
-    <span class="field-label">Role / Profession</span>
-    <input type="text" id="npc-role" placeholder="e.g. Blacksmith, Town Elder..." style="margin-bottom:9px">
-    <span class="field-label">Faction / Allegiance</span>
-    <input type="text" id="npc-faction" placeholder="e.g. Merchant Guild, Crown loyalist..." style="margin-bottom:9px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
+      <div>
+        <span class="field-label">Role / Profession</span>
+        <input type="text" id="npc-role" placeholder="e.g. Blacksmith, Elder...">
+      </div>
+      <div>
+        <span class="field-label">Faction / Allegiance</span>
+        <input type="text" id="npc-faction" placeholder="e.g. Merchant Guild...">
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
       <div>
         <span class="field-label">Status</span>
@@ -1284,7 +1290,7 @@ select option{background:#1a1208}
         </select>
       </div>
       <div>
-        <span class="field-label">Mood towards party</span>
+        <span class="field-label">Mood</span>
         <select id="npc-mood">
           <option value="neutral">&#128528; Neutral</option>
           <option value="friendly">&#128512; Friendly</option>
@@ -1303,18 +1309,18 @@ select option{background:#1a1208}
       <button class="btn-ghost btn-sm" onclick="promptNewLocation()" style="white-space:nowrap">+ New</button>
     </div>
     <span class="field-label">Voice &amp; Mannerisms</span>
-    <input type="text" id="npc-voice" placeholder="e.g. Gruff Northern accent, tugs beard when lying, calls everyone 'friend'" style="margin-bottom:9px">
+    <input type="text" id="npc-voice" placeholder="e.g. Gruff accent, tugs beard when lying..." style="margin-bottom:9px">
+    <span class="field-label">Relationships <span style="font-size:10px;color:var(--muted)">(e.g. Ally of Guard Captain, Rival of Bram)</span></span>
+    <input type="text" id="npc-relationships" placeholder="e.g. Ally of Renata Voss, Enemy of Bram Hossan" style="margin-bottom:9px">
     <span class="field-label">Notes</span>
-    <textarea id="npc-notes" placeholder="Personality, secrets, quest hooks..." style="height:60px;resize:vertical;margin-bottom:9px"></textarea>
-    </div>
-    <span class="field-label">Relationships <span style="font-size:10px;color:var(--muted)">(comma separated, e.g. "Ally of Guard Captain, Rival of Bram")</span></span>
-    <input type="text" id="npc-relationships" placeholder="e.g. Ally of Renata Voss, Enemy of Bram Hossan" style="margin-bottom:12px">
+    <textarea id="npc-notes" placeholder="Personality, secrets, quest hooks..." style="height:80px;resize:vertical;margin-bottom:12px"></textarea>
     <div class="modal-btns">
       <button class="btn-gold" style="flex:1" onclick="saveNpc()">Save NPC</button>
       <button class="btn-ghost" onclick="closeModal('npc-modal')">Cancel</button>
       <button class="btn-danger hidden" id="npc-delete-btn" onclick="deleteNpc()">Delete</button>
     </div>
   </div>
+</div>
 </div>
 
 <!-- PC Modal -->
