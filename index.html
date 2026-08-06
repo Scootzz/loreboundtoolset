@@ -2640,6 +2640,21 @@ function loadCombatHistory() { try{return JSON.parse(localStorage.getItem('fg_co
 function saveCombatHistory(h) { localStorage.setItem('fg_combats',JSON.stringify(h)); }
 function getApiKey() { return localStorage.getItem('fg_api_key')||''; }
 
+function apiHeaders() {
+  var key = getApiKey();
+  if(!key) {
+    showToast('No API key set. Click ⚙ Settings to add your key.', 'error');
+    return null;
+  }
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': key,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+}
+
+
 
 var _s = loadSett();
 var scores = _s.scores;
@@ -2773,7 +2788,7 @@ function forgeItem() {
   var rp=document.getElementById('result-panel'); var rc=document.getElementById('result-content');
   rp.classList.remove('hidden'); rc.innerHTML='<p class="text-center loading-pulse" style="color:var(--muted);font-style:italic;padding:24px 0">The forgemaster communes with the component...</p>';
   rp.scrollIntoView({behavior:'smooth',block:'nearest'});
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})})
   .then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error(res.status+': '+t.slice(0,200));});return res.json();})
   .then(function(data){
     var text=data.content.map(function(i){return i.text||'';}).join('');
@@ -3132,7 +3147,7 @@ function generateNpc() {
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:apiHeaders(),
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,messages:[{role:'user',content:prompt}]})
   })
   .then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error(res.status+': '+t.slice(0,150));});return res.json();})
@@ -3178,7 +3193,7 @@ function handlePdfUpload(event) {
     if(status) status.textContent='Asking Claude to identify NPCs...';
     fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers:apiHeaders(),
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:content}]})
     })
     .then(function(res){return res.json();})
@@ -3350,6 +3365,7 @@ function handlePcPdfUpload(event) {
         'Content-Type':'application/json',
         'x-api-key':apiKey,
         'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body:reqBody
@@ -3395,7 +3411,7 @@ function handlePcUpdateUpload(event) {
   reader.onload = function(e) {
     var base64 = e.target.result.split(',')[1];
     var prompt = 'This is an updated D&D character sheet PDF. Extract the current character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name","level":"level as number string","player":"player name if shown, else empty","notes":"1-2 sentences covering race, background, subclass if visible, and any notable new abilities or features from their current level"}';
-    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},{type:'text',text:prompt}]}]})})
+    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},{type:'text',text:prompt}]}]})})
     .then(function(res){return res.json();})
     .then(function(data){
       var text = data.content.map(function(i){return i.text||'';}).join('');
@@ -4433,7 +4449,7 @@ async function analyseEncounter() {
   try {
     var res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers: apiHeaders(),
       body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:800, messages:[{role:'user',content:messageContent}]})
     });
     if (!res.ok) { var t = await res.text(); throw new Error(res.status + ': ' + t.slice(0,200)); }
@@ -4836,7 +4852,7 @@ function sendSessionNoteToAPI(textContent, fileName, isPdf, base64, status, even
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:apiHeaders(),
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:messages})
   })
   .then(function(res){ return res.json(); })
@@ -5122,7 +5138,7 @@ function generateRandomEncounter() {
   resultDiv.classList.remove('hidden');
   resultDiv.innerHTML = '<span style="color:var(--muted);font-style:italic;animation:pulse 1.4s ease-in-out infinite">Generating encounter...</span>';
   var prompt = 'You are a D&D 5e DM. Generate a random '+diff+' difficulty encounter for a '+biome+' setting. '+partyInfo+'. Pick 1-3 creature types from this list that fit the biome: '+creatureNames.slice(0,80).join(', ')+'. Return ONLY valid JSON, no markdown: {"creatures":[{"name":"EXACT creature name from list","qty":1,"reason":"why this fits"}],"setup":"1-2 sentence scene description","hook":"one optional complication or twist"}';
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})})
   .then(function(res){return res.json();})
   .then(function(data){
     var text=data.content.map(function(i){return i.text||'';}).join('');
@@ -6359,7 +6375,7 @@ function generateName() {
   var prompt = 'Generate ONE single fantasy name for a ' + gender + ' ' + race + ' character in a D&D campaign. Return ONLY the name, nothing else, no punctuation, no explanation.';
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:apiHeaders(),
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:30,messages:[{role:'user',content:prompt}]})
   })
   .then(function(res){return res.json();})
@@ -6429,7 +6445,7 @@ generateNpc = function() {
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:apiHeaders(),
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})
   })
   .then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error(res.status+': '+t.slice(0,150));});return res.json();})
@@ -6490,7 +6506,7 @@ function generateStatblock() {
     +'"traits":[{"name":"Trait","desc":"desc"}],'
     +'"actions":[{"name":"Attack","desc":"Melee Weapon Attack: +X to hit, reach 5 ft., one target. Hit: X (XdX+X) damage."}],'
     +'"bonusActions":[],"reactions":[],"legendaryResistances":3,"legendaryActions":[{"name":"Attack (1 Action)","desc":"The creature makes one attack."}],"lairActions":[]}';  
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
   .then(function(res){return res.json();})
   .then(function(data){
     if(data.error) throw new Error(data.error.message);
@@ -6522,7 +6538,7 @@ function generateStatblock() {
 function generateStatblockArt(sb,desc,callback){
   var apiKey=getApiKey(); if(!apiKey){if(callback)callback(null);return;}
   var prompt='Generate SVG token art (viewBox 0 0 180 180) for a D&D creature: '+sb.name+' a '+sb.size+' '+sb.type+'. Description: '+desc+'. Dark background circle, recognisable geometric silhouette, 3-5 creature-appropriate colours. Return ONLY the SVG starting with <svg.';
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
   .then(function(res){return res.json();})
   .then(function(data){
     var svg=data.content.map(function(i){return i.text||'';}).join('').trim();
@@ -6970,6 +6986,7 @@ function askRulesQuestionCraft() {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
@@ -7884,7 +7901,7 @@ function generateLoot() {
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:apiHeaders(),
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();})
   .then(function(data){
@@ -8441,7 +8458,7 @@ function generateCrew() {
   if(genBtn){genBtn.textContent='Generating...';genBtn.disabled=true;}
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:apiHeaders(),
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:800,messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();})
   .then(function(data){
@@ -8608,7 +8625,7 @@ function handlePrepUpload(event) {
 
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers: apiHeaders(),
       body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
     }).then(function(r){return r.json();})
     .then(function(data){
@@ -9554,7 +9571,7 @@ function generateSessionRecap() {
   if(result) result.classList.add('hidden');
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:apiHeaders(),
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,messages:[{role:'user',content:'Write a dramatic "Previously in..." recap paragraph (3-5 sentences, past tense, exciting tone) for a D&D session based on these notes. End on the cliffhanger if provided.\n\n'+text}]})
   }).then(function(r){return r.json();})
   .then(function(data){
@@ -10168,7 +10185,7 @@ function handleModuleUpload(event) {
       var prompt = 'You are extracting structured data from a D&D module. From this text section, extract any named: LOCATIONS (places, buildings, rooms, areas), NPCS (named characters with their role/title), EVENTS/PLOT HOOKS (named story events or quest hooks), and FACTIONS (organisations, guilds, cults).\n\nReturn ONLY a JSON object with these exact keys. Use empty arrays if nothing found in this section. Each NPC needs: name, role, location (if mentioned), notes (brief description). Each location needs: name, type (city/town/dungeon/building/room), notes. Each event needs: label, notes (brief). Each faction needs: name, goal.\n\n{"locations":[],"npcs":[],"events":[],"factions":[]}\n\nTEXT SECTION '+(idx+1)+' OF '+chunks.length+':\n'+chunks[idx];
       fetch('https://api.anthropic.com/v1/messages',{
         method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        headers:apiHeaders(),
         body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
       }).then(function(r){return r.json();})
       .then(function(data){
@@ -11079,104 +11096,78 @@ function toggleDashStatus() {
 // -- Session Notes v2 -----------------------------------------
 
 function handleUpcomingSessionUpload(event) {
-  var file = event.target.files[0]; if(!file) return;
-  var apiKey = getApiKey();
-  if(!apiKey) { showToast('Set your API key in Settings first','error'); return; }
-  var status = document.getElementById('sn-upcoming-status');
-  var result = document.getElementById('sn-upcoming-result');
-  if(status) { status.style.display='block'; status.textContent='Reading file...'; }
-  if(result) result.style.display='none';
-
-  // Load PCs for context
+  var file = event.target.files[0];
+  if(!file) return;
+  if(!getApiKey()) {
+    showToast('No API key set — add one via the ⚙ Settings button', 'error');
+    return;
+  }
+  var statusEl = document.getElementById('sn-upcoming-status');
+  var resultEl = document.getElementById('sn-upcoming-result');
+  if(statusEl){ statusEl.style.display='block'; statusEl.textContent='Reading '+file.name+'...'; }
+  if(resultEl) resultEl.style.display='none';
   var pcs = typeof loadPcs !== 'undefined' ? loadPcs() : [];
-  var pcContext = pcs.length ? pcs.map(function(p){ return p.name + ' (' + (p.pcClass||'') + (p.level?' Lv'+p.level:'') + ')'; }).join(', ') : 'No characters yet';
-
-  // Read file
+  var pcContext = pcs.length
+    ? pcs.map(function(p){ return p.name+(p.pcClass?' ('+p.pcClass+(p.level?' Lv'+p.level:'')+')'  :''); }).join(', ')
+    : 'No characters recorded';
   var reader = new FileReader();
   reader.onload = function(e) {
-    var text = '';
-    if(file.name.endsWith('.txt')) {
-      text = e.target.result;
-      analyseUpcomingSession(text, pcContext, status, result);
+    if(file.name.match(/\.docx?$/i) && typeof mammoth !== 'undefined') {
+      mammoth.extractRawText({arrayBuffer:e.target.result})
+        .then(function(r){ analyseUpcomingSession(r.value, pcContext, statusEl, resultEl); })
+        .catch(function(){ analyseUpcomingSession('[Could not read '+file.name+']', pcContext, statusEl, resultEl); });
+    } else if(file.name.match(/\.txt$/i)) {
+      analyseUpcomingSession(e.target.result, pcContext, statusEl, resultEl);
     } else {
-      // Use mammoth for docx, basic text extract for pdf
-      try {
-        if(typeof mammoth !== 'undefined' && (file.name.endsWith('.docx') || file.name.endsWith('.doc'))) {
-          mammoth.extractRawText({arrayBuffer: e.target.result}).then(function(r){
-            analyseUpcomingSession(r.value, pcContext, status, result);
-          });
-        } else {
-          // PDF - try to get text
-          text = 'Session prep file uploaded: ' + file.name;
-          analyseUpcomingSession(text, pcContext, status, result);
-        }
-      } catch(err) {
-        if(status) status.textContent = 'Could not read file: ' + err.message;
-      }
+      analyseUpcomingSession('[PDF: '+file.name+' — upload as .txt or .docx for best results]', pcContext, statusEl, resultEl);
     }
   };
-  if(file.name.endsWith('.txt')) reader.readAsText(file);
+  if(file.name.match(/\.txt$/i)) reader.readAsText(file);
   else reader.readAsArrayBuffer(file);
+  event.target.value='';
 }
 
 function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
-  if(statusEl) statusEl.textContent = 'Analysing session prep...';
-  
-  var prompt = 'You are an expert DM assistant. Analyse this session prep.\n\nParty: ' + pcContext + '\n\nPrep:\n' + prepText.slice(0,5000) + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills), considerations (array of 3-5 tips). No markdown.';;
-
-  fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
-    })
+  if(statusEl){ statusEl.style.display='block'; statusEl.textContent='Analysing with Claude...'; }
+  var prompt = 'You are an expert Dungeon Master assistant. Carefully analyse the following session prep notes.'
+    + '\n\nParty composition: ' + pcContext
+    + '\n\nSession prep notes:\n' + prepText.slice(0,6000)
+    + '\n\nReturn ONLY valid JSON (no markdown, no preamble) with these exact keys:'
+    + '\n{"annotated":"The full prep text rewritten with [INSIGHT: your note] markers inserted inline at relevant moments",'
+    + '"oversights":["3-6 specific risks or gaps given the party skills and the plan"],'
+    + '"considerations":["3-6 concrete actionable suggestions for the DM to prepare"]}';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:apiHeaders(),
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]})
   })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
-    var text = (data.content||[]).map(function(c){ return c.text||''; }).join('');
-    try {
-      var clean = text.replace(/```json|```/g,'').trim();
-      var parsed = JSON.parse(clean);
-
-      // Annotated text - style [INSIGHT: ...] markers
-      var annotated = (parsed.annotated || prepText).replace(
-        /\[INSIGHT:\s*([^\]]+)\]/g,
-        '<mark style="background:rgba(212,168,67,0.2);border-radius:3px;padding:1px 4px;cursor:help" title="$1">&#128161; [insight]</mark>'
-      );
-      var annotEl = document.getElementById('sn-annotated-text');
-      if(annotEl) annotEl.innerHTML = annotated;
-
-      // Oversights
-      var ovEl = document.getElementById('sn-oversights');
-      if(ovEl && parsed.oversights) {
-        ovEl.innerHTML = parsed.oversights.map(function(o){
-          return '<div style="margin-bottom:8px;padding:8px;background:rgba(205,74,74,0.08);border-left:2px solid rgba(205,74,74,0.5);border-radius:0 4px 4px 0;font-size:12px">&#9888; ' + o + '</div>';
-        }).join('');
-      }
-
-      // Considerations
-      var conEl = document.getElementById('sn-considerations');
-      if(conEl && parsed.considerations) {
-        conEl.innerHTML = parsed.considerations.map(function(c){
-          return '<div style="margin-bottom:8px;padding:8px;background:rgba(212,168,67,0.06);border-left:2px solid var(--gold-dim);border-radius:0 4px 4px 0;font-size:12px">&#128161; ' + c + '</div>';
-        }).join('');
-      }
-
-      if(statusEl) statusEl.style.display = 'none';
-      if(resultEl) resultEl.style.display = 'block';
-
-      // Store for saving
-      window._snUpcomingText = prepText;
-      window._snUpcomingAnalysis = parsed;
-
-    } catch(err) {
-      if(statusEl) statusEl.textContent = 'Analysis error: ' + err.message + ' | Raw: ' + text.slice(0,200);
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.error) throw new Error(data.error.message);
+    var raw=(data.content||[]).map(function(c){return c.text||'';}).join('');
+    try{
+      var parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      var annotEl=document.getElementById('sn-annotated-text');
+      if(annotEl) annotEl.innerHTML=(parsed.annotated||prepText).replace(/\[INSIGHT:\s*([^\]]+)\]/g,
+        '<mark style="background:rgba(212,168,67,0.18);border-radius:3px;padding:1px 5px;cursor:help;font-style:normal" title="$1">&#128161; [insight]</mark>');
+      var ovEl=document.getElementById('sn-oversights');
+      if(ovEl) ovEl.innerHTML=(parsed.oversights||[]).map(function(o){
+        return '<div style="margin-bottom:7px;padding:7px 10px;background:rgba(205,74,74,0.08);border-left:2px solid rgba(205,74,74,0.5);border-radius:0 3px 3px 0;font-size:12px;font-style:normal;color:var(--text)">&#9888; '+o+'</div>';
+      }).join('');
+      var conEl=document.getElementById('sn-considerations');
+      if(conEl) conEl.innerHTML=(parsed.considerations||[]).map(function(c){
+        return '<div style="margin-bottom:7px;padding:7px 10px;background:rgba(212,168,67,0.06);border-left:2px solid var(--gold-dim);border-radius:0 3px 3px 0;font-size:12px;font-style:normal;color:var(--text)">&#128161; '+c+'</div>';
+      }).join('');
+      window._snUpcomingText=prepText;
+      window._snUpcomingAnalysis=parsed;
+      if(statusEl) statusEl.style.display='none';
+      if(resultEl) resultEl.style.display='block';
+    }catch(err){
+      if(statusEl) statusEl.textContent='Parse error: '+err.message;
     }
   })
-  .catch(function(err) {
-    if(statusEl) statusEl.textContent = 'Request failed: ' + err.message;
+  .catch(function(err){
+    if(statusEl) statusEl.textContent='Error: '+err.message;
   });
 }
 
