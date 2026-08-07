@@ -479,7 +479,7 @@ select option{background:#1a1208}
   <button class="main-tab" data-tab="combat" onclick="enterTab('combat')">&#9760;&#xFE0E; Combat</button>
   <button class="main-tab" data-tab="crafting" onclick="enterTab('crafting')">&#128220;&#xFE0E; Reference</button>
   <button class="main-tab" data-tab="store" onclick="enterTab('store')">&#9878;&#xFE0E; Store</button>
-  <button class="main-tab" data-tab="inventory" onclick="enterTab('inventory')">&#127809;&#xFE0E; Inventory</button>
+  
   <button class="main-tab" data-tab="sessions-main" onclick="enterTab('sessions-main')">&#128221;&#xFE0E; Sessions</button>
   <button class="main-tab" data-tab="rumours-main" onclick="enterTab('rumours-main')">&#128065;&#xFE0E; Rumours</button>
   <button class="main-tab" data-tab="factions" onclick="enterTab('factions')">&#9830;&#xFE0E; Factions</button>
@@ -578,7 +578,7 @@ select option{background:#1a1208}
       <button class="landing-tile" onclick="enterTab('naval')"><span class="landing-icon">&#9875;&#xFE0E;</span><span class="landing-name">Naval</span></button>
       <button class="landing-tile" onclick="enterTab('music')"><span class="landing-icon">&#9836;&#xFE0E;</span><span class="landing-name">Music</span></button>
       <button class="landing-tile" onclick="enterTab('crafting')"><span class="landing-icon">&#128220;&#xFE0E;</span><span class="landing-name">Reference</span></button>
-      <button class="landing-tile" onclick="enterTab('inventory')"><span class="landing-icon">&#127809;&#xFE0E;</span><span class="landing-name">Inventory</span></button>
+
       <button class="landing-tile" onclick="enterTab('sessions-main')"><span class="landing-icon">&#128221;&#xFE0E;</span><span class="landing-name">Sessions</span></button>
       <button class="landing-tile" onclick="enterTab('rumours-main')"><span class="landing-icon">&#128065;&#xFE0E;</span><span class="landing-name">Rumours</span></button>
     </div>
@@ -587,35 +587,7 @@ select option{background:#1a1208}
 </div>
 
 <!-- ═══ INVENTORY TAB ═══ -->
-<div id="tab-inventory" class="tab-pane">
-  <!-- Controls -->
-  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-    <div class="panel-label" style="margin:0;flex:1">&#127809; Party Inventory</div>
-    <button class="btn-ghost btn-sm" onclick="openAddInventoryModal()">+ Add Item</button>
-    <button class="btn-ghost btn-sm" onclick="renderInventory('all')" id="inv-filter-all" style="border-color:var(--gold-dim);color:var(--gold)">All</button>
-    <button class="btn-ghost btn-sm" onclick="renderInventory('loot')" id="inv-filter-loot">Loot</button>
-    <button class="btn-ghost btn-sm" onclick="renderInventory('purchased')" id="inv-filter-purchased">Purchased</button>
-    <button class="btn-ghost btn-sm" onclick="renderInventory('crafted')" id="inv-filter-crafted">Crafted</button>
-  </div>
-  <!-- Summary bar -->
-  <div class="panel" style="margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-    <div>
-      <span class="field-label" style="display:block">Party Gold</span>
-      <span id="inv-gold" style="font-family:Cinzel,serif;font-size:16px;color:var(--gold);font-weight:bold">0 gp</span>
-    </div>
-    <div><span class="field-label" style="display:block">Items</span><span id="inv-count" style="font-size:14px;color:var(--text)">0</span></div>
-    <div><span class="field-label" style="display:block">Total Value</span><span id="inv-value" style="font-size:14px;color:var(--text)">0 gp</span></div>
-    <button class="btn-ghost btn-sm" onclick="enterTab('settlement')" style="margin-left:auto;font-size:11px">Adjust Gold &#8594;</button>
-  </div>
-  <!-- Item list -->
-  <div id="inventory-list"></div>
-
-  <!-- Loot Log -->
-  <div class="panel" style="margin-top:12px">
-    <div class="panel-label" style="margin-bottom:8px">&#128182; Loot Drop History</div>
-    <div id="loot-log-list"></div>
-  </div>
-</div>
+<!-- Inventory tab removed -->
 
 <!-- Add Inventory Item Modal -->
 <div class="modal-overlay" id="inventory-modal">
@@ -2289,12 +2261,172 @@ select option{background:#1a1208}
 
 
 
+
+
+
+
+
+</body></html>');
+  w.document.close();
+}
+
+function downloadSpellCardsPng(sb) {
+  var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+  var allSpells = [];
+  levels.forEach(function(lvl){
+    var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
+    list.forEach(function(sp){
+      if(typeof sp === 'string') {
+        allSpells.push({name:sp, level:lvl, school:'', castingTime:'', range:'', components:'', duration:'', desc:''});
+      } else {
+        allSpells.push(Object.assign({level:lvl}, sp));
+      }
+    });
+  });
+  if(!allSpells.length){ showToast('No spells found','error'); return; }
+
+  var CARD_W = 250, CARD_H = 350, COLS = 4, PAD = 16, GAP = 12;
+  var rows = Math.ceil(allSpells.length / COLS);
+  var canvasW = COLS * CARD_W + (COLS+1) * GAP;
+  var canvasH = rows * CARD_H + (rows+1) * GAP + 50;
+
+  var canvas = document.createElement('canvas');
+  canvas.width = canvasW; canvas.height = canvasH;
+  var ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#1a0f05';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Title
+  ctx.fillStyle = '#d4a843';
+  ctx.font = 'bold 22px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(sb.name + ' — Spell Cards', canvasW/2, 36);
+
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    if(!text) return y;
+    var words = text.split(' ');
+    var line = '';
+    for(var i=0; i<words.length; i++){
+      var testLine = line + words[i] + ' ';
+      if(ctx.measureText(testLine).width > maxWidth && i > 0){
+        ctx.fillText(line.trim(), x, y);
+        line = words[i] + ' ';
+        y += lineHeight;
+      } else { line = testLine; }
+    }
+    if(line.trim()) { ctx.fillText(line.trim(), x, y); y += lineHeight; }
+    return y;
+  }
+
+  allSpells.forEach(function(sp, idx){
+    var col = idx % COLS;
+    var row = Math.floor(idx / COLS);
+    var cx = GAP + col * (CARD_W + GAP);
+    var cy = 50 + GAP + row * (CARD_H + GAP);
+
+    // Card bg
+    ctx.fillStyle = '#2a1a08';
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, CARD_W, CARD_H, 8);
+    ctx.fill();
+
+    // Level colour strip
+    var levelColours = {cantrips:'#4a6a9a','1st':'#4a8a4a','2nd':'#7a6a2a','3rd':'#9a4a2a','4th':'#6a3a8a','5th':'#8a2a2a','6th':'#2a7a8a','7th':'#5a2a6a','8th':'#8a5a2a','9th':'#6a1a1a'};
+    ctx.fillStyle = levelColours[sp.level] || '#4a3420';
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, CARD_W, 28, [8,8,0,0]);
+    ctx.fill();
+
+    // Level label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText((sp.level==='cantrips'?'Cantrip':sp.level+' Level')+(sp.school?' \u2022 '+sp.school:''), cx+PAD, cy+18);
+
+    // Spell name
+    ctx.fillStyle = '#d4a843';
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'left';
+    var nameY = cy + 44;
+    nameY = wrapText(ctx, sp.name, cx+PAD, nameY, CARD_W-PAD*2, 18);
+
+    // Divider
+    ctx.strokeStyle = '#4a3420';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx+PAD, nameY+2); ctx.lineTo(cx+CARD_W-PAD, nameY+2);
+    ctx.stroke();
+    nameY += 10;
+
+    // Stats
+    ctx.fillStyle = '#c8a070';
+    ctx.font = '10px Georgia, serif';
+    var stats = [
+      sp.castingTime ? 'Cast: '+sp.castingTime : null,
+      sp.range ? 'Range: '+sp.range : null,
+      sp.components ? 'Components: '+sp.components : null,
+      sp.duration ? 'Duration: '+sp.duration : null
+    ].filter(Boolean);
+    stats.forEach(function(stat){
+      ctx.fillText(stat, cx+PAD, nameY);
+      nameY += 13;
+    });
+    if(stats.length){ nameY += 4; }
+
+    // Description
+    ctx.fillStyle = '#e8d5a8';
+    ctx.font = '11px Georgia, serif';
+    wrapText(ctx, sp.desc||'', cx+PAD, nameY, CARD_W-PAD*2, 14);
+  });
+
+  // Download
+  canvas.toBlob(function(blob){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (sb.name||'creature').replace(/[^a-z0-9]/gi,'_')+'_spell_cards.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
+function onScenarioSelect(id) {
+  if(!id) {
+    // "New Encounter" selected - clear enemy rows
+    var container = document.getElementById('enemy-rows');
+    if(container){ container.innerHTML=''; enemyRows=[]; }
+    // Uncheck all PCs
+    document.querySelectorAll('.pc-combat-check').forEach(function(cb){
+      cb.checked=false; selectedCombatPcs[cb.dataset.id]=false;
+    });
+    // Reset analysis
+    var result = document.getElementById('combat-result');
+    if(result) result.classList.add('hidden');
+  } else {
+    loadScenario(id);
+  }
+}
+
+function resetLootGenerator() {
+  document.getElementById('loot-enemies').value = '';
+  document.getElementById('loot-content').innerHTML = '';
+  var result = document.getElementById('loot-result');
+  var status = document.getElementById('loot-status');
+  if(result) result.classList.add('hidden');
+  if(status) status.classList.add('hidden');
+  var panel = document.getElementById('loot-generator-panel');
+  if(panel) panel.style.display = 'none';
+}
 <script>
 
 
 
 
+
 var CREATURES = {"APE":{"type":"Beast","cr":"1/2","primary":"Strength","secondary":"Agility","components":[{"name":"Primate Grip Tendon","rarity":"Common","aspect":"Agility"},{"name":"Dense Ape Muscle","rarity":"Common","aspect":"Strength"},{"name":"Mountain Ape Skull Plate","rarity":"Uncommon","aspect":"Strength"}]},"BABOON":{"type":"Beast","cr":"0","primary":"Pack","secondary":"Alertness","components":[{"name":"Baboon Scent Gland","rarity":"Common","aspect":"Alertness"},{"name":"Pack Call Vocal Cord","rarity":"Common","aspect":"Pack"},{"name":"Alpha Baboon Fang","rarity":"Uncommon","aspect":"Alertness"}]},"BAT":{"type":"Beast","cr":"0","primary":"Echolocation","secondary":"Flight","components":[{"name":"Echo Membrane","rarity":"Common","aspect":"Echolocation"},{"name":"Night Wing Membrane","rarity":"Common","aspect":"Flight"},{"name":"Sonic Skull Chamber","rarity":"Uncommon","aspect":"Echolocation"}]},"BLACK BEAR":{"type":"Beast","cr":"1/2","primary":"Resilience","secondary":"Predator","components":[{"name":"Bear Claw","rarity":"Common","aspect":"Predator"},{"name":"Thick Bear Hide","rarity":"Common","aspect":"Resilience"},{"name":"Winter Fat Reserve","rarity":"Uncommon","aspect":"Resilience"}]},"BROWN BEAR":{"type":"Beast","cr":"1","primary":"Strength","secondary":"Endurance","components":[{"name":"Bear Hide","rarity":"Common","aspect":"Endurance"},{"name":"Crushing Claw","rarity":"Common","aspect":"Strength"},{"name":"Bear Heart","rarity":"Rare","aspect":"Strength"}]},"CAMEL":{"type":"Beast","cr":"1/8","primary":"Endurance","secondary":"Desert","components":[{"name":"Fat Reserve","rarity":"Common","aspect":"Endurance"},{"name":"Camel Water Bladder","rarity":"Common","aspect":"Desert"},{"name":"SunHardened Hide","rarity":"Uncommon","aspect":"Desert"}]},"CAT":{"type":"Beast","cr":"0","primary":"Stealth","secondary":"Agility","components":[{"name":"Whisker Cluster","rarity":"Common","aspect":"Stealth"},{"name":"Soft Paw Pads","rarity":"Common","aspect":"Agility"},{"name":"NightSight Eyes","rarity":"Uncommon","aspect":"Stealth"}]},"CROCODILE":{"type":"Beast","cr":"1/2","primary":"Ambush","secondary":"Aquatic","components":[{"name":"Crocodile Teeth","rarity":"Common","aspect":"Ambush"},{"name":"Scaled Hide","rarity":"Common","aspect":"Aquatic"},{"name":"Crushing Jaw Tendon","rarity":"Uncommon","aspect":"Ambush"}]},"DEER":{"type":"Beast","cr":"0","primary":"Grace","secondary":"Speed","components":[{"name":"Antler Tines","rarity":"Common","aspect":"Grace"},{"name":"Fleet Hoof Shavings","rarity":"Common","aspect":"Speed"},{"name":"Soft Woodland Hide","rarity":"Common","aspect":"Grace"}]},"DIRE WOLF":{"type":"Beast","cr":"1","primary":"Predator","secondary":"Pack","components":[{"name":"Thick Dire Hide","rarity":"Common","aspect":"Pack"},{"name":"Dire Fang","rarity":"Common","aspect":"Predator"},{"name":"Hunter Instinct Gland","rarity":"Rare","aspect":"Predator"}]},"EAGLE":{"type":"Beast","cr":"0","primary":"Sight","secondary":"Flight","components":[{"name":"Eagle Eye Lens","rarity":"Uncommon","aspect":"Sight"},{"name":"Flight Feathers","rarity":"Common","aspect":"Flight"},{"name":"Sky Talon","rarity":"Common","aspect":"Flight"}]},"ELEPHANT":{"type":"Beast","cr":"4","primary":"Strength","secondary":"Memory","components":[{"name":"Ivory Tusk","rarity":"Uncommon","aspect":"Strength"},{"name":"Elephant Hide Plate","rarity":"Uncommon","aspect":"Strength"},{"name":"Ancient Memory Bone","rarity":"Rare","aspect":"Memory"}]},"ELK":{"type":"Beast","cr":"1/4","primary":"Endurance","secondary":"Wilderness","components":[{"name":"Elk Antler Crown","rarity":"Common","aspect":"Wilderness"},{"name":"Endurance Heart Tissue","rarity":"Common","aspect":"Endurance"},{"name":"Flexible Elk Hide","rarity":"Common","aspect":"Endurance"}]},"GIANT BAT":{"type":"Beast","cr":"1/4","primary":"Echolocation","secondary":"Flight","components":[{"name":"Echo Skull Plate","rarity":"Uncommon","aspect":"Echolocation"},{"name":"Giant Wing Membrane","rarity":"Common","aspect":"Flight"},{"name":"Night Scent Gland","rarity":"Common","aspect":"Echolocation"}]},"GIANT CENTIPEDE":{"type":"Beast","cr":"1/4","primary":"Venom","secondary":"Protection","components":[{"name":"Venom Sac","rarity":"Common","aspect":"Poison"},{"name":"Chitin Segments","rarity":"Common","aspect":"Protection"},{"name":"Hooked Mandibles","rarity":"Common","aspect":"Venom"}]},"GIANT CROCODILE":{"type":"Beast","cr":"5","primary":"Grip","secondary":"Endurance","components":[{"name":"Crocodile Scale","rarity":"Common","aspect":"Endurance"},{"name":"Crushing Jawbone","rarity":"Uncommon","aspect":"Grip"},{"name":"River Hunter Heart","rarity":"Rare","aspect":"Grip"}]},"GIANT EAGLE":{"type":"Beast","cr":"1","primary":"Flight","secondary":"Perception","components":[{"name":"Great Feather","rarity":"Common","aspect":"Flight"},{"name":"Keen Eye Lens","rarity":"Uncommon","aspect":"Perception"},{"name":"Sky Heart","rarity":"Rare","aspect":"Flight & Perception"}]},"GIANT ELK":{"type":"Beast","cr":"2","primary":"Momentum","secondary":"Nature","components":[{"name":"Elk Antler","rarity":"Common","aspect":"Momentum"},{"name":"Forest Pelt","rarity":"Uncommon","aspect":"Nature"},{"name":"Great Hoof Core","rarity":"Rare","aspect":"Momentum"}]},"GIANT OCTOPUS":{"type":"Beast","cr":"1","primary":"Adaptation","secondary":"Grip","components":[{"name":"Tentacle Fiber","rarity":"Common","aspect":"Grip"},{"name":"Ink Gland","rarity":"Uncommon","aspect":"Adaptation"},{"name":"Deepwater Brain Node","rarity":"Rare","aspect":"Adaptation"}]},"GIANT OWL":{"type":"Beast","cr":"1/4","primary":"Stealth","secondary":"Perception","components":[{"name":"Silent Feather","rarity":"Common","aspect":"Stealth"},{"name":"Night Eye","rarity":"Uncommon","aspect":"Perception"},{"name":"Nocturnal Talon","rarity":"Common","aspect":"Stealth"}]},"GIANT SPIDER":{"type":"Beast","cr":"1","primary":"Venom","secondary":"Ambush","components":[{"name":"Spider Silk","rarity":"Common","aspect":"Ambush"},{"name":"Venom Sac","rarity":"Uncommon","aspect":"Venom"},{"name":"Web Spinner Gland","rarity":"Rare","aspect":"Ambush"}]},"GIANT SCORPION":{"type":"Beast","cr":"3","primary":"Venom","secondary":"Armour","components":[{"name":"Chitin Plate","rarity":"Common","aspect":"Armour"},{"name":"Venom Stinger","rarity":"Uncommon","aspect":"Venom"},{"name":"Neurotoxin Gland","rarity":"Rare","aspect":"Venom"}]},"MAMMOTH":{"type":"Beast","cr":"6","primary":"Endurance","secondary":"Strength","components":[{"name":"Mammoth Hide","rarity":"Common","aspect":"Endurance"},{"name":"Ivory Tusk","rarity":"Uncommon","aspect":"Strength"},{"name":"Ancient Heart","rarity":"Rare","aspect":"Endurance"}]},"POLAR BEAR":{"type":"Beast","cr":"2","primary":"Endurance","secondary":"Cold","components":[{"name":"Insulated Hide","rarity":"Common","aspect":"Endurance"},{"name":"Frost Claw","rarity":"Common","aspect":"Cold"},{"name":"Iceblood Heart","rarity":"Rare","aspect":"Cold"}]},"WOLF":{"type":"Beast","cr":"1/4","primary":"Predator","secondary":"Pack","components":[{"name":"Wolf Hide","rarity":"Common","aspect":"Pack"},{"name":"Predator Fang","rarity":"Common","aspect":"Predator"},{"name":"Pack Instinct Heart","rarity":"Uncommon","aspect":"Pack"}]},"AXE BEAK":{"type":"Monstrosity","cr":"1/4","primary":"Momentum","secondary":"Speed","components":[{"name":"Axe Beak Talon","rarity":"Common","aspect":"Momentum"},{"name":"Striding Leg Tendon","rarity":"Common","aspect":"Speed"},{"name":"Charge Crest Plate","rarity":"Uncommon","aspect":"Momentum"}]},"COCKATRICE":{"type":"Monstrosity","cr":"1/2","primary":"Petrification","secondary":"Venom","components":[{"name":"Cockatrice Beak","rarity":"Common","aspect":"Venom"},{"name":"Petrifying Gland","rarity":"Uncommon","aspect":"Petrification"},{"name":"Calcified Heart","rarity":"Rare","aspect":"Petrification"}]},"DARKMANTLE":{"type":"Monstrosity","cr":"1/2","primary":"Ambush","secondary":"Shadow","components":[{"name":"Cloak Membrane","rarity":"Common","aspect":"Shadow"},{"name":"Darkness Ink Sac","rarity":"Uncommon","aspect":"Ambush"},{"name":"Shadow Nerve Cluster","rarity":"Rare","aspect":"Shadow"}]},"DEATH DOG":{"type":"Monstrosity","cr":"1","primary":"Pack","secondary":"Disease","components":[{"name":"Diseased Fang","rarity":"Common","aspect":"Disease"},{"name":"Twin Skull Plate","rarity":"Uncommon","aspect":"Pack"},{"name":"Rotblood Heart","rarity":"Rare","aspect":"Disease"}]},"PIERCER":{"type":"Monstrosity","cr":"1/2","primary":"Ambush","secondary":"Gravity","components":[{"name":"Stone Spike","rarity":"Common","aspect":"Ambush"},{"name":"Adhesive Mouth Tendril","rarity":"Uncommon","aspect":"Gravity"},{"name":"Impact Core","rarity":"Rare","aspect":"Gravity"}]},"HARPY":{"type":"Monstrosity","cr":"1","primary":"Charm","secondary":"Flight","components":[{"name":"Harpy Talon","rarity":"Common","aspect":"Flight"},{"name":"Siren Vocal Cord","rarity":"Uncommon","aspect":"Charm"},{"name":"Luring Heart","rarity":"Rare","aspect":"Charm"}]},"HIPPOGRIFF":{"type":"Monstrosity","cr":"1","primary":"Flight","secondary":"Predator","components":[{"name":"Griffon-like Feather","rarity":"Common","aspect":"Flight"},{"name":"Razor Beak","rarity":"Common","aspect":"Predator"},{"name":"Skybound Heart","rarity":"Uncommon","aspect":"Mobility"}]},"RUST MONSTER":{"type":"Monstrosity","cr":"1/2","primary":"Corrosion","secondary":"Defense","components":[{"name":"Antennae Rod","rarity":"Uncommon","aspect":"Corrosion"},{"name":"Rust Monster Carapace","rarity":"Common","aspect":"Defence"},{"name":"Corrosive Gland","rarity":"Rare","aspect":"Corrosion"}]},"MIMIC":{"type":"Monstrosity","cr":"2","primary":"Deception","secondary":"Adhesion","components":[{"name":"Mimic Adhesive","rarity":"Uncommon","aspect":"Adhesion"},{"name":"Shifting Hide","rarity":"Rare","aspect":"Deception"},{"name":"Core Nucleus","rarity":"Rare","aspect":"Deception"}]},"ANKHEG":{"type":"Monstrosity","cr":"2","primary":"Burrow","secondary":"Acid","components":[{"name":"Ankheg Chitin","rarity":"Common","aspect":"Acid"},{"name":"Acid Gland","rarity":"Uncommon","aspect":"Acid"},{"name":"Burrow Core","rarity":"Rare","aspect":"Burrow"}]},"CARRION CRAWLER":{"type":"Monstrosity","cr":"2","primary":"Paralysis","secondary":"Scavenger","components":[{"name":"Paralytic Tentacle","rarity":"Uncommon","aspect":"Paralysis"},{"name":"Carrion Carapace","rarity":"Common","aspect":"Scavenger"},{"name":"Nerve Cluster","rarity":"Rare","aspect":"Paralysis"}]},"BASILISK":{"type":"Monstrosity","cr":"3","primary":"Defence","secondary":"Gaze","components":[{"name":"Basilisk Scale","rarity":"Common","aspect":"Defence"},{"name":"Petrifying Eye","rarity":"Uncommon","aspect":"Petrification"},{"name":"Basilisk Gaze Crystal","rarity":"Rare","aspect":"Petrification"}]},"DISPLACER BEAST":{"type":"Monstrosity","cr":"3","primary":"Illusion","secondary":"Predator","components":[{"name":"Displacer Hide","rarity":"Uncommon","aspect":"Illusion"},{"name":"Barbed Tentacle","rarity":"Common","aspect":"Predator"},{"name":"Phase Nerve Cluster","rarity":"Rare","aspect":"Illusion"}]},"OWLBEAR":{"type":"Monstrosity","cr":"3","primary":"Ferocity","secondary":"Strength","components":[{"name":"Owlbear Claw","rarity":"Common","aspect":"Ferocity"},{"name":"Dense Hybrid Hide","rarity":"Uncommon","aspect":"Strength"},{"name":"Rage Heart","rarity":"Rare","aspect":"Ferocity"}]},"MANTICORE":{"type":"Monstrosity","cr":"3","primary":"Volley","secondary":"Predator","components":[{"name":"Tail Spike","rarity":"Common","aspect":"Volley"},{"name":"Wing Membrane","rarity":"Uncommon","aspect":"Predator"},{"name":"Spike Gland","rarity":"Rare","aspect":"Volley"}]},"PHASE SPIDER":{"type":"Monstrosity","cr":"3","primary":"Phasing","secondary":"Venom","components":[{"name":"Phase Silk","rarity":"Uncommon","aspect":"Phasing"},{"name":"Venom Sac","rarity":"Common","aspect":"Venom"},{"name":"Ethereal Node","rarity":"Rare","aspect":"Phasing"}]},"MINOTAUR":{"type":"Monstrosity","cr":"3","primary":"Momentum","secondary":"Fury","components":[{"name":"Minotaur Horn","rarity":"Common","aspect":"Momentum"},{"name":"Labyrinth Heart","rarity":"Uncommon","aspect":"Fury"},{"name":"Fury Gland","rarity":"Rare","aspect":"Fury"}]},"GRIFFON":{"type":"Monstrosity","cr":"2","primary":"Flight","secondary":"Predator","components":[{"name":"Griffon Talon","rarity":"Common","aspect":"Predator"},{"name":"Regal Feather","rarity":"Uncommon","aspect":"Flight"},{"name":"Skyhunter Heart","rarity":"Rare","aspect":"Flight"}]},"HOOK HORROR":{"type":"Monstrosity","cr":"3","primary":"Ambush","secondary":"Grip","components":[{"name":"Hooked Claw","rarity":"Common","aspect":"Grip"},{"name":"Chitin Plate","rarity":"Uncommon","aspect":"Ambush"},{"name":"Cavern Echo Organ","rarity":"Rare","aspect":"Ambush"}]},"UMBER HULK":{"type":"Monstrosity","cr":"5","primary":"Burrow","secondary":"Confusion","components":[{"name":"Umber Carapace","rarity":"Common","aspect":"Burrow"},{"name":"Burrow Claw","rarity":"Uncommon","aspect":"Burrow"},{"name":"Confusion Eye Cluster","rarity":"Rare","aspect":"Confusion"}]},"YETI":{"type":"Monstrosity","cr":"3","primary":"Cold","secondary":"Predator","components":[{"name":"Frost Fur","rarity":"Common","aspect":"Cold"},{"name":"Chilling Claw","rarity":"Uncommon","aspect":"Predator"},{"name":"Iceblood Heart","rarity":"Rare","aspect":"Cold"}]},"LAMIA":{"type":"Monstrosity","cr":"4","primary":"Charm","secondary":"Illusion","components":[{"name":"Lamia Fang","rarity":"Common","aspect":"Illusion"},{"name":"Enchanting Veil Tissue","rarity":"Uncommon","aspect":"Charm"},{"name":"Beguiling Heart","rarity":"Rare","aspect":"Illusion"}]},"GORGON":{"type":"Monstrosity","cr":"5","primary":"Petrification","secondary":"Iron","components":[{"name":"Ironhide Plate","rarity":"Common","aspect":"Iron"},{"name":"Petrifying Breath Gland","rarity":"Uncommon","aspect":"Petrification"},{"name":"Gorgon Heartstone","rarity":"Rare","aspect":"Petrification"}]},"ROPER":{"type":"Monstrosity","cr":"5","primary":"Consumption","secondary":"Grip","components":[{"name":"Roper Tendril","rarity":"Common","aspect":"Grip"},{"name":"Consuming Eyeball","rarity":"Uncommon","aspect":"Consumption"},{"name":"Devouring Maw Core","rarity":"Rare","aspect":"Consumption"}]},"DRIDER":{"type":"Monstrosity","cr":"6","primary":"Curse","secondary":"Venom","components":[{"name":"Drider Fang","rarity":"Common","aspect":"Venom"},{"name":"Web Spinner Gland","rarity":"Uncommon","aspect":"Control"},{"name":"Cursed Spider Heart","rarity":"Rare","aspect":"Curse"}]},"CHIMERA":{"type":"Monstrosity","cr":"6","primary":"Hybrid","secondary":"Destruction","components":[{"name":"Chimera Horn","rarity":"Common","aspect":"Destruction"},{"name":"Fire Breath Gland","rarity":"Uncommon","aspect":"Fire"},{"name":"Triple Heart Cluster","rarity":"Rare","aspect":"Hybrid & Destruction"}]},"HYDRA":{"type":"Monstrosity","cr":"8","primary":"Regeneration","secondary":"Ferocity","components":[{"name":"Hydra Fang","rarity":"Common","aspect":"Ferocity"},{"name":"Regenerative Blood","rarity":"Uncommon","aspect":"Regeneration"},{"name":"Hydra Heart Core","rarity":"Rare","aspect":"Regeneration & Ferocity"}]},"BEHIR":{"type":"Monstrosity","cr":"11","primary":"Lightning","secondary":"Defence","components":[{"name":"Behir Scale","rarity":"Uncommon","aspect":"Defence"},{"name":"Storm Gland","rarity":"Rare","aspect":"Lightning"},{"name":"Thunder Heart","rarity":"Very Rare","aspect":"Lightning & Defence"}]},"REMORHAZ":{"type":"Monstrosity","cr":"11","primary":"Heat","secondary":"Defence","components":[{"name":"Heated Carapace Plate","rarity":"Uncommon","aspect":"Defence"},{"name":"Furnace Gland","rarity":"Rare","aspect":"Heat"},{"name":"Inferno Core","rarity":"Very Rare","aspect":"Heat & Defence"}]},"ABOMINABLE YETI":{"type":"Monstrosity","cr":"9","primary":"Blizzard","secondary":"Terror","components":[{"name":"Frozen Fur Mantle","rarity":"Uncommon","aspect":"Blizzard"},{"name":"Terror Howl Larynx","rarity":"Rare","aspect":"Terror"},{"name":"Glacier Heart","rarity":"Very Rare","aspect":"Blizzard & Terror"}]},"GUARDIAN NAGA":{"type":"Monstrosity","cr":"10","primary":"Protection","secondary":"Divine Magic","components":[{"name":"Naga Scale","rarity":"Uncommon","aspect":"Protection"},{"name":"Sacred Venom Gland","rarity":"Rare","aspect":"Divine Magic"},{"name":"Eternal Heart","rarity":"Very Rare","aspect":"Divine Magic & Protection"}]},"SPIRIT NAGA":{"type":"Monstrosity","cr":"8","primary":"Necromancy","secondary":"Manipulation","components":[{"name":"Spirit Naga Fang","rarity":"Uncommon","aspect":"Necromancy"},{"name":"Soulbinding Spine","rarity":"Rare","aspect":"Necromancy"},{"name":"Phylact Heart Node","rarity":"Very Rare","aspect":"Necromancy & Manipulation"}]},"PURPLE WORM":{"type":"Monstrosity","cr":"15","primary":"Devour","secondary":"Venom","components":[{"name":"Purple Worm Tooth","rarity":"Rare","aspect":"Devour"},{"name":"Venom Stinger","rarity":"Very Rare","aspect":"Venom"},{"name":"Devouring Gullet Core","rarity":"Very Rare","aspect":"Devour & Venom"}]},"ROC":{"type":"Monstrosity","cr":"11","primary":"Flight","secondary":"Predator","components":[{"name":"Roc Feather","rarity":"Rare","aspect":"Flight"},{"name":"Titanic Talon","rarity":"Very Rare","aspect":"Predator"},{"name":"Stormwing Heart","rarity":"Very Rare","aspect":"Flight & Predator"}]},"KRAKEN":{"type":"Monstrosity","cr":"23","primary":"Oceanic","secondary":"Storm","components":[{"name":"Kraken Tentacle Fiber","rarity":"Very Rare","aspect":"Oceanic & Dominion"},{"name":"Storm Organ","rarity":"Legendary","aspect":"Oceanic & Storm"},{"name":"Abyssal Heart","rarity":"Legendary","aspect":"All"}]},"TARRASQUE":{"type":"Monstrosity","cr":"30","primary":"Cataclysm","secondary":"Invulnerability","components":[{"name":"Tarrasque Carapace Plate","rarity":"Legendary","aspect":"All"},{"name":"Worldbreaker Claw","rarity":"Legendary","aspect":"All"},{"name":"Primordial Heart Core","rarity":"Artifact","aspect":"All"}]},"FLUMPH":{"type":"Aberration","cr":"1/8","primary":"Psionic","secondary":"Levitation","components":[{"name":"Psionic Tendril","rarity":"Common","aspect":"Psionic"},{"name":"Hover Bladder","rarity":"Common","aspect":"Levitation"},{"name":"Thought Core","rarity":"Uncommon","aspect":"Psionic"}]},"INTELLECT DEVOURER":{"type":"Aberration","cr":"2","primary":"Mind","secondary":"Possession","components":[{"name":"Brain Claw","rarity":"Common","aspect":"Mind"},{"name":"Psychic Brain Tissue","rarity":"Uncommon","aspect":"Mind"},{"name":"Possession Node","rarity":"Rare","aspect":"Possession"}]},"GIBBERING MOUTHER":{"type":"Aberration","cr":"2","primary":"Madness","secondary":"Flesh","components":[{"name":"Mouther Teeth Cluster","rarity":"Common","aspect":"Flesh"},{"name":"Warped Flesh Mass","rarity":"Uncommon","aspect":"Flesh"},{"name":"Babbling Brain Node","rarity":"Rare","aspect":"Madness & Flesh"}]},"OTYUGH":{"type":"Aberration","cr":"5","primary":"Grip","secondary":"Telepathy","components":[{"name":"Otyugh Tentacle","rarity":"Common","aspect":"Grip"},{"name":"Filth Gland","rarity":"Uncommon","aspect":"Grip"},{"name":"Telepathic Brain Node","rarity":"Rare","aspect":"Telepathy & Grip"}]},"GRICK":{"type":"Aberration","cr":"2","primary":"Predator","secondary":"Burrow","components":[{"name":"Grick Hooked Beak","rarity":"Common","aspect":"Predator"},{"name":"Chitinous Hide","rarity":"Uncommon","aspect":"Burrow"},{"name":"Wall-Crawling Tendon","rarity":"Uncommon","aspect":"Burrow"}]},"GRICK ALPHA":{"type":"Aberration","cr":"7","primary":"Apex Predator","secondary":"Defence","components":[{"name":"Alpha Grick Beak","rarity":"Rare","aspect":"Precision"},{"name":"Adaptive Chitin Plates","rarity":"Rare","aspect":"Defence"},{"name":"Alpha Climbing Tendon","rarity":"Very Rare","aspect":"Apex Predator & Defence"}]},"NOTHIC":{"type":"Aberration","cr":"2","primary":"Psychic","secondary":"Corruption","components":[{"name":"Warped Nothic Eye","rarity":"Uncommon","aspect":"Psychic"},{"name":"Whispering Brain Tissue","rarity":"Rare","aspect":"Psychic"},{"name":"Curse-Scarred Claw","rarity":"Uncommon","aspect":"Corruption"}]},"CHUUL":{"type":"Aberration","cr":"4","primary":"Predator","secondary":"Defence","components":[{"name":"Chuul Paralysis Stinger","rarity":"Rare","aspect":"Predator"},{"name":"Abyssal Carapace","rarity":"Rare","aspect":"Defence"},{"name":"Amphibious Lung Sac","rarity":"Uncommon","aspect":"Defence"}]},"GRELL":{"type":"Aberration","cr":"3","primary":"Levitation","secondary":"Psychic","components":[{"name":"GreII Levitation Bladder","rarity":"Rare","aspect":"Levitation"},{"name":"Paralytic Tentacle","rarity":"Uncommon","aspect":"Psychic"},{"name":"Lightning Conductive Nerve","rarity":"Rare","aspect":"Psychic & Levitation"}]},"MIND FLAYER":{"type":"Aberration","cr":"7","primary":"Psychic","secondary":"Manipulator","components":[{"name":"Mind Flayer Brain","rarity":"Very Rare","aspect":"Psychic & Manipulator"},{"name":"Psionic Tentacle Cluster","rarity":"Rare","aspect":"Manipulator"},{"name":"Elder Brain Node","rarity":"Rare","aspect":"Psychic"}]},"ABOLETH":{"type":"Aberration","cr":"10","primary":"Ancient","secondary":"Aquatic","components":[{"name":"Aboleth Mucus Gland","rarity":"Very Rare","aspect":"Aquatic"},{"name":"Ancient Memory Node","rarity":"Legendary","aspect":"Ancient"},{"name":"Leviathan Scale","rarity":"Very Rare","aspect":"Aquatic & Ancient"}]},"GAUTH":{"type":"Aberration","cr":"6","primary":"Energy","secondary":"Psychic","components":[{"name":"Eye Ray Crystal","rarity":"Rare","aspect":"Energy"},{"name":"Anti-Magic Retina","rarity":"Very Rare","aspect":"Psychic & Energy"},{"name":"Floating Nerve Cluster","rarity":"Rare","aspect":"Psychic"}]},"SPECTATOR":{"type":"Aberration","cr":"3","primary":"Eye Tyrant","secondary":"Guardian","components":[{"name":"Spectator Eye Crystal","rarity":"Rare","aspect":"Eye Tyrant"},{"name":"Guardian Lens","rarity":"Rare","aspect":"Guardian"},{"name":"Floating Eye Membrane","rarity":"Uncommon","aspect":"Eye Tyrant"}]},"GAZER":{"type":"Aberration","cr":"1/2","primary":"Eye Tyrant","secondary":"Scout","components":[{"name":"Miniature Eye Lens","rarity":"Common","aspect":"Eye Tyrant"},{"name":"Hovering Nerve Sac","rarity":"Common","aspect":"Eye Tyrant"},{"name":"Arcane Ray Gland","rarity":"Uncommon","aspect":"Eye Tyrant"}]},"DEATH KISS":{"type":"Aberration","cr":"10","primary":"Eye Tyrant","secondary":"Predator","components":[{"name":"Lightning Blood Vessel","rarity":"Very Rare","aspect":"Eye Tyrant & Predator"},{"name":"Draining Tendril Cluster","rarity":"Rare","aspect":"Predator"},{"name":"Aberrant Eye Core","rarity":"Very Rare","aspect":"Eye Tyrant & Predator"}]},"MINDWITNESS":{"type":"Aberration","cr":"5","primary":"Psychic","secondary":"Eye Tyrant","components":[{"name":"Hive Brain Cluster","rarity":"Rare","aspect":"Psychic"},{"name":"Central Eye Membrane","rarity":"Rare","aspect":"Psychic"},{"name":"Psionic Ray Nerve","rarity":"Rare","aspect":"Psychic & Eye Tyrant"}]},"NEOTHELID":{"type":"Aberration","cr":"13","primary":"Psychic","secondary":"Devourer","components":[{"name":"Neothelid Acid Gland","rarity":"Very Rare","aspect":"Devourer"},{"name":"Elder Psionic Brain","rarity":"Legendary","aspect":"Psychic & Devourer"},{"name":"Titanic Digestive Core","rarity":"Very Rare","aspect":"Devouring"}]},"STAR SPAWN GRUE":{"type":"Aberration","cr":"1/4","primary":"Corruption","secondary":"Shadow","components":[{"name":"Void-Touched Claw","rarity":"Common","aspect":"Shadow"},{"name":"Star Corruption Blood","rarity":"Uncommon","aspect":"Corruption"},{"name":"Grue Shadow Organ","rarity":"Uncommon","aspect":"Shadow"}]},"STAR SPAWN MANGLER":{"type":"Aberration","cr":"5","primary":"Predator","secondary":"Speed","components":[{"name":"Rending Claw Cluster","rarity":"Rare","aspect":"Predator"},{"name":"Void Muscle Fiber","rarity":"Rare","aspect":"Predator"},{"name":"Abyssal Tendon","rarity":"Rare","aspect":"Predator & Speed"}]},"BEHOLDER":{"type":"Aberration","cr":"13","primary":"Eye Tyrant","secondary":"Reality Warping","components":[{"name":"Central Antimagic Eye","rarity":"Legendary","aspect":"Eye Tyrant Reality Warping"},{"name":"Eye Ray Crystal","rarity":"Very Rare","aspect":"Reality Warping"},{"name":"Levitation Nerve Cluster","rarity":"Very Rare","aspect":"Eye Tyrant"}]},"BEHOLDER ZOMBIE":{"type":"Undead Aberration","cr":"5","primary":"Decay","secondary":"Eye Ray","components":[{"name":"Rotting Eye Lens","rarity":"Rare","aspect":"Decay"},{"name":"Undead Ray Nerve","rarity":"Rare","aspect":"Eye Ray"},{"name":"Necrotic Brain Core","rarity":"Rare","aspect":"Decay & Eye Ray"}]},"ELDER BRAIN":{"type":"Aberration","cr":"14","primary":"Hive Mind","secondary":"Psychic","components":[{"name":"Elder Brain Cortex","rarity":"Legendary","aspect":"Hive Mind & Psychic"},{"name":"Psionic Nerve Web","rarity":"Very Rare","aspect":"Psychic"},{"name":"Mind Control Core","rarity":"Legendary","aspect":"Hive Mind & Psychic"}]},"ULITHARID":{"type":"Aberration","cr":"9","primary":"Psychic","secondary":"Leadership","components":[{"name":"Ulitharid Brain Stem","rarity":"Very Rare","aspect":"Psychic"},{"name":"Command Tentacle","rarity":"Rare","aspect":"Leadership"},{"name":"Elder Transformation Node","rarity":"Legendary","aspect":"Psychic & Leadership"}]},"STAR SPAWN SEER":{"type":"Aberration","cr":"13","primary":"Prophecy","secondary":"Corruption","components":[{"name":"Void-Seer Eye","rarity":"Very Rare","aspect":"Prophecy"},{"name":"Star Prophecy Brain","rarity":"Legendary","aspect":"Prophecy & Corruption"},{"name":"Reality-Warping Nerve","rarity":"Legendary","aspect":"Corruption & Prophecy"}]},"STAR SPAWN HULK":{"type":"Aberration","cr":"10","primary":"Destruction","secondary":"Mutation","components":[{"name":"Hulk Bone Plate","rarity":"Very Rare","aspect":"Destruction & Mutation"},{"name":"Void Muscle Core","rarity":"Rare","aspect":"Destruction"},{"name":"Mutation Blood","rarity":"Very Rare","aspect":"Corruption"}]},"STAR SPAWN LARVA MAGE":{"type":"Aberration","cr":"16","primary":"Corruption","secondary":"Necromancy","components":[{"name":"Larval Core Cluster","rarity":"Legendary","aspect":"Corruption & Necro"},{"name":"Necrotic Spell Organ","rarity":"Very Rare","aspect":"Necromancy"},{"name":"Void Transformation Node","rarity":"Legendary","aspect":"Necro & Corruption"}]},"DEATH TYRANT":{"type":"Aberration","cr":"14","primary":"Undeath","secondary":"Eye Tyrant","components":[{"name":"Necrotic Central Eye","rarity":"Legendary","aspect":"Undeath & Eye Tyrant"},{"name":"Death Ray Crystal","rarity":"Legendary","aspect":"Undeath & Eye Tyrant"},{"name":"Undead Levitation Node","rarity":"Very Rare","aspect":"Eye Tyrant"}]},"ALHOON":{"type":"Aberration","cr":"10","primary":"Necromancy","secondary":"Psychic","components":[{"name":"Alhoon Phylact Node","rarity":"Legendary","aspect":"Necromancy & Psychic"},{"name":"Psionic Brain Core","rarity":"Very Rare","aspect":"Psychic"},{"name":"Necrotic Tentacle Cluster","rarity":"Rare","aspect":"Necromancy"}]},"MIND FLAYER ARCANIST":{"type":"Aberration","cr":"8","primary":"Psychic","secondary":"Arcane","components":[{"name":"Arcane Brain Tissue","rarity":"Very Rare","aspect":"Knowledge"},{"name":"Psionic Casting Node","rarity":"Rare","aspect":"Psychic"},{"name":"Spell-Twisting Nerve","rarity":"Very Rare","aspect":"Arcane & Psychic"}]},"ABOLETH SPAWN":{"type":"Aberration","cr":"5","primary":"Mutation","secondary":"Aquatic","components":[{"name":"Mutated Scale Plate","rarity":"Rare","aspect":"Aquatic"},{"name":"Corrupting Mucus Gland","rarity":"Rare","aspect":"Mutation"},{"name":"Spawn Brain Cluster","rarity":"Rare","aspect":"Mutation"}]},"SIBRIEX":{"type":"Fiendish Aberration","cr":"18","primary":"Fleshcraft","secondary":"Corruption","components":[{"name":"Flesh-Warping Bile","rarity":"Legendary","aspect":"Fleshcraft & Corruption"},{"name":"Abyssal Mutation Organ","rarity":"Legendary","aspect":"Corruption & Fleshcraft"},{"name":"Demon Brain Core","rarity":"Very Rare","aspect":"Corruption"}]},"ASTRAL DREADNOUGHT":{"type":"Aberration","cr":"21","primary":"Void","secondary":"Devouring","components":[{"name":"Void Maw Core","rarity":"Legendary","aspect":"Void, Devouring, Astral"},{"name":"Astral Carapace Plate","rarity":"Legendary","aspect":"Void, Devouring, Astral"},{"name":"Devourer Heart","rarity":"Legendary","aspect":"Void, Devouring, Astral"}]},"ELDER BRAIN DRAGON":{"type":"Aberration","cr":"22","primary":"Psychic","secondary":"Dragon","components":[{"name":"Elder Brain Core","rarity":"Legendary","aspect":"Psychic, Dragon, Hive"},{"name":"Psionic Dragon Scale","rarity":"Very Rare","aspect":"Psychic, Dragon, Hive Themes: Psionic armour"},{"name":"Hive Synapse Node","rarity":"Legendary","aspect":"Psychic, Dragon, Hive Themes: Control relics"}]},"PSEUDODRAGON":{"type":"Dragon","cr":"1/4","primary":"Venom","secondary":"Psychic","components":[{"name":"Pseudodragon Stinger","rarity":"Common","aspect":"Venom"},{"name":"Telepathic Brain Node","rarity":"Uncommon","aspect":"Psychic"},{"name":"Draconic Wing Membrane","rarity":"Common","aspect":"Psychic"}]},"FAERIE DRAGON":{"type":"Dragon","cr":"1","primary":"Illusion","secondary":"Fey","components":[{"name":"Faerie Dragon Scale","rarity":"Uncommon","aspect":"Illusion"},{"name":"Euphoria Breath Gland","rarity":"Rare","aspect":"Illusion"},{"name":"Fey Wing Membrane","rarity":"Uncommon","aspect":"Fey"}]},"WYVERN":{"type":"Dragon","cr":"6","primary":"Predator","secondary":"Venom","components":[{"name":"Wyvern Venom Stinger","rarity":"Very Rare","aspect":"Predator & Venom"},{"name":"Draconic Wing Membrane","rarity":"Rare","aspect":"Predator"},{"name":"Wyvern Scale Plate","rarity":"Rare","aspect":"Predator"}]},"GUARD DRAKE":{"type":"Dragon","cr":"2","primary":"Guardian","secondary":"Draconic Servant","components":[{"name":"Guard Drake Scale","rarity":"Uncommon","aspect":"Guardian"},{"name":"Draconic Loyalty Heart","rarity":"Rare","aspect":"Draconic Servant"},{"name":"Drake Claw","rarity":"Common","aspect":"Guardian"}]},"BLACK DRAGON WYRMLING":{"type":"Dragon","cr":"2","primary":"Acid","secondary":"Defence","components":[{"name":"Acid Breath Gland","rarity":"Rare","aspect":"Acid"},{"name":"Black Dragon Scale","rarity":"Uncommon","aspect":"Defence"},{"name":"Corrosive Blood","rarity":"Rare","aspect":"Corrosion"}]},"BLUE DRAGON WYRMLING":{"type":"Dragon","cr":"3","primary":"Lightning","secondary":"Storm","components":[{"name":"Lightning Breath Gland","rarity":"Rare","aspect":"Lightning"},{"name":"Blue Dragon Scale","rarity":"Uncommon","aspect":"defence"},{"name":"Storm Nerve Cluster","rarity":"Rare","aspect":"Energy"}]},"GREEN DRAGON WYRMLING":{"type":"Dragon","cr":"2","primary":"Poison","secondary":"Defence","components":[{"name":"Poison Breath Gland","rarity":"Rare","aspect":"Poison"},{"name":"Green Dragon Scale","rarity":"Uncommon","aspect":"Defence"},{"name":"Deception Tongue Node","rarity":"Rare","aspect":"Poison"}]},"RED DRAGON WYRMLING":{"type":"Dragon","cr":"4","primary":"Fire","secondary":"Defence","components":[{"name":"Fire Breath Gland","rarity":"Rare","aspect":"Fire"},{"name":"Red Dragon Scale","rarity":"Uncommon","aspect":"Defence"},{"name":"Inferno Heart Fragment","rarity":"Very Rare","aspect":"Fire & Defence"}]},"WHITE DRAGON WYRMLING":{"type":"Dragon","cr":"2","primary":"Frost","secondary":"Defence","components":[{"name":"Frost Breath Gland","rarity":"Rare","aspect":"Frost"},{"name":"White Dragon Scale","rarity":"Uncommon","aspect":"Defence"},{"name":"Glacial Blood Crystal","rarity":"Rare","aspect":"Frost"}]},"YOUNG BLACK DRAGON":{"type":"Dragon","cr":"7","primary":"Acid","secondary":"Defence","components":[{"name":"Greater Acid Breath Gland","rarity":"Very Rare","aspect":"Acid"},{"name":"Black Dragon Scale Plate","rarity":"Rare","aspect":"Defence"},{"name":"Corrosive Heart Blood","rarity":"Very Rare","aspect":"Acid & Defence"}]},"YOUNG BLUE DRAGON":{"type":"Dragon","cr":"9","primary":"Lightning","secondary":"Defence","components":[{"name":"Greater Lightning Breath Gland","rarity":"Very Rare","aspect":"Lightning"},{"name":"Blue Dragon Scale Plate","rarity":"Rare","aspect":"Defence"},{"name":"Storm Core Organ","rarity":"Very Rare","aspect":"Lightning & Defence"}]},"YOUNG GREEN DRAGON":{"type":"Dragon","cr":"8","primary":"Poison","secondary":"Defence","components":[{"name":"Greater Poison Breath Gland","rarity":"Very Rare","aspect":"Poison & Defence"},{"name":"Green Dragon Scale Plate","rarity":"Rare","aspect":"defence"},{"name":"Manipulation Tongue Node","rarity":"Very Rare","aspect":"Defence"}]},"YOUNG RED DRAGON":{"type":"Dragon","cr":"10","primary":"Fire","secondary":"Defence","components":[{"name":"Greater Fire Breath Gland","rarity":"Very Rare","aspect":"Fire"},{"name":"Red Dragon Scale Plate","rarity":"Rare","aspect":"defence"},{"name":"Inferno Heart Core","rarity":"Very Rare","aspect":"Fire & Defence"}]},"YOUNG WHITE DRAGON":{"type":"Dragon","cr":"6","primary":"Frost","secondary":"Defence","components":[{"name":"White Dragon Scale Plate","rarity":"Rare","aspect":"Defence"},{"name":"Frozen Heart Crystal","rarity":"Very Rare","aspect":"Frost & Defence"}]},"ADULT BLACK DRAGON":{"type":"Dragon","cr":"14","primary":"Acid","secondary":"Defence","components":[{"name":"Black Dragon Greatscale","rarity":"Very Rare","aspect":"defence"},{"name":"Corruption Heart Core","rarity":"Legendary","aspect":"Acid & Defence"}]},"ADULT BLUE DRAGON":{"type":"Dragon","cr":"16","primary":"Lightning","secondary":"Defence","components":[{"name":"Ancient Lightning Breath Gland","rarity":"Very Rare","aspect":"Lightning"},{"name":"Blue Dragon Greatscale","rarity":"Very Rare","aspect":"defence"},{"name":"Storm Core Heart","rarity":"Legendary","aspect":"Lightning & Defence"}]},"ADULT GREEN DRAGON":{"type":"Dragon","cr":"15","primary":"Poison","secondary":"Defence","components":[{"name":"Ancient Poison Breath Gland","rarity":"Very Rare","aspect":"Poison"},{"name":"Green Dragon Greatscale","rarity":"Very Rare","aspect":"defence"},{"name":"Poisoned Heart Core","rarity":"Legendary","aspect":"Poison & Defence"}]},"ADULT RED DRAGON":{"type":"Dragon","cr":"17","primary":"Fire","secondary":"Defence","components":[{"name":"Ancient Fire Breath Gland","rarity":"Very Rare","aspect":"Fire"},{"name":"Red Dragon Greatscale","rarity":"Very Rare","aspect":"Defence"},{"name":"Inferno Heart Core","rarity":"Legendary","aspect":"Fire & Defence"}]},"ADULT WHITE DRAGON":{"type":"Dragon","cr":"13","primary":"Frost","secondary":"Defence","components":[{"name":"Ancient Frost Breath Gland","rarity":"Very Rare","aspect":"Frost"},{"name":"White Dragon Greatscale","rarity":"Very Rare","aspect":"Defence"},{"name":"Frozen Heart Crystal","rarity":"Very Rare","aspect":"Frost & Defence"}]},"ANCIENT BLACK DRAGON":{"type":"Dragon","cr":"21","primary":"Acid","secondary":"Decay","components":[{"name":"Corrosive Acid Gland","rarity":"Legendary","aspect":"ALL"},{"name":"Rot-Soaked Heart","rarity":"Legendary","aspect":"ALL"},{"name":"Bogscale Hide","rarity":"Very Rare","aspect":"Defence"}]},"ANCIENT BLUE DRAGON":{"type":"Dragon","cr":"23","primary":"Lightning","secondary":"Storm","components":[{"name":"Storm Conduit Heart","rarity":"Legendary","aspect":"ALL"},{"name":"Charged Scale Plate","rarity":"Very Rare","aspect":"Defence"},{"name":"Glass Desert Core","rarity":"Legendary","aspect":"ALL"}]},"ANCIENT GREEN DRAGON":{"type":"Dragon","cr":"22","primary":"Poison","secondary":"Deception","components":[{"name":"Venom Gland","rarity":"Legendary","aspect":"Poison & Defence"},{"name":"Whispering Brain Node","rarity":"Legendary","aspect":"ALL"},{"name":"Verdant Scale Plate","rarity":"Very Rare","aspect":"Forest"}]},"ANCIENT RED DRAGON":{"type":"Dragon","cr":"24","primary":"Fire","secondary":"Destruction","components":[{"name":"Inferno Core","rarity":"Legendary","aspect":"ALL"},{"name":"Cataclysmic Heart","rarity":"Legendary","aspect":"ALL"},{"name":"Tyrant Crown Scale","rarity":"Very Rare","aspect":"Defence"}]},"ANCIENT WHITE DRAGON":{"type":"Dragon","cr":"20","primary":"Frost","secondary":"Savagery","components":[{"name":"Frozen Heart Core","rarity":"Legendary","aspect":"ALL"},{"name":"Predator Fang Cluster","rarity":"Very Rare","aspect":"Savagery"},{"name":"Glacial Scale Plate","rarity":"Legendary","aspect":"ALL"}]},"BRASS DRAGON WYRMLING":{"type":"Dragon","cr":"1","primary":"Fire","secondary":"Wind","components":[{"name":"Fire Breath Gland","rarity":"Rare","aspect":"Fire"},{"name":"Ember Core","rarity":"Common","aspect":"Fire"},{"name":"Sleep Breath Organ","rarity":"Rare","aspect":"Wind"}]},"BRONZE DRAGON WYRMLING":{"type":"Dragon","cr":"2","primary":"Lightning","secondary":"Sea","components":[{"name":"Lightning Breath Gland","rarity":"Rare","aspect":"Lightning"},{"name":"Static Node","rarity":"Uncommon","aspect":"Lightning"},{"name":"Repulsion Breath Node","rarity":"Rare","aspect":"Sea"}]},"COPPER DRAGON WYRMLING":{"type":"Dragon","cr":"1","primary":"Acid","secondary":"Trickery","components":[{"name":"Acid Breath Gland","rarity":"Rare","aspect":"Acid"},{"name":"Acid Core","rarity":"Uncommon","aspect":"Acid"},{"name":"Humour Nerve Cluster","rarity":"Rare","aspect":"Trickery"}]},"SILVER DRAGON WYRMLING":{"type":"Dragon","cr":"2","primary":"Frost","secondary":"Control","components":[{"name":"Frost Breath Gland","rarity":"Rare","aspect":"Frost"},{"name":"Ice Core","rarity":"Uncommon","aspect":"Frost"},{"name":"Paralyzing Breath Node","rarity":"Rare","aspect":"Control"}]},"GOLD DRAGON WYRMLING":{"type":"Dragon","cr":"3","primary":"Fire","secondary":"Radiance","components":[{"name":"Fire Breath Gland","rarity":"Rare","aspect":"Fire"},{"name":"Fire Core","rarity":"Uncommon","aspect":"Fire"},{"name":"Weakening Breath Organ","rarity":"Rare","aspect":"Radiance"}]},"YOUNG BRASS DRAGON":{"type":"Dragon","cr":"6","primary":"Fire","secondary":"Wind","components":[{"name":"Greater Fire Breath Gland","rarity":"Very Rare","aspect":"Fire"},{"name":"Burning Core","rarity":"Rare","aspect":"Fire"},{"name":"Sleep Breath Organ","rarity":"Very Rare","aspect":"Wind"}]},"YOUNG BRONZE DRAGON":{"type":"Dragon","cr":"8","primary":"Lightning","secondary":"Sea","components":[{"name":"Lightning Core","rarity":"Rare","aspect":"Lightning"},{"name":"Repulsion Breath Core","rarity":"Very Rare","aspect":"Sea"}]},"YOUNG COPPER DRAGON":{"type":"Dragon","cr":"7","primary":"Acid","secondary":"Trickery","components":[{"name":"Greater Acid Breath Gland","rarity":"Very Rare","aspect":"Acid"},{"name":"Toxic Core","rarity":"Rare","aspect":"Acid"},{"name":"Trickster Nerve Core","rarity":"Very Rare","aspect":"Trickery"}]},"YOUNG SILVER DRAGON":{"type":"Dragon","cr":"9","primary":"Frost","secondary":"Control","components":[{"name":"Greater Frost Breath Gland","rarity":"Very Rare","aspect":"Frost"},{"name":"Frost Core","rarity":"Rare","aspect":"Frost"},{"name":"Paralyzing Breath Core","rarity":"Very Rare","aspect":"Control"}]},"YOUNG GOLD DRAGON":{"type":"Dragon","cr":"10","primary":"Fire","secondary":"Radiance","components":[{"name":"Greater Fire Breath Gland","rarity":"Very Rare","aspect":"Fire"},{"name":"Magma Core","rarity":"Rare","aspect":"Fire"},{"name":"Weakening Breath Core","rarity":"Very Rare","aspect":"Radiance"}]},"ADULT BRASS DRAGON":{"type":"Dragon","cr":"13","primary":"Fire","secondary":"Wind","components":[{"name":"Ancient Fire Breath Gland","rarity":"Very Rare","aspect":"Fire & Wind"},{"name":"Inferno Core","rarity":"Very Rare","aspect":"Fire"},{"name":"Sleep Breath Heart Node","rarity":"Very Rare","aspect":"Wind"}]},"ADULT BRONZE DRAGON":{"type":"Dragon","cr":"15","primary":"Lightning","secondary":"Sea","components":[{"name":"Ancient Lightning Breath Gland","rarity":"Very Rare","aspect":"Lightning & Sea"},{"name":"Lightning Core","rarity":"Very Rare","aspect":"Lightning"},{"name":"Repulsion Force Core","rarity":"Very Rare","aspect":"Sea"}]},"ADULT COPPER DRAGON":{"type":"Dragon","cr":"14","primary":"Acid","secondary":"Trickery","components":[{"name":"Ancient Acid Breath Gland","rarity":"Very Rare","aspect":"Acid"},{"name":"Caustic Core","rarity":"Very Rare","aspect":"Acid & Trickery"},{"name":"Trickster Mind Core","rarity":"Very Rare","aspect":"Trickery"}]},"ADULT SILVER DRAGON":{"type":"Dragon","cr":"16","primary":"Frost","secondary":"Control","components":[{"name":"Ancient Frost Breath Gland","rarity":"Very Rare","aspect":"Frost & Control"},{"name":"Winter Core","rarity":"Very Rare","aspect":"Frost"},{"name":"Paralyzing Dominion Core","rarity":"Very Rare","aspect":"Control"}]},"ADULT GOLD DRAGON":{"type":"Dragon","cr":"17","primary":"Fire","secondary":"Radiance","components":[{"name":"Ancient Fire Breath Gland","rarity":"Very Rare","aspect":"Fire & Radiance"},{"name":"Magma Core","rarity":"Very Rare","aspect":"Fire"},{"name":"Radiant Judgment Heart","rarity":"Very Rare","aspect":"Radiance"}]},"ANCIENT BRASS DRAGON":{"type":"Dragon","cr":"20","primary":"Fire","secondary":"Wind","components":[{"name":"Blazing Core","rarity":"Legendary","aspect":"ALL"},{"name":"Whisperwind Lung","rarity":"Very Rare","aspect":"Wind & Fire"},{"name":"Dune Scale Plate","rarity":"Legendary","aspect":"ALL"}]},"ANCIENT BRONZE DRAGON":{"type":"Dragon","cr":"22","primary":"Lightning","secondary":"War","components":[{"name":"Stormheart Core","rarity":"Legendary","aspect":"Lightning"},{"name":"Battle-Hardened Scale","rarity":"Very Rare","aspect":"War & Sea"},{"name":"Tidal Essence Node","rarity":"Legendary","aspect":"ALL"}]},"ANCIENT COPPER DRAGON":{"type":"Dragon","cr":"21","primary":"Acid","secondary":"Trickery","components":[{"name":"Caustic Spittle Gland","rarity":"Legendary","aspect":"ALL"},{"name":"Jester Mind Fragment","rarity":"Very Rare","aspect":"Trickery & Stone"},{"name":"Stonehide Plate","rarity":"Legendary","aspect":"ALL"}]},"ANCIENT SILVER DRAGON":{"type":"Dragon","cr":"23","primary":"Cold","secondary":"Protection","components":[{"name":"Frostbound Core","rarity":"Legendary","aspect":"ALL"},{"name":"Guardian Scale Plate","rarity":"Very Rare","aspect":"Protection & Cold"},{"name":"Cloudwing Membrane","rarity":"Legendary","aspect":"ALL"}]},"ANCIENT GOLD DRAGON":{"type":"Dragon","cr":"24","primary":"Radiance","secondary":"Wisdom","components":[{"name":"Solar Heart Core","rarity":"Legendary","aspect":"ALL"},{"name":"Sage Mind Crystal","rarity":"Very Rare","aspect":"Wisdom & Radiance"},{"name":"Golden Flame Scale","rarity":"Legendary","aspect":"ALL"}]},"DUST MEPHIT":{"type":"Elemental","cr":"1/2","primary":"Dust","secondary":"Air","components":[{"name":"Dust Core","rarity":"Common","aspect":"Dust"},{"name":"Ashen Wing Membrane","rarity":"Common","aspect":"Air"},{"name":"Suffocation Gland","rarity":"Uncommon","aspect":"Air"}]},"ICE MEPHIT":{"type":"Elemental","cr":"1/2","primary":"Ice","secondary":"Cold","components":[{"name":"Frozen Core","rarity":"Common","aspect":"Cold"},{"name":"Ice Crystal Fragment","rarity":"Common","aspect":"Ice"},{"name":"Frost Breath Node","rarity":"Uncommon","aspect":"Cold"}]},"MAGMA MEPHIT":{"type":"Elemental","cr":"1/2","primary":"Fire","secondary":"Earth","components":[{"name":"Molten Core","rarity":"Uncommon","aspect":"Fire"},{"name":"Lava Globule","rarity":"Common","aspect":"Fire"},{"name":"Volcanic Heart Fragment","rarity":"Rare","aspect":"Earth"}]},"MUD MEPHIT":{"type":"Elemental","cr":"1/4","primary":"Earth","secondary":"Water","components":[{"name":"Mud Core","rarity":"Common","aspect":"Earth"},{"name":"Clay Glob","rarity":"Common","aspect":"Earth"},{"name":"Quicksand Node","rarity":"Uncommon","aspect":"Water"}]},"SMOKE MEPHIT":{"type":"Elemental","cr":"1/4","primary":"Smoke","secondary":"Fire","components":[{"name":"Smoke Core","rarity":"Common","aspect":"Smoke"},{"name":"Cinder Fragment","rarity":"Common","aspect":"Fire"},{"name":"Obscuring Breath Node","rarity":"Uncommon","aspect":"Smoke"}]},"STEAM MEPHIT":{"type":"Elemental","cr":"1/4","primary":"Steam","secondary":"Fire","components":[{"name":"Steam Core","rarity":"Common","aspect":"Steam"},{"name":"Scalding Vapor Node","rarity":"Uncommon","aspect":"Fire"},{"name":"Condensed Vapor Crystal","rarity":"Uncommon","aspect":"Water"}]},"AIR ELEMENTAL":{"type":"Elemental","cr":"5","primary":"Air","secondary":"Storm","components":[{"name":"Storm Core","rarity":"Rare","aspect":"Air"},{"name":"Cyclone Essence","rarity":"Rare","aspect":"Storm"},{"name":"Tempest Vortex Node","rarity":"Very Rare","aspect":"Air & Storm"}]},"EARTH ELEMENTAL":{"type":"Elemental","cr":"5","primary":"Earth","secondary":"Stone","components":[{"name":"Stone Core","rarity":"Rare","aspect":"Earth"},{"name":"Living Granite Fragment","rarity":"Rare","aspect":"Stone"},{"name":"Seismic Heart","rarity":"Very Rare","aspect":"Earth & Stone"}]},"FIRE ELEMENTAL":{"type":"Elemental","cr":"5","primary":"Fire","secondary":"Flame","components":[{"name":"Flame Core","rarity":"Rare","aspect":"Fire"},{"name":"Living Ember","rarity":"Rare","aspect":"Flame"},{"name":"Inferno Heart","rarity":"Very Rare","aspect":"Fire"}]},"WATER ELEMENTAL":{"type":"Elemental","cr":"5","primary":"Water","secondary":"Tides","components":[{"name":"Tidal Core","rarity":"Rare","aspect":"Water"},{"name":"Living Water Sphere","rarity":"Rare","aspect":"Water"},{"name":"Abyssal Pressure Heart","rarity":"Very Rare","aspect":"Tides"}]},"AIR MYRMIDON":{"type":"Elemental","cr":"7","primary":"Air","secondary":"War","components":[{"name":"Bound Cyclone Core","rarity":"Rare","aspect":"Air"},{"name":"War Harness Plate","rarity":"Rare","aspect":"War"},{"name":"Tempest Drive Node","rarity":"Very Rare","aspect":"Air & War"}]},"EARTH MYRMIDON":{"type":"Elemental","cr":"7","primary":"Earth","secondary":"War","components":[{"name":"Stonebound Core","rarity":"Rare","aspect":"Earth"},{"name":"Siege Harness Plate","rarity":"Rare","aspect":"War"},{"name":"Seismic Drive Node","rarity":"Very Rare","aspect":"Earth & War"}]},"FIRE MYRMIDON":{"type":"Elemental","cr":"7","primary":"Fire","secondary":"War","components":[{"name":"Inferno Core","rarity":"Rare","aspect":"Fire"},{"name":"Warbrand Harness","rarity":"Rare","aspect":"War"},{"name":"Blaze Drive Node","rarity":"Very Rare","aspect":"Fire & War"}]},"WATER MYRMIDON":{"type":"Elemental","cr":"7","primary":"Water","secondary":"War","components":[{"name":"Tidebound Core","rarity":"Rare","aspect":"Water"},{"name":"Flood Harness Plate","rarity":"Rare","aspect":"War"},{"name":"Current Drive Node","rarity":"Very Rare","aspect":"Water & War"}]},"AZER":{"type":"Elemental","cr":"2","primary":"Fire","secondary":"Metal","components":[{"name":"Forge Heart","rarity":"Uncommon","aspect":"Fire"},{"name":"Living Brass Fragment","rarity":"Uncommon","aspect":"Metal"},{"name":"Ember Beard Filament","rarity":"Rare","aspect":"Fire"}]},"GARGOYLE":{"type":"Elemental","cr":"2","primary":"Stone","secondary":"Vigilance","components":[{"name":"Living Stone Core","rarity":"Uncommon","aspect":"Stone"},{"name":"Watcher Eye Fragment","rarity":"Common","aspect":"Vigilance"},{"name":"Granite Plate","rarity":"Uncommon","aspect":"Stone"}]},"SALAMANDER":{"type":"Elemental","cr":"5","primary":"Fire","secondary":"Magma","components":[{"name":"Flame Core","rarity":"Rare","aspect":"Fire"},{"name":"Molten Blood","rarity":"Rare","aspect":"Magma"},{"name":"Inferno Spine","rarity":"Very Rare","aspect":"Fire"}]},"INVISIBLE STALKER":{"type":"Elemental","cr":"6","primary":"Air","secondary":"Stealth","components":[{"name":"Wind Core","rarity":"Rare","aspect":"Air"},{"name":"Veil of Unseen Air","rarity":"Very Rare","aspect":"Stealth"},{"name":"Silent Gale Essence","rarity":"Rare","aspect":"Air"}]},"DAO":{"type":"Elemental","cr":"11","primary":"Earth","secondary":"Stone","components":[{"name":"Gemstone Heart","rarity":"Very Rare","aspect":"Earth & Stone"},{"name":"Dao Stone Essence","rarity":"Rare","aspect":"Stone"},{"name":"Living Crystal Shard","rarity":"Very Rare","aspect":"Earth"}]},"DJINNI":{"type":"Elemental","cr":"11","primary":"Air","secondary":"Storm","components":[{"name":"Tempest Core","rarity":"Very Rare","aspect":"Air & Storm"},{"name":"Djinni Storm Essence","rarity":"Very Rare","aspect":"Storm"},{"name":"Living Cloud Fragment","rarity":"Rare","aspect":"Air"}]},"EFREETI":{"type":"Elemental","cr":"11","primary":"Fire","secondary":"Destruction","components":[{"name":"Inferno Core","rarity":"Very Rare","aspect":"Fire"},{"name":"Efreeti Ember Heart","rarity":"Very Rare","aspect":"Destruction"},{"name":"Cinder Soul Fragment","rarity":"Very Rare","aspect":"Fire & Destruction"}]},"MARID":{"type":"Elemental","cr":"11","primary":"Water","secondary":"Tides","components":[{"name":"Oceanic Core","rarity":"Very Rare","aspect":"Water"},{"name":"Marid Tidal Essence","rarity":"Very Rare","aspect":"Tides"},{"name":"Abyssal Pearl","rarity":"Very Rare","aspect":"Water & Tides"}]},"LEVIATHAN":{"type":"Elemental","cr":"20","primary":"Water","secondary":"Pressure","components":[{"name":"Abyssal Heart Core","rarity":"Legendary","aspect":"ALL"},{"name":"Crushing Pressure Node","rarity":"Very Rare","aspect":"Pressure & Ocean"},{"name":"World-Tide Scale","rarity":"Very Rare","aspect":"ALL"}]},"ZARATAN":{"type":"Elemental","cr":"22","primary":"Earth","secondary":"Mountain","components":[{"name":"Worldshell Core","rarity":"Legendary","aspect":"ALL"},{"name":"Mountain Plate","rarity":"Legendary","aspect":"ALL"},{"name":"Endless Core Stone","rarity":"Very Rare","aspect":"Endurance & Earth"}]},"ELDER TEMPEST":{"type":"Fey","cr":"1/4","primary":"Trickery","secondary":"Poison","components":[{"name":"Tempest Core","rarity":"Legendary","aspect":"ALL"},{"name":"Lightning Conduit","rarity":"Legendary","aspect":"ALL"},{"name":"Skybreaker Essence","rarity":"Very Rare","aspect":"Wind & Lightning"},{"name":"Pixie Venom Gland","rarity":"Common","aspect":"Poison"},{"name":"Glamour Dust Pouch","rarity":"Common","aspect":"Trickery"},{"name":"Winglight Filament","rarity":"Common","aspect":"Trickery"}]},"PIXIE":{"type":"Fey","cr":"1/4","primary":"Magic","secondary":"Trickery","components":[{"name":"Arcane Dust Core","rarity":"Common","aspect":"Magic"},{"name":"Prank Essence","rarity":"Common","aspect":"Trickery"},{"name":"Gossamer Wing Thread","rarity":"Common","aspect":"Magic"}]},"QUICKLING":{"type":"Fey","cr":"1","primary":"Speed","secondary":"Trickery","components":[{"name":"Temporal Nerve Node","rarity":"Uncommon","aspect":"Speed"},{"name":"Blur Essence","rarity":"Uncommon","aspect":"Trickery"},{"name":"Lightning Tendon","rarity":"Uncommon","aspect":"Speed"}]},"DRYAD":{"type":"Fey","cr":"1","primary":"Nature","secondary":"Charm","components":[{"name":"Heartwood Core","rarity":"Uncommon","aspect":"Nature"},{"name":"Charm Blossom","rarity":"Uncommon","aspect":"Charm"},{"name":"Vinebound Essence","rarity":"Uncommon","aspect":"Nature"}]},"SATYR":{"type":"Fey","cr":"1/2","primary":"Revelry","secondary":"Charm","components":[{"name":"Feywine Blood","rarity":"Common","aspect":"Revelry"},{"name":"Alluring Horn Fragment","rarity":"Common","aspect":"Charm"},{"name":"Dancebound Hoof","rarity":"Common","aspect":"Revelry"}]},"BLINK DOG":{"type":"Fey","cr":"1/4","primary":"Teleportation","secondary":"Loyalty","components":[{"name":"Phase Gland","rarity":"Common","aspect":"Teleportation"},{"name":"Bonded Fang","rarity":"Common","aspect":"Loyalty"},{"name":"Ethereal Fur Tuft","rarity":"Common","aspect":"Teleportation"}]},"BOGGLE":{"type":"Fey","cr":"1/8","primary":"Portals","secondary":"Chaos","components":[{"name":"Dimensional Oil","rarity":"Common","aspect":"Portals"},{"name":"Sticky Residue","rarity":"Common","aspect":"Chaos"},{"name":"Rift Node","rarity":"Common","aspect":"Portals"}]},"HAG (GREEN HAG)":{"type":"Fey","cr":"3","primary":"Deception","secondary":"Corruption","components":[{"name":"Witch Eye","rarity":"Rare","aspect":"Deception"},{"name":"Corrupt Heart","rarity":"Rare","aspect":"Corruption"},{"name":"Bog Essence","rarity":"Uncommon","aspect":"Corruption"}]},"HAG (ANNIS HAG)":{"type":"Fey","cr":"6","primary":"Strength","secondary":"Cruelty","components":[{"name":"Iron Claw","rarity":"Rare","aspect":"Strength"},{"name":"Cruel Essence","rarity":"Rare","aspect":"Cruelty"},{"name":"Bone Knot","rarity":"Rare","aspect":"Strength"}]},"HAG (NIGHT HAG)":{"type":"Fiend","cr":"5","primary":"Dreams","secondary":"Torment","components":[{"name":"Nightmare Core","rarity":"Rare","aspect":"Dreams"},{"name":"Soul Bag Fragment","rarity":"Rare","aspect":"Torment"},{"name":"Ethereal Residue","rarity":"Rare","aspect":"Dreams"}]},"ELADRIN (GENERAL)":{"type":"Fey","cr":"10","primary":"Emotion","secondary":"Teleportation","components":[{"name":"Seasonal Core","rarity":"Rare","aspect":"Emotion"},{"name":"Fey Step Node","rarity":"Very Rare","aspect":"Teleportation & Emotion"},{"name":"Mood Essence","rarity":"Rare","aspect":"Emotion"}]},"YETH HOUND":{"type":"Fey","cr":"4","primary":"Fear","secondary":"Hunt","components":[{"name":"Dread Howl Node","rarity":"Rare","aspect":"Fear"},{"name":"Hunter Fang","rarity":"Uncommon","aspect":"Hunt"},{"name":"Shadow Pelt","rarity":"Rare","aspect":"Fear"}]},"REDCAP":{"type":"Fey","cr":"3","primary":"Violence","secondary":"Blood","components":[{"name":"Bloodcap Cloth","rarity":"Rare","aspect":"Blood"},{"name":"Iron Boot","rarity":"Uncommon","aspect":"Violence"},{"name":"Murder Essence","rarity":"Rare","aspect":"Violence"}]},"TITANIA":{"type":"Undead","cr":"1/4","primary":"Bone","secondary":"Death","components":[{"name":"Queen\u2019s Heart Bloom","rarity":"Legendary","aspect":"ALL"},{"name":"Sovereign Crown Essence","rarity":"Legendary","aspect":"ALL"},{"name":"Primal Fey Core","rarity":"Legendary","aspect":"ALL"},{"name":"Animated Bone Core","rarity":"Common","aspect":"Bone"},{"name":"Death Residue","rarity":"Common","aspect":"Death"},{"name":"Marrow Dust","rarity":"Common","aspect":"Bone"}]},"ZOMBIE":{"type":"Undead","cr":"1/4","primary":"Decay","secondary":"Endurance","components":[{"name":"Rotting Flesh Mass","rarity":"Common","aspect":"Decay"},{"name":"Undying Core","rarity":"Common","aspect":"Endurance"},{"name":"Grave Ichor","rarity":"Common","aspect":"Decay"}]},"CRAWLING CLAW":{"type":"Undead","cr":"0","primary":"Animation","secondary":"Curse","components":[{"name":"Animated Hand Core","rarity":"Common","aspect":"Animation"},{"name":"Curse Residue","rarity":"Common","aspect":"Curse"},{"name":"Tendon Knot","rarity":"Common","aspect":"Animation"}]},"GHOUL":{"type":"Undead","cr":"1","primary":"Hunger","secondary":"Paralysis","components":[{"name":"Paralytic Claw","rarity":"Uncommon","aspect":"Paralysis"},{"name":"Hunger Core","rarity":"Uncommon","aspect":"Hunger"},{"name":"Flesh Rot Essence","rarity":"Uncommon","aspect":"Hunger"}]},"GHAST":{"type":"Undead","cr":"2","primary":"Stench","secondary":"Hunger","components":[{"name":"Putrid Gland","rarity":"Uncommon","aspect":"Stench"},{"name":"Devourer Core","rarity":"Uncommon","aspect":"Hunger"},{"name":"Rot Breath Node","rarity":"Uncommon","aspect":"Stench"}]},"SHADOW":{"type":"Undead","cr":"1/2","primary":"Shadow","secondary":"Strength Drain","components":[{"name":"Shadow Essence","rarity":"Uncommon","aspect":"Shadow"},{"name":"Draining Core","rarity":"Uncommon","aspect":"Strength Drain"},{"name":"Umbral Fragment","rarity":"Uncommon","aspect":"Shadow"}]},"SPECTER":{"type":"Undead","cr":"1","primary":"Spirit","secondary":"Drain","components":[{"name":"Ethereal Core","rarity":"Uncommon","aspect":"Spirit"},{"name":"Life Drain Node","rarity":"Uncommon","aspect":"Drain"},{"name":"Wisp Fragment","rarity":"Uncommon","aspect":"Spirit"}]},"WRAITH":{"type":"Undead","cr":"5","primary":"Soul","secondary":"Drain","components":[{"name":"Soul Core","rarity":"Rare","aspect":"Soul"},{"name":"Life Drain Essence","rarity":"Rare","aspect":"Drain"},{"name":"Spectral Cloak","rarity":"Rare","aspect":"Soul"}]},"MUMMY":{"type":"Undead","cr":"3","primary":"Curse","secondary":"Preservation","components":[{"name":"Cursed Wrappings","rarity":"Rare","aspect":"Curse"},{"name":"Preserved Heart","rarity":"Rare","aspect":"Preservation"},{"name":"Desiccated Core","rarity":"Uncommon","aspect":"Preservation"}]},"MUMMY LORD":{"type":"Undead","cr":"15","primary":"Curse","secondary":"Divine Wrath","components":[{"name":"Royal Curse Core","rarity":"Very Rare","aspect":"Curse"},{"name":"Divine Wrath Node","rarity":"Very Rare","aspect":"Divine Wrath"},{"name":"Pharaoh Heart","rarity":"Very Rare","aspect":"Curse & Divine Wrath"}]},"VAMPIRE SPAWN":{"type":"Undead","cr":"5","primary":"Blood","secondary":"Hunger","components":[{"name":"Blood Core","rarity":"Rare","aspect":"Blood"},{"name":"Hunger Essence","rarity":"Rare","aspect":"Hunger"},{"name":"Night Fang","rarity":"Rare","aspect":"Blood"}]},"VAMPIRE":{"type":"Undead","cr":"13","primary":"Blood","secondary":"Charm","components":[{"name":"Ancient Blood Vein","rarity":"Very Rare","aspect":"Blood"},{"name":"Charm Gaze Node","rarity":"Very Rare","aspect":"Charm & Blood"},{"name":"Regeneration Heart","rarity":"Rare","aspect":"Blood"}]},"BONE NAGA":{"type":"Undead","cr":"4","primary":"Bone","secondary":"Magic","components":[{"name":"Bone Coil Core","rarity":"Rare","aspect":"Bone"},{"name":"Arcane Node","rarity":"Rare","aspect":"Magic"},{"name":"Serpent Spine","rarity":"Rare","aspect":"Bone"}]},"FLAMESKULL":{"type":"Undead","cr":"4","primary":"Fire","secondary":"Undeath","components":[{"name":"Flame Skull Core","rarity":"Rare","aspect":"Fire"},{"name":"Undead Binding Rune","rarity":"Rare","aspect":"Undeath"},{"name":"Burning Eye Node","rarity":"Rare","aspect":"Fire"}]},"DEMILICH":{"type":"Undead","cr":"18","primary":null,"secondary":null,"components":[{"name":"Soul Gem Core","rarity":"Very Rare","aspect":"Soul"},{"name":"Dust Skull Fragment","rarity":"Very Rare","aspect":"Decay"},{"name":"Wail Node","rarity":"Very Rare","aspect":"Soul"}]},"LICH":{"type":"Undead","cr":"21","primary":"Soul","secondary":"Phylactery","components":[{"name":"Phylactery Core","rarity":"Legendary","aspect":"ALL"},{"name":"Arcane Nexus Heart","rarity":"Legendary","aspect":"ALL"},{"name":"Undying Essence Node","rarity":"Very Rare","aspect":"Phylactery & Soul"}]},"DRACOLICH":{"type":"Undead","cr":"None","primary":"Poison","secondary":"Trickery","components":[{"name":"Necrotic Dragon Heart","rarity":"Legendary","aspect":"ALL"},{"name":"Bone Dragon Scale","rarity":"Legendary","aspect":"ALL"},{"name":"Soul Phylact Node","rarity":"Very Rare","aspect":"Necrotic"},{"name":"Venom Sting Gland","rarity":"Common","aspect":"Poison"},{"name":"Infernal Trick Essence","rarity":"Common","aspect":"Trickery"},{"name":"Devil Wing Membrane","rarity":"Common","aspect":"Trickery"}]},"QUASIT":{"type":"Fiend","cr":"1","primary":"Chaos","secondary":"Poison","components":[{"name":"Chaotic Core","rarity":"Common","aspect":"Chaos"},{"name":"Toxic Claw Gland","rarity":"Common","aspect":"Poison"},{"name":"Warped Essence","rarity":"Common","aspect":"Chaos"}]},"MANE":{"type":"Fiend","cr":"1/8","primary":"Flesh","secondary":"Chaos","components":[{"name":"Warped Flesh Core","rarity":"Common","aspect":"Flesh"},{"name":"Abyssal Residue","rarity":"Common","aspect":"Chaos"},{"name":"Demon Ichor","rarity":"Common","aspect":"Flesh"}]},"LEMURE":{"type":"Fiend","cr":"0","primary":"Flesh","secondary":"Suffering","components":[{"name":"Hellflesh Mass","rarity":"Common","aspect":"Flesh"},{"name":"Torment Essence","rarity":"Common","aspect":"Suffering"},{"name":"Infernal Sludge","rarity":"Common","aspect":"Flesh"}]},"SPIKED DEVIL":{"type":"Fiend","cr":"2","primary":"Fire","secondary":"War","components":[{"name":"Infernal Spine Cluster","rarity":"Uncommon","aspect":"War"},{"name":"Hellfire Core","rarity":"Uncommon","aspect":"Fire"},{"name":"Barbed Plate Fragment","rarity":"Uncommon","aspect":"War"}]},"BARBED DEVIL":{"type":"Fiend","cr":"5","primary":"Pain","secondary":"War","components":[{"name":"Barb Cluster","rarity":"Rare","aspect":"War"},{"name":"Agony Core","rarity":"Rare","aspect":"Pain"},{"name":"Infernal Plate","rarity":"Rare","aspect":"War"}]},"BEARDED DEVIL":{"type":"Fiend","cr":"3","primary":"Bleed","secondary":"Discipline","components":[{"name":"Infernal Glaive Fragment","rarity":"Rare","aspect":"Discipline"},{"name":"Bleeding Beard Tendrils","rarity":"Uncommon","aspect":"Bleed"},{"name":"Devil Core Node","rarity":"Uncommon","aspect":"Discipline"}]},"SUCCUBUS/INCUBUS":{"type":"Fiend","cr":"4","primary":"Charm","secondary":"Desire","components":[{"name":"Alluring Essence","rarity":"Rare","aspect":"Charm"},{"name":"Desire Core","rarity":"Rare","aspect":"Desire"},{"name":"Soul Kiss Fragment","rarity":"Rare","aspect":"Charm"}]},"NIGHTMARE":{"type":"Fiend","cr":"3","primary":"Fire","secondary":"Fear","components":[{"name":"Hellfire Hoof","rarity":"Rare","aspect":"Fire"},{"name":"Dread Mane","rarity":"Uncommon","aspect":"Fear"},{"name":"Night Smoke Core","rarity":"Rare","aspect":"Fear"}]},"HEZROU":{"type":"Fiend","cr":"8","primary":"Filth","secondary":"Poison","components":[{"name":"Fetid Core","rarity":"Rare","aspect":"Filth"},{"name":"Toxic Hide","rarity":"Rare","aspect":"Poison"},{"name":"Stench Gland","rarity":"Rare","aspect":"Filth"}]},"GLABREZU":{"type":"Fiend","cr":"9","primary":"Deception","secondary":"Power","components":[{"name":"Deceiver Core","rarity":"Rare","aspect":"Deception"},{"name":"Power Claw","rarity":"Rare","aspect":"Power"},{"name":"Abyssal Node","rarity":"Rare","aspect":"Deception"}]},"HORNED DEVIL":{"type":"Fiend","cr":"11","primary":"Fire","secondary":"Authority","components":[{"name":"Hellfire Core","rarity":"Rare","aspect":"Fire"},{"name":"Tyrant Horn","rarity":"Very Rare","aspect":"Authority & Fire"},{"name":"Wing Membrane","rarity":"Rare","aspect":"Fire"}]},"ERINYES":{"type":"Fiend","cr":"12","primary":"Judgment","secondary":"War","components":[{"name":"Judgment Blade Fragment","rarity":"Very Rare","aspect":"Judgment & War"},{"name":"War Core","rarity":"Rare","aspect":"War"},{"name":"Binding Chain","rarity":"Very Rare","aspect":"Judgment"}]},"NYCALOTH":{"type":"Fiend","cr":"13","primary":"War","secondary":"Teleportation","components":[{"name":"Mercenary Core","rarity":"Very Rare","aspect":"War"},{"name":"Teleport Node","rarity":"Very Rare","aspect":"Teleportation"},{"name":"Fiendish Blade Essence","rarity":"Rare","aspect":"War"}]},"BALOR":{"type":"Fiend","cr":"19","primary":null,"secondary":null,"components":[{"name":"Demonic Flame Core","rarity":"Very Rare","aspect":"Fire & Destruction"},{"name":"Whip of Ruin Fragment","rarity":"Very Rare","aspect":"Destruction"},{"name":"Explosive Heart","rarity":"Very Rare","aspect":"Fire"}]},"PIT FIEND":{"type":"Fiend","cr":"20","primary":"Fire","secondary":"Tyranny","components":[{"name":"Hellfire Core","rarity":"Legendary","aspect":"ALL"},{"name":"Tyrant Crown Horn","rarity":"Legendary","aspect":"ALL"},{"name":"Venomous Blood Node","rarity":"Very Rare","aspect":"Poison & Fire"}]},"ORCUS":{"type":"Fiend","cr":"26","primary":"Death","secondary":"Undeath","components":[{"name":"Wand Core Fragment","rarity":"Legendary","aspect":"ALL"},{"name":"Undead Heart Essence","rarity":"Legendary","aspect":"ALL"},{"name":"Demon Lord Node","rarity":"Legendary","aspect":"ALL"}]},"DEMOGORGON":{"type":"Fiend","cr":"26","primary":"Madness","secondary":"Savagery","components":[{"name":"Twin Mind Core","rarity":"Legendary","aspect":"ALL"},{"name":"Savagery Fang","rarity":"Legendary","aspect":"ALL"},{"name":"Chaos Blood","rarity":"Legendary","aspect":"ALL"}]},"ASMODEUS":{"type":"Celestial","cr":"2","primary":"Grace","secondary":"Sky","components":[{"name":"Crown of Hell Fragment","rarity":"Legendary","aspect":"ALL"},{"name":"Infernal Contract","rarity":"Legendary","aspect":"ALL"},{"name":"Primordial Hellfire Heart","rarity":"Legendary","aspect":"ALL"},{"name":"Celestial Wing Feather","rarity":"Uncommon","aspect":"Sky"},{"name":"Gracebound Heart","rarity":"Uncommon","aspect":"Grace"},{"name":"Cloudsilver Hoof","rarity":"Uncommon","aspect":"Sky"}]},"COUATL":{"type":"Celestial","cr":"4","primary":"Prophecy","secondary":"Protection","components":[{"name":"Oracle Scale","rarity":"Rare","aspect":"Prophecy"},{"name":"Guardian Venom Gland","rarity":"Rare","aspect":"Protection"},{"name":"Rainbow Crest Fragment","rarity":"Rare","aspect":"Prophecy"}]},"HOLLYPHANT":{"type":"Celestial","cr":"5","primary":"Radiance","secondary":"Mercy","components":[{"name":"Golden Tusk Shard","rarity":"Rare","aspect":"Radiance"},{"name":"Merciful Heart Essence","rarity":"Rare","aspect":"Mercy"},{"name":"Trumpet Core","rarity":"Rare","aspect":"Radiance"}]},"UNICORN":{"type":"Celestial","cr":"5","primary":"Purity","secondary":"Life","components":[{"name":"Purity Horn Fragment","rarity":"Rare","aspect":"Purity"},{"name":"Lifeblood Core","rarity":"Rare","aspect":"Life"},{"name":"Moonmane Thread","rarity":"Rare","aspect":"Purity"}]},"DEVA":{"type":"Celestial","cr":"10","primary":"Judgment","secondary":"Healing","components":[{"name":"Radiant Core","rarity":"Rare","aspect":"Judgment"},{"name":"Healer\u2019s Heart","rarity":"Very Rare","aspect":"Healing"},{"name":"Angelic Feather","rarity":"Rare","aspect":"Judgment"}]},"PLANETAR":{"type":"Celestial","cr":"16","primary":"War","secondary":"Radiance","components":[{"name":"War Halo Core","rarity":"Very Rare","aspect":"War & Radiance"},{"name":"Radiant Greatfeather","rarity":"Very Rare","aspect":"Radiance"},{"name":"Judgment Blood","rarity":"Very Rare","aspect":"War"}]},"SOLAR":{"type":"Celestial","cr":"21","primary":"Radiance","secondary":"Judgment","components":[{"name":"Solar Heart Core","rarity":"Legendary","aspect":"ALL"},{"name":"Judgment Eye","rarity":"Legendary","aspect":"ALL"},{"name":"Heavenforged Pinion","rarity":"Legendary","aspect":"ALL"}]},"KI-RIN":{"type":"Celestial","cr":"12","primary":"Wisdom","secondary":"Storm","components":[{"name":"Sagehorn Core","rarity":"Very Rare","aspect":"Wisdom"},{"name":"Stormmane Essence","rarity":"Rare","aspect":"Storm"},{"name":"Cloudstep Hoof","rarity":"Rare","aspect":"Storm"}]},"EMPYREAN":{"type":"Plant","cr":"23","primary":"Divinity","secondary":"Storm","components":[{"name":"Titan Heart Core","rarity":"Legendary","aspect":"ALL"},{"name":"Tempest Blood","rarity":"Legendary","aspect":"ALL"},{"name":"Wrathbound Bone","rarity":"Legendary","aspect":"ALL"}]},"AWAKENED SHRUB":{"type":"Plant","cr":"0","primary":"Nature","secondary":"Growth","components":[{"name":"Living Root Core","rarity":"Common","aspect":"Nature"},{"name":"Growth Sap","rarity":"Common","aspect":"Growth"},{"name":"Leaf Essence","rarity":"Common","aspect":"Nature"}]},"AWAKENED TREE":{"type":"Plant","cr":"2","primary":"Nature","secondary":"Strength","components":[{"name":"Heartwood Core","rarity":"Uncommon","aspect":"Nature"},{"name":"Root Network Bundle","rarity":"Uncommon","aspect":"Strength"},{"name":"Bark Plate","rarity":"Uncommon","aspect":"Nature"}]},"NEEDLE BLIGHT":{"type":"Plant","cr":"1/4","primary":"Thorn","secondary":"Nature","components":[{"name":"Needle Cluster","rarity":"Common","aspect":"Thorn"},{"name":"Sap Core","rarity":"Common","aspect":"Nature"},{"name":"Barbed Husk","rarity":"Common","aspect":"Thorn"}]},"VINE BLIGHT":{"type":"Plant","cr":"1/2","primary":"Vine","secondary":"Control","components":[{"name":"Binding Vine Core","rarity":"Common","aspect":"Vine"},{"name":"Constriction Tendril","rarity":"Common","aspect":"Control"},{"name":"Sap Node","rarity":"Common","aspect":"Vine"}]},"TWIG BLIGHT":{"type":"Plant","cr":"1/8","primary":"Swarm","secondary":"Nature","components":[{"name":"Brittle Twig Core","rarity":"Common","aspect":"Nature"},{"name":"Swarm Essence","rarity":"Common","aspect":"Swarm"},{"name":"Splinter Shard","rarity":"Common","aspect":"Nature"}]},"VIOLET FUNGUS":{"type":"Plant","cr":"1/4","primary":"Decay","secondary":"Rot","components":[{"name":"Rotting Spore Core","rarity":"Common","aspect":"Decay"},{"name":"Decay Tendrils","rarity":"Common","aspect":"Rot"},{"name":"Fungal Mass","rarity":"Common","aspect":"Decay"}]},"SHRIEKER":{"type":"Plant","cr":"0","primary":"Sound","secondary":"Alert","components":[{"name":"Resonance Core","rarity":"Common","aspect":"Sound"},{"name":"Alert Node","rarity":"Common","aspect":"Alert"},{"name":"Echo Membrane","rarity":"Common","aspect":"Sound"}]},"GAS SPORE":{"type":"Plant","cr":"1/2","primary":"Explosion","secondary":"Disease","components":[{"name":"Volatile Spore Core","rarity":"Common","aspect":"Explosion"},{"name":"Infection Sac","rarity":"Common","aspect":"Disease"},{"name":"Floating Husk","rarity":"Common","aspect":"Explosion"}]},"MYCONID ADULT":{"type":"Plant","cr":"2","primary":"Spores","secondary":"Communion","components":[{"name":"Spore Core","rarity":"Uncommon","aspect":"Spores"},{"name":"Rapport Node","rarity":"Uncommon","aspect":"Spores"}]},"MYCONID SOVEREIGN":{"type":"Plant","cr":"1/4","primary":"Parasite","secondary":"Nature","components":[{"name":"Sovereign Spore Core","rarity":"Rare","aspect":"Spores"},{"name":"Dominion Node","rarity":"Rare","aspect":"Dominion"},{"name":"Hallucinogenic Sac","rarity":"Rare","aspect":"Spores"},{"name":"Spore Seed Core","rarity":"Common","aspect":"Parasite"},{"name":"Thorn Body","rarity":"Common","aspect":"Nature"},{"name":"Growth Node","rarity":"Common","aspect":"Parasite"}]},"ASSASSIN VINE":{"type":"Plant","cr":"3","primary":"Control","secondary":"Ambush","components":[{"name":"Strangling Vine Core","rarity":"Rare","aspect":"Control"},{"name":"Ambush Tendril","rarity":"Rare","aspect":"Ambush"},{"name":"Digestive Sap","rarity":"Rare","aspect":"Control"}]},"TREANT":{"type":"Plant","cr":"9","primary":"Nature","secondary":"Guardian","components":[{"name":"Ancient Heartwood Core","rarity":"Rare","aspect":"Nature"},{"name":"Guardian Bark Plate","rarity":"Rare","aspect":"Guardian"},{"name":"Living Root Network","rarity":"Rare","aspect":"Nature"}]},"WOAD":{"type":"Plant","cr":"10","primary":"Nature","secondary":"Protection","components":[{"name":"Woad Core","rarity":"Rare","aspect":"Nature"},{"name":"Guardian Vine Wrap","rarity":"Rare","aspect":"Protection"},{"name":"Leaf Armor Plate","rarity":"Rare","aspect":"Nature"}]},"GULTHIAS TREE":{"type":"Construct","cr":"None","primary":"Corruption","secondary":"Growth","components":[{"name":"Corrupted Heartwood Core","rarity":"Legendary","aspect":"Corruption"},{"name":"Bloodsap Nexus","rarity":"Legendary","aspect":"Blood"},{"name":"Endless Root Network","rarity":"Very Rare","aspect":"Growth"}]},"ANIMATED ARMOUR":{"type":"Construct","cr":"1","primary":"Animation","secondary":"Defence","components":[{"name":"Binding Rune Core","rarity":"Common","aspect":"Animation"},{"name":"Reinforced Plate","rarity":"Common","aspect":"Defence"},{"name":"Arcane Joint Mechanism","rarity":"Common","aspect":"Animation"}]},"FLYING SWORD":{"type":"Construct","cr":"1/4","primary":"Animation","secondary":"Precision","components":[{"name":"Arcane Blade Spark","rarity":"Common","aspect":"Animation"}]},"SCARCROW":{"type":"Construct","cr":"1","primary":"Fear","secondary":"Curse","components":[{"name":"Dread Core","rarity":"Common","aspect":"Fear"},{"name":"Cursed Straw Bundle","rarity":"Common","aspect":"Curse"},{"name":"Binding Stitch Thread","rarity":"Common","aspect":"Curse"}]},"STONE GOLEM":{"type":"Construct","cr":"10","primary":"Stone","secondary":"Endurance","components":[{"name":"Runic Core Stone","rarity":"Rare","aspect":"Stone"},{"name":"Golem Heart Crystal","rarity":"Very Rare","aspect":"Endurance"},{"name":"Animated Glyph Node","rarity":"Rare","aspect":"Stone"}]},"SHIELD GUARDIAN":{"type":"Construct","cr":"7","primary":"Protection","secondary":"Bond","components":[{"name":"Guardian Core","rarity":"Rare","aspect":"Protection"},{"name":"Bonding Amulet Fragment","rarity":"Very Rare","aspect":"Bond"},{"name":"Arcane Shield Node","rarity":"Rare","aspect":"Protection"}]},"MARUT":{"type":"Ooze","cr":"1/2","primary":"Corrosion","secondary":"Acid","components":[{"name":"Inevitable Core","rarity":"Legendary","aspect":"Law"},{"name":"Judgment Engine","rarity":"Legendary","aspect":"Judgment"},{"name":"Force Matrix Node","rarity":"Legendary","aspect":"Force"},{"name":"Corrosive Core","rarity":"Common","aspect":"Corrosion"},{"name":"Acidic Slime Gland","rarity":"Common","aspect":"Acid"},{"name":"Dissolving Residue","rarity":"Common","aspect":"Corrosion"}]},"OCHRE JELLY":{"type":"Ooze","cr":"2","primary":"Acid","secondary":"Splitting","components":[{"name":"Splitting Membrane","rarity":"Uncommon","aspect":"Acid"}]},"GELATINOUS CUBE":{"type":"Ooze","cr":"2","primary":"Engulf","secondary":"Paralysis","components":[{"name":"Engulfing Core","rarity":"Uncommon","aspect":"Engulf"},{"name":"Paralytic Slime","rarity":"Uncommon","aspect":"Paralysis"},{"name":"Transparent Membrane","rarity":"Uncommon","aspect":"Engulf"}]},"OBLEX (ADULT)":{"type":"Ooze","cr":"5","primary":"Memory","secondary":"Deception","components":[{"name":"Memory Core","rarity":"Rare","aspect":"Memory"},{"name":"Imitation Slime","rarity":"Rare","aspect":"Deception"},{"name":"Psychic Residue","rarity":"Rare","aspect":"Memory"}]},"JUICE OF JUUBLEX":{"type":"Ooze","cr":"None","primary":"Corruption","secondary":"Acid","components":[{"name":"Abyssal Slime Core","rarity":"Legendary","aspect":"ALL"},{"name":"Primordial Acid Heart","rarity":"Legendary","aspect":"ALL"},{"name":"Chaotic Dissolution Node","rarity":"Legendary","aspect":"ALL"}]},"BANDIT":{"type":"Humanoid","cr":"1/8","components":[]},"BANDIT CAPTAIN":{"type":"Humanoid","cr":"2","components":[]},"BERSERKER":{"type":"Humanoid","cr":"2","components":[]},"CULTIST":{"type":"Humanoid","cr":"1/8","components":[]},"CULT FANATIC":{"type":"Humanoid","cr":"2","components":[]},"GLADIATOR":{"type":"Humanoid","cr":"5","components":[]},"GUARD":{"type":"Humanoid","cr":"1/8","components":[]},"KNIGHT":{"type":"Humanoid","cr":"3","components":[]},"MAGE":{"type":"Humanoid","cr":"6","components":[]},"NOBLE":{"type":"Humanoid","cr":"1/8","components":[]},"PRIEST":{"type":"Humanoid","cr":"2","components":[]},"SCOUT":{"type":"Humanoid","cr":"1/2","components":[]},"SPY":{"type":"Humanoid","cr":"1","components":[]},"THUG":{"type":"Humanoid","cr":"1/2","components":[]},"TRIBAL WARRIOR":{"type":"Humanoid","cr":"1/8","components":[]},"VETERAN":{"type":"Humanoid","cr":"3","components":[]},"ARCHMAGE":{"type":"Humanoid","cr":"12","components":[]},"ASSASSIN":{"type":"Humanoid","cr":"8","components":[]},"DRUID":{"type":"Humanoid","cr":"2","components":[]},"WARLOCK OF THE ARCHFEY":{"type":"Humanoid","cr":"4","components":[]},"WARLOCK OF THE FIEND":{"type":"Humanoid","cr":"7","components":[]},"WARLOCK OF THE GREAT OLD ONE":{"type":"Humanoid","cr":"6","components":[]},"WARLORD":{"type":"Humanoid","cr":"12","components":[]},"GOBLIN":{"type":"Goblinoid","cr":"1/4","components":[]},"GOBLIN BOSS":{"type":"Goblinoid","cr":"1","components":[]},"HOBGOBLIN":{"type":"Goblinoid","cr":"1/2","components":[]},"HOBGOBLIN CAPTAIN":{"type":"Goblinoid","cr":"3","components":[]},"HOBGOBLIN WARLORD":{"type":"Goblinoid","cr":"6","components":[]},"BUGBEAR":{"type":"Goblinoid","cr":"1","components":[]},"BUGBEAR CHIEF":{"type":"Goblinoid","cr":"3","components":[]},"ORC":{"type":"Orc","cr":"1/2","components":[]},"ORC EYE OF GRUUMSH":{"type":"Orc","cr":"2","components":[]},"ORC WAR CHIEF":{"type":"Orc","cr":"4","components":[]},"OROG":{"type":"Orc","cr":"2","components":[]},"SKELETON":{"type":"Undead","cr":"1/4","components":[]},"WIGHT":{"type":"Undead","cr":"3","components":[]},"GHOST":{"type":"Undead","cr":"4","components":[]},"BANSHEE":{"type":"Undead","cr":"4","components":[]},"REVENANT":{"type":"Undead","cr":"5","components":[]},"VAMPIRE WARRIOR":{"type":"Undead","cr":"15","components":[]},"VAMPIRE SPELLCASTER":{"type":"Undead","cr":"15","components":[]},"DEATH KNIGHT":{"type":"Undead","cr":"17","components":[]},"ALLIP":{"type":"Undead","cr":"5","components":[]},"BONE DEVIL":{"type":"Undead","cr":"9","components":[]},"DEATHLOCK":{"type":"Undead","cr":"4","components":[]},"SWORD WRAITH WARRIOR":{"type":"Undead","cr":"3","components":[]},"OGRE":{"type":"Giant","cr":"2","components":[]},"TROLL":{"type":"Giant","cr":"5","components":[]},"HILL GIANT":{"type":"Giant","cr":"5","components":[]},"STONE GIANT":{"type":"Giant","cr":"7","components":[]},"FROST GIANT":{"type":"Giant","cr":"8","components":[]},"FIRE GIANT":{"type":"Giant","cr":"9","components":[]},"CLOUD GIANT":{"type":"Giant","cr":"9","components":[]},"STORM GIANT":{"type":"Giant","cr":"13","components":[]},"CYCLOPS":{"type":"Giant","cr":"6","components":[]},"ETTERCAP":{"type":"Monstrosity","cr":"2","components":[]},"ETTIN":{"type":"Giant","cr":"4","components":[]},"FIR BOLG":{"type":"Giant","cr":"7","components":[]},"VERBEEG MARAUDER":{"type":"Giant","cr":"4","components":[]},"DRAGON WYRMLING - BLACK":{"type":"Dragon","cr":"2","components":[]},"DRAGON WYRMLING - BLUE":{"type":"Dragon","cr":"3","components":[]},"DRAGON WYRMLING - BRASS":{"type":"Dragon","cr":"1","components":[]},"DRAGON WYRMLING - BRONZE":{"type":"Dragon","cr":"2","components":[]},"DRAGON WYRMLING - COPPER":{"type":"Dragon","cr":"1","components":[]},"DRAGON WYRMLING - GOLD":{"type":"Dragon","cr":"3","components":[]},"DRAGON WYRMLING - GREEN":{"type":"Dragon","cr":"2","components":[]},"DRAGON WYRMLING - RED":{"type":"Dragon","cr":"4","components":[]},"DRAGON WYRMLING - SILVER":{"type":"Dragon","cr":"2","components":[]},"DRAGON WYRMLING - WHITE":{"type":"Dragon","cr":"2","components":[]},"YOUNG DRAGON - BLACK":{"type":"Dragon","cr":"7","components":[]},"YOUNG DRAGON - BLUE":{"type":"Dragon","cr":"9","components":[]},"YOUNG DRAGON - BRASS":{"type":"Dragon","cr":"6","components":[]},"YOUNG DRAGON - BRONZE":{"type":"Dragon","cr":"8","components":[]},"YOUNG DRAGON - COPPER":{"type":"Dragon","cr":"7","components":[]},"YOUNG DRAGON - GOLD":{"type":"Dragon","cr":"10","components":[]},"YOUNG DRAGON - GREEN":{"type":"Dragon","cr":"8","components":[]},"YOUNG DRAGON - RED":{"type":"Dragon","cr":"10","components":[]},"YOUNG DRAGON - SILVER":{"type":"Dragon","cr":"9","components":[]},"YOUNG DRAGON - WHITE":{"type":"Dragon","cr":"6","components":[]},"ADULT DRAGON - BLACK":{"type":"Dragon","cr":"14","components":[]},"ADULT DRAGON - BLUE":{"type":"Dragon","cr":"16","components":[]},"ADULT DRAGON - BRASS":{"type":"Dragon","cr":"13","components":[]},"ADULT DRAGON - BRONZE":{"type":"Dragon","cr":"15","components":[]},"ADULT DRAGON - COPPER":{"type":"Dragon","cr":"14","components":[]},"ADULT DRAGON - GOLD":{"type":"Dragon","cr":"17","components":[]},"ADULT DRAGON - GREEN":{"type":"Dragon","cr":"15","components":[]},"ADULT DRAGON - RED":{"type":"Dragon","cr":"17","components":[]},"ADULT DRAGON - SILVER":{"type":"Dragon","cr":"16","components":[]},"ADULT DRAGON - WHITE":{"type":"Dragon","cr":"13","components":[]},"ANCIENT DRAGON - BLACK":{"type":"Dragon","cr":"21","components":[]},"ANCIENT DRAGON - BLUE":{"type":"Dragon","cr":"23","components":[]},"ANCIENT DRAGON - BRASS":{"type":"Dragon","cr":"20","components":[]},"ANCIENT DRAGON - BRONZE":{"type":"Dragon","cr":"22","components":[]},"ANCIENT DRAGON - COPPER":{"type":"Dragon","cr":"21","components":[]},"ANCIENT DRAGON - GOLD":{"type":"Dragon","cr":"24","components":[]},"ANCIENT DRAGON - GREEN":{"type":"Dragon","cr":"22","components":[]},"ANCIENT DRAGON - RED":{"type":"Dragon","cr":"24","components":[]},"ANCIENT DRAGON - SILVER":{"type":"Dragon","cr":"23","components":[]},"ANCIENT DRAGON - WHITE":{"type":"Dragon","cr":"20","components":[]},"DRAGON TURTLE":{"type":"Dragon","cr":"17","components":[]},"IMP":{"type":"Fiend","cr":"1","components":[]},"CHAIN DEVIL":{"type":"Fiend","cr":"8","components":[]},"ICE DEVIL":{"type":"Fiend","cr":"14","components":[]},"SPINED DEVIL":{"type":"Fiend","cr":"2","components":[]},"BARLGURA":{"type":"Fiend","cr":"5","components":[]},"BULEZAU":{"type":"Fiend","cr":"3","components":[]},"CHASME":{"type":"Fiend","cr":"6","components":[]},"DRETCH":{"type":"Fiend","cr":"1/4","components":[]},"GORISTRO":{"type":"Fiend","cr":"17","components":[]},"MARILITH":{"type":"Fiend","cr":"16","components":[]},"MANES":{"type":"Fiend","cr":"1/8","components":[]},"NALFESHNEE":{"type":"Fiend","cr":"13","components":[]},"RUTTERKIN":{"type":"Fiend","cr":"2","components":[]},"SHADOW DEMON":{"type":"Fiend","cr":"4","components":[]},"VROCK":{"type":"Fiend","cr":"6","components":[]},"CAMBION":{"type":"Fiend","cr":"5","components":[]},"NIGHT HAG":{"type":"Fiend","cr":"5","components":[]},"GREEN HAG":{"type":"Fey","cr":"3","components":[]},"SEA HAG":{"type":"Fey","cr":"2","components":[]},"BHEUR HAG":{"type":"Fey","cr":"7","components":[]},"SPRITE":{"type":"Fey","cr":"1/4","components":[]},"CENTAUR":{"type":"Fey","cr":"2","components":[]},"ANIMATED ARMOR":{"type":"Construct","cr":"1","components":[]},"RUG OF SMOTHERING":{"type":"Construct","cr":"2","components":[]},"CLAY GOLEM":{"type":"Construct","cr":"9","components":[]},"FLESH GOLEM":{"type":"Construct","cr":"5","components":[]},"IRON GOLEM":{"type":"Construct","cr":"16","components":[]},"BRONZE SCOUT":{"type":"Construct","cr":"1","components":[]},"CLOCKWORK BRONZE SCOUT":{"type":"Construct","cr":"1","components":[]},"HELMED HORROR":{"type":"Construct","cr":"4","components":[]},"HOMUNCULUS":{"type":"Construct","cr":"0","components":[]},"MODRON MONODRONE":{"type":"Construct","cr":"1/8","components":[]},"MODRON DUODRONE":{"type":"Construct","cr":"1/4","components":[]},"GALEB DUHR":{"type":"Elemental","cr":"6","components":[]},"XORN":{"type":"Elemental","cr":"5","components":[]},"BULETTE":{"type":"Monstrosity","cr":"5","components":[]},"MEDUSA":{"type":"Monstrosity","cr":"6","components":[]},"MERROW":{"type":"Monstrosity","cr":"2","components":[]},"PERYTON":{"type":"Monstrosity","cr":"2","components":[]},"RAKSHASA":{"type":"Fiend","cr":"13","components":[]},"YUAN-TI PUREBLOOD":{"type":"Monstrosity","cr":"1","components":[]},"YUAN-TI MALISON":{"type":"Monstrosity","cr":"3","components":[]},"YUAN-TI ABOMINATION":{"type":"Monstrosity","cr":"7","components":[]},"CENTIPEDE SWARM":{"type":"Beast","cr":"1/2","components":[]},"GNOLL":{"type":"Humanoid","cr":"1/2","components":[]},"GNOLL PACK LORD":{"type":"Humanoid","cr":"2","components":[]},"GNOLL FANG OF YEENOGHU":{"type":"Fiend","cr":"4","components":[]},"KOBOLD":{"type":"Humanoid","cr":"1/8","components":[]},"KOBOLD DRAGONSHIELD":{"type":"Humanoid","cr":"1","components":[]},"KOBOLD INVENTOR":{"type":"Humanoid","cr":"1/4","components":[]},"LIZARDFOLK":{"type":"Humanoid","cr":"1/2","components":[]},"LIZARDFOLK SHAMAN":{"type":"Humanoid","cr":"2","components":[]},"LIZARD KING/QUEEN":{"type":"Humanoid","cr":"4","components":[]},"MERFOLK":{"type":"Humanoid","cr":"1/8","components":[]},"SAHUAGIN":{"type":"Humanoid","cr":"1/2","components":[]},"SAHUAGIN BARON":{"type":"Humanoid","cr":"5","components":[]},"TROGLODYTE":{"type":"Humanoid","cr":"1/4","components":[]},"WEREBOAR":{"type":"Humanoid","cr":"4","components":[]},"WERERAT":{"type":"Humanoid","cr":"2","components":[]},"WERETIGER":{"type":"Humanoid","cr":"4","components":[]},"WEREBEAR":{"type":"Humanoid","cr":"5","components":[]},"WEREWOLF":{"type":"Humanoid","cr":"3","components":[]},"GRAY OOZE":{"type":"Ooze","cr":"1/2","components":[]},"BLACK PUDDING":{"type":"Ooze","cr":"4","components":[]},"PEGASUS":{"type":"Celestial","cr":"2","components":[]},"DROW":{"type":"Humanoid","cr":"1/4","components":[]},"DROW MAGE":{"type":"Humanoid","cr":"7","components":[]},"DROW PRIESTESS OF LOLTH":{"type":"Humanoid","cr":"8","components":[]},"DROW ELITE WARRIOR":{"type":"Humanoid","cr":"5","components":[]},"DUERGAR":{"type":"Humanoid","cr":"1","components":[]},"DUERGAR WARLORD":{"type":"Humanoid","cr":"6","components":[]},"DUERGAR MIND MASTER":{"type":"Humanoid","cr":"2","components":[]},"GITHYANKI WARRIOR":{"type":"Humanoid","cr":"3","components":[]},"GITHYANKI KNIGHT":{"type":"Humanoid","cr":"8","components":[]},"GITHZERAI MONK":{"type":"Humanoid","cr":"2","components":[]},"COMMONER":{"type":"Humanoid","cr":"0","components":[]}};
+
 
 
 
@@ -2640,24 +2772,9 @@ function loadSessions() { try{return JSON.parse(localStorage.getItem('fg_session
 function saveSessions(s) { localStorage.setItem('fg_sessions',JSON.stringify(s)); }
 function loadTlCards() { try{return JSON.parse(localStorage.getItem('fg_tlcards')||'[]');}catch(e){return [];} }
 function saveTlCards(c) { localStorage.setItem('fg_tlcards',JSON.stringify(c)); }
-function loadCombatHistory() { try{return JSON.parse(localStorage.getItem('fg_combat_history')||'[]');}catch(e){return [];} }
-function saveCombatHistory(h) { localStorage.setItem('fg_combat_history',JSON.stringify(h)); }
+function loadCombatHistory() { try{return JSON.parse(localStorage.getItem('fg_combats')||'[]');}catch(e){return [];} }
+function saveCombatHistory(h) { localStorage.setItem('fg_combats',JSON.stringify(h)); }
 function getApiKey() { return localStorage.getItem('fg_api_key')||''; }
-
-function apiHeaders() {
-  var key = getApiKey();
-  if(!key) {
-    showToast('No API key set. Click ⚙ Settings to add your key.', 'error');
-    return null;
-  }
-  return {
-    'Content-Type': 'application/json',
-    'x-api-key': key,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true'
-  };
-}
-
 
 
 var _s = loadSett();
@@ -2738,7 +2855,7 @@ function selectCreature(name) {
   $cl('component-panel').remove('hidden');
   $cl('craft-panel').add('hidden');
   $cl('result-panel').add('hidden');
-  document.getElementById('creature-info').textContent=data.type+' - CR '+data.cr+' - '+data.primary+' / '+data.secondary;
+  document.getElementById('creature-info').textContent=(data.type||'?')+' - CR '+(data.cr||'?')+' - '+(data.primary||'?')+' / '+(data.secondary||'?');
   var list=document.getElementById('component-list'); list.innerHTML='';
   data.components.forEach(function(comp){
     var btn=document.createElement('button'); btn.className='comp-btn';
@@ -2774,7 +2891,8 @@ function forgeItem() {
   if(!concept){document.getElementById('item-concept').focus();return;}
   if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');return;}
   var tier=document.getElementById('craft-tier').value;
-  var cData=CREATURES[selectedCreature]; var comp=selectedComponent;
+  var cData=selectedCreature ? CREATURES[selectedCreature] : null; var comp=selectedComponent;
+  if(!cData || !comp){ showToast('Select a creature and component first','error'); return; }
   var rg={Common:'minor convenience, no attunement, one simple property',Uncommon:'minor magical benefit, may require attunement, 1-2 properties',Rare:'notable power, usually requires attunement, 2-3 meaningful properties','Very Rare':'powerful ability, requires attunement, 3-4 strong properties',Legendary:'legendary power, requires attunement, 4-5 campaign-defining properties',Artifact:'world-altering artifact, requires attunement, multiple unique legendary properties'};
   var lines=[
     'You are a master magical item creator for D&D 5e. Generate a complete magic item.',
@@ -2792,7 +2910,7 @@ function forgeItem() {
   var rp=document.getElementById('result-panel'); var rc=document.getElementById('result-content');
   rp.classList.remove('hidden'); rc.innerHTML='<p class="text-center loading-pulse" style="color:var(--muted);font-style:italic;padding:24px 0">The forgemaster communes with the component...</p>';
   rp.scrollIntoView({behavior:'smooth',block:'nearest'});
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})})
   .then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error(res.status+': '+t.slice(0,200));});return res.json();})
   .then(function(data){
     var text=data.content.map(function(i){return i.text||'';}).join('');
@@ -3151,7 +3269,7 @@ function generateNpc() {
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:apiHeaders(),
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,messages:[{role:'user',content:prompt}]})
   })
   .then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error(res.status+': '+t.slice(0,150));});return res.json();})
@@ -3197,7 +3315,7 @@ function handlePdfUpload(event) {
     if(status) status.textContent='Asking Claude to identify NPCs...';
     fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:apiHeaders(),
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:content}]})
     })
     .then(function(res){return res.json();})
@@ -3369,7 +3487,6 @@ function handlePcPdfUpload(event) {
         'Content-Type':'application/json',
         'x-api-key':apiKey,
         'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true',
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body:reqBody
@@ -3415,7 +3532,7 @@ function handlePcUpdateUpload(event) {
   reader.onload = function(e) {
     var base64 = e.target.result.split(',')[1];
     var prompt = 'This is an updated D&D character sheet PDF. Extract the current character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name","level":"level as number string","player":"player name if shown, else empty","notes":"1-2 sentences covering race, background, subclass if visible, and any notable new abilities or features from their current level"}';
-    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},{type:'text',text:prompt}]}]})})
+    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},{type:'text',text:prompt}]}]})})
     .then(function(res){return res.json();})
     .then(function(data){
       var text = data.content.map(function(i){return i.text||'';}).join('');
@@ -4307,18 +4424,6 @@ function renderCombatHistory() {
 }
 
 function renderCombatTab() {
-  // Restore tracker state if combatants are empty (e.g. after page reload)
-  if(!trackerCombatants.length) {
-    try {
-      var saved = JSON.parse(localStorage.getItem('fg_tracker_state')||'null');
-      if(saved && saved.combatants && saved.combatants.length) {
-        trackerCombatants = saved.combatants;
-        trackerRound = saved.round || 1;
-        trackerActiveTurn = saved.active || 0;
-        trackerStarted = saved.started || false;
-      }
-    } catch(e) {}
-  }
   var container = document.getElementById('combat-pc-checkboxes');
   if(!container) return;
   var pcs = loadPcs();
@@ -4416,11 +4521,12 @@ function addEnemyRow() {
 }
 
 async function analyseEncounter() {
-  if(!getApiKey()) { showToast('No API key set — add one via ⚙ Settings','error'); return; }
+  var apiKey = getApiKey();
+  if (!apiKey) { (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var pcs = loadPcs();
-  var selected = pcs.filter(function(p){ return selectedCombatPcs[p.id]; });
-  if(!selected.length){ alert('Select at least one player character.'); return; }
-  if(!enemyRows.length){ alert('Add at least one enemy.'); return; }
+  var selected = pcs.filter(function(p) { return selectedCombatPcs[p.id]; });
+  if (!selected.length) { alert('Select at least one player character.'); return; }
+  if (!enemyRows.length) { alert('Add at least one enemy.'); return; }
 
   var result = document.getElementById('combat-result');
   var content = document.getElementById('combat-result-content');
@@ -4428,48 +4534,54 @@ async function analyseEncounter() {
   content.innerHTML = '<p class="text-center loading-pulse" style="color:var(--muted);font-style:italic;padding:24px 0">Analysing the encounter...</p>';
   result.scrollIntoView({behavior:'smooth',block:'nearest'});
 
-  var playerSummary = selected.map(function(p){
-    return p.name+' - '+(p.pcClass||'Unknown')+' Level '+(p.level||'?')+(p.notes?' ('+p.notes.slice(0,80)+')':'');
+  var playerSummary = selected.map(function(p) {
+    return p.name + ' - ' + (p.pcClass||'Unknown class') + ' Level ' + (p.level||'?') + (p.notes ? ' (' + p.notes.slice(0,120) + ')' : '');
   }).join(', ');
 
-  var enemySummary = enemyRows.map(function(r){
+  var enemySummary = enemyRows.map(function(r) {
     var c = CREATURES[r.creature];
-    return r.qty+'x '+r.creature+(r.legendary?' [LEGENDARY]':'')+' (CR '+(c?c.cr:'?')+', '+(c?c.type:'?')+')';
+    var legFlag = r.legendary ? ' [LEGENDARY]' : '';
+    return r.qty + 'x ' + r.creature + legFlag + ' (CR ' + (c?c.cr:'?') + ', Type: ' + (c?c.type:'?') + ', Primary: ' + (c?c.primary:'?') + ')';
   }).join(', ');
 
-  var jsonSchema = '{"difficulty":"Easy|Medium|Hard|Deadly","xp_note":"brief note","tips":["tip1","tip2","tip3"],"scaling_warning":"empty string or warning","scale_suggestions":["suggestion if needed"],"if_too_easy":["suggestion1","suggestion2"],"if_too_hard":["suggestion1","suggestion2"]}';
-
+  var jsonSchema = '{"difficulty":"Easy OR Medium OR Hard OR Deadly","xp_note":"brief XP/milestone note","tips":["tip 1","tip 2","tip 3"],"scaling_warning":"EMPTY STRING unless enemies are significantly under-levelled (CR 3+ below party level), then suggest specific upgrades","scale_suggestions":["specific enemy to add or upgrade","e.g. replace Bandits with Veterans CR3","add a named leader with legendary actions"],"if_too_easy":["suggestion 1","suggestion 2"],"if_too_hard":["suggestion 1","suggestion 2"]}';
   var messageContent = [];
   var pdfPcs = selected.filter(function(p){ return p.pdfData; });
 
-  if(pdfPcs.length > 0) {
-    pdfPcs.forEach(function(p){
-      messageContent.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:p.pdfData}});
+  if (pdfPcs.length > 0) {
+    pdfPcs.forEach(function(p) {
+      messageContent.push({type:'document', source:{type:'base64', media_type:'application/pdf', data:p.pdfData}});
     });
     var pdfNames = pdfPcs.map(function(p){return p.name;}).join(', ');
-    var nonPdf = selected.filter(function(p){return !p.pdfData;});
-    var extraNote = nonPdf.length ? ' Additional: '+nonPdf.map(function(p){return p.name+' ('+p.pcClass+' Lv'+p.level+')';}).join(', ') : '';
-    messageContent.push({type:'text',text:'You are a D&D 5e DM assistant. Character sheets attached for: '+pdfNames+'.'+extraNote+' ENEMIES: '+enemySummary+' You MUST respond with ONLY a single JSON object. No explanation, no markdown, no preamble. JSON schema: '+jsonSchema});
+    var nonPdfPcs = selected.filter(function(p){return !p.pdfData;});
+    var nonPdfNote = nonPdfPcs.length ? ' Additional players (class/level only): ' + nonPdfPcs.map(function(p){return p.name+' ('+p.pcClass+' Lv'+p.level+')';}).join(', ') : '';
+    var pdfText = 'You are a D&D 5e DM assistant. The attached PDFs are character sheets for: ' + pdfNames + '.' + nonPdfNote;
+    pdfText += ' ENEMIES: ' + enemySummary;
+    pdfText += ' Analyse this encounter and return ONLY valid JSON, no markdown: ' + jsonSchema;
+    messageContent.push({type:'text', text: pdfText});
   } else {
-    messageContent.push({type:'text',text:'You are a D&D 5e DM assistant. You MUST respond with ONLY a single JSON object matching the schema below — no explanation, no markdown, no preamble, no other text whatsoever. PLAYERS: '+playerSummary+' ENEMIES: '+enemySummary+' JSON schema: '+jsonSchema});
+    var plainText = 'You are a D&D 5e DM assistant.';
+    plainText += ' PLAYERS: ' + playerSummary;
+    plainText += ' ENEMIES: ' + enemySummary;
+    plainText += ' Analyse this encounter. If enemies are significantly below party level (trivially easy), flag this in scaling_warning and provide specific scale_suggestions to make it more challenging (e.g. add legendary actions, increase CR, add numbers). Return ONLY valid JSON, no markdown: ' + jsonSchema;
+    messageContent.push({type:'text', text: plainText});
   }
 
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:apiHeaders(),
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:messageContent}]})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    if(data.error) throw new Error(data.error.message);
-    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:800, messages:[{role:'user',content:messageContent}]})
+    });
+    if (!res.ok) { var t = await res.text(); throw new Error(res.status + ': ' + t.slice(0,200)); }
+    var data = await res.json();
+    var text = data.content.map(function(i){return i.text||'';}).join('');
     var clean = text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
     var analysis = JSON.parse(clean);
     renderCombatResult(analysis, selected, enemyRows);
-  })
-  .catch(function(e){
-    content.innerHTML = '<p class="text-center" style="color:var(--danger);font-style:italic">Analysis failed.<br><small style="opacity:.7">'+e.message+'</small></p>';
-  });
+  } catch(e) {
+    content.innerHTML = '<p class="text-center" style="color:var(--danger);font-style:italic">Analysis failed.<br><small style="opacity:.7">' + e.message + '</small></p>';
+  }
 }
 
 function saveCombatEncounter(analysis, players, enemies) {
@@ -4861,7 +4973,7 @@ function sendSessionNoteToAPI(textContent, fileName, isPdf, base64, status, even
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:apiHeaders(),
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:messages})
   })
   .then(function(res){ return res.json(); })
@@ -5147,7 +5259,7 @@ function generateRandomEncounter() {
   resultDiv.classList.remove('hidden');
   resultDiv.innerHTML = '<span style="color:var(--muted);font-style:italic;animation:pulse 1.4s ease-in-out infinite">Generating encounter...</span>';
   var prompt = 'You are a D&D 5e DM. Generate a random '+diff+' difficulty encounter for a '+biome+' setting. '+partyInfo+'. Pick 1-3 creature types from this list that fit the biome: '+creatureNames.slice(0,80).join(', ')+'. Return ONLY valid JSON, no markdown: {"creatures":[{"name":"EXACT creature name from list","qty":1,"reason":"why this fits"}],"setup":"1-2 sentence scene description","hook":"one optional complication or twist"}';
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})})
   .then(function(res){return res.json();})
   .then(function(data){
     var text=data.content.map(function(i){return i.text||'';}).join('');
@@ -5308,6 +5420,7 @@ function enterTab(name) {
   if(name==='music') renderMusic();
   if(name==='naval') renderNaval();
   if(name==='store') setTimeout(renderStore,0);
+  if(name==='sessions'||name==='sessions-main') renderSessionNotesList();
   if(name==='inventory') setTimeout(renderInventory,0);
   if(name==='sessions-main') setTimeout(renderSessionsStandalone,0);
   if(name==='rumours-main') setTimeout(renderRumoursStandalone,0);
@@ -5711,7 +5824,6 @@ var CONDITION_COLORS = {
 };
 
 function renderTracker() {
-  try{ localStorage.setItem("fg_tracker_state", JSON.stringify({combatants:trackerCombatants,round:trackerRound,active:trackerActiveTurn,started:trackerStarted})); }catch(e){}
   if(!document.getElementById('tracker-bar-inner')) return;
   var bar = document.getElementById('tracker-bar-inner');
   if(!bar) return;
@@ -6385,7 +6497,7 @@ function generateName() {
   var prompt = 'Generate ONE single fantasy name for a ' + gender + ' ' + race + ' character in a D&D campaign. Return ONLY the name, nothing else, no punctuation, no explanation.';
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:apiHeaders(),
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:30,messages:[{role:'user',content:prompt}]})
   })
   .then(function(res){return res.json();})
@@ -6455,7 +6567,7 @@ generateNpc = function() {
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:apiHeaders(),
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})
   })
   .then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error(res.status+': '+t.slice(0,150));});return res.json();})
@@ -6501,143 +6613,62 @@ function generateStatblock() {
   var desc = document.getElementById('statblock-desc').value.trim();
   if(!desc){ document.getElementById('statblock-desc').focus(); return; }
   var size = document.getElementById('statblock-size').value;
-  var isLegendary = !!(document.getElementById('statblock-legendary') && document.getElementById('statblock-legendary').checked);
-  if(!getApiKey()){ showToast('No API key set \u2014 add one via \u2699 Settings','error'); return; }
+  var apiKey = getApiKey();
+  if(!apiKey){ (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var status = document.getElementById('statblock-status');
   var result = document.getElementById('statblock-result');
   status.classList.remove('hidden'); status.textContent = 'Generating '+desc+'...';
   result.classList.remove('hidden');
-
-  // Step 1: Generate statblock with spell NAMES only (compact)
-  var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'.'
-    + (isLegendary ? ' Make it LEGENDARY with 3 Legendary Actions, 3 Legendary Resistances, and Lair Actions.' : '')
-    + ' If a spellcaster, list spell names only (no descriptions). Return ONLY valid JSON, no markdown:'
-    + ' {"name":"string","size":"'+size+'","type":"string","alignment":"string","ac":10,"acNote":"string",'
-    + '"hp":20,"hpDice":"4d8+4","speed":"30 ft","str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10,'
-    + '"savingThrows":"string","skills":"string","damageImmunities":"string","conditionImmunities":"string",'
-    + '"senses":"string","languages":"Common","cr":"1","profBonus":"+2",'
-    + '"traits":[{"name":"string","desc":"string"}],'
-    + '"actions":[{"name":"string","desc":"string"}],'
-    + '"bonusActions":[],"reactions":[],'
-    + '"legendaryResistances":0,"legendaryActions":[],"lairActions":[],'
-    + '"spellcastingAbility":"","spellSaveDC":0,"spellAttackBonus":0,'
-    + '"spellSlots":{"1st":0,"2nd":0,"3rd":0,"4th":0,"5th":0,"6th":0,"7th":0,"8th":0,"9th":0},'
-    + '"spells":{"cantrips":["spell name"],"1st":["spell name"],"2nd":[],"3rd":[],"4th":[],"5th":[],"6th":[],"7th":[],"8th":[],"9th":[]}}';
-
-  var timer = setTimeout(function(){
-    status.textContent = 'Request timed out. Please try again.';
-  }, 45000);
-
-  fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:2500, messages:[{role:'user',content:prompt}]})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
-    clearTimeout(timer);
-    if(data.error) throw new Error(data.error.message);
-    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
-    var s = text.indexOf('{'); var e = text.lastIndexOf('}');
-    if(s === -1) throw new Error('No JSON returned');
-    var sb = JSON.parse(text.slice(s, e+1));
-    currentStatblock = sb;
-    renderStatblockCard(sb, null);
-    status.classList.add('hidden');
-    showTokenPrompt(sb, desc);
-    // Step 2: if spellcaster, fetch full spell details in background
-    var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-    var spellNames = [];
-    levels.forEach(function(lvl){
-      var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
-      list.forEach(function(sp){ if(typeof sp === 'string' && sp) spellNames.push({name:sp, level:lvl}); });
-    });
-    if(spellNames.length) fetchSpellDetails(sb, spellNames);
-    if(typeof window._sbOnComplete==='function') window._sbOnComplete();
-  })
-  .catch(function(err) {
-    clearTimeout(timer);
-    status.textContent = 'Failed: '+err.message;
-  });
-}
-
-function fetchSpellDetails(sb, spellEntries) {
-  if(!spellEntries.length) return;
-  var BATCH = 6;
-  var batches = [];
-  for(var i=0; i<spellEntries.length; i+=BATCH) batches.push(spellEntries.slice(i,i+BATCH));
-  var allDetails = [];
-
-  function fetchBatch(idx) {
-    if(idx >= batches.length) {
-      // All batches done - merge into sb
-      var byName = {};
-      allDetails.forEach(function(sp){ byName[sp.name.toLowerCase()] = sp; });
-      var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-      levels.forEach(function(lvl){
-        var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
-        sb.spells[lvl] = list.map(function(sp){
-          var key = (typeof sp==='string'?sp:sp.name).toLowerCase();
-          return byName[key] || {name:typeof sp==='string'?sp:sp.name,level:lvl,school:'',castingTime:'',range:'',components:'',duration:'',desc:''};
-        });
-      });
-      showToast('Spell cards ready \u2713','success');
-      document.querySelectorAll('[data-sb-spell-btn]').forEach(function(btn){
-        btn.style.color='var(--gold)'; btn.style.borderColor='var(--gold)';
-        btn.title='Download spell cards PNG';
-      });
-      return;
-    }
-    var batch = batches[idx];
-    var names = batch.map(function(s){return s.name;}).join(', ');
-    var prompt = 'Give me full D&D 5e details for these spells: '+names
-      +'. Return ONLY a JSON array with no markdown, no preamble:'
-      +' [{"name":"exact spell name","school":"school","castingTime":"1 action","range":"60 ft","components":"V, S","duration":"Instantaneous","desc":"Full description of what the spell does."}]';
-    fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:apiHeaders(),
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})
-    })
-    .then(function(r){return r.json();})
-    .then(function(data){
-      if(data.error){console.warn('Spell batch error:',data.error.message); fetchBatch(idx+1); return;}
-      var text=(data.content||[]).map(function(c){return c.text||'';}).join('');
-      var s=text.indexOf('['); var e=text.lastIndexOf(']');
-      if(s!==-1){
-        try{
-          var parsed=JSON.parse(text.slice(s,e+1));
-          allDetails = allDetails.concat(parsed);
-        }catch(err){console.warn('Spell JSON parse error:',err.message,text.slice(s,s+200));}
-      }
-      fetchBatch(idx+1);
-    })
-    .catch(function(err){console.warn('Spell fetch error:',err); fetchBatch(idx+1);});
-  }
-  fetchBatch(0);
-}
-
-function generateStatblockArt(sb, desc, callback) {
-  if(!getApiKey()){ if(callback) callback(null); return; }
-  var prompt = 'Create a simple SVG token (viewBox="0 0 180 180") for a D&D creature: '+sb.name+', a '+sb.size+' '+sb.type+'. Dark circle background, simple silhouette. Return ONLY the SVG element, starting with <svg.';
-  var timer = setTimeout(function(){ if(callback) callback(null); callback=null; }, 15000);
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:apiHeaders(),
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompt}]})
-  })
-  .then(function(r){ return r.json(); })
+  var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'. Choose an appropriate CR based on the description.'+(isLegendary?' THIS IS A LEGENDARY CREATURE: give it 3 Legendary Actions, 3 Legendary Resistances per day as a trait, and at least 1 Lair Action if it has a lair. Make it significantly more powerful than a normal creature of its type.':'')
+    +' Return ONLY valid JSON, no markdown, no extra text:'
+    +'{"name":"creature name","size":"'+size+'","type":"creature type","alignment":"alignment","ac":10,"acNote":"armor",'
+    +'"hp":20,"hpDice":"4d8+4","speed":"30 ft","str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10,'
+    +'"savingThrows":"","skills":"","damageImmunities":"","conditionImmunities":"",'
+    +'"senses":"darkvision 60 ft, passive Perception 10","languages":"Common","cr":"CR value","profBonus":"+2",'
+    +'"traits":[{"name":"Trait","desc":"desc"}],'
+    +'"actions":[{"name":"Attack","desc":"Melee Weapon Attack: +X to hit, reach 5 ft., one target. Hit: X (XdX+X) damage."}],'
+    +'"bonusActions":[],"reactions":[],"legendaryResistances":3,"legendaryActions":[{"name":"Attack (1 Action)","desc":"The creature makes one attack."}],"lairActions":[]}';  
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
+  .then(function(res){return res.json();})
   .then(function(data){
-    clearTimeout(timer);
-    if(!callback) return;
-    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
-    var s = text.indexOf('<svg'); var e = text.lastIndexOf('</svg>');
-    callback(s !== -1 ? text.slice(s, e+6) : null);
-    callback = null;
+    if(data.error) throw new Error(data.error.message);
+    var text=data.content.map(function(i){return i.text||'';}).join('');
+    var s=text.indexOf('{'); var e=text.lastIndexOf('}');
+    if(s===-1) throw new Error('No statblock returned');
+    var sb=JSON.parse(text.slice(s,e+1));
+    currentStatblock = sb;
+    var rendered = renderStatblockCard(sb, null);
+    status.textContent='Generating artwork for '+sb.name+'...';
+    generateStatblockArt(sb, desc, function(svgArt) {
+      // Update token in card
+      var tokenEl = document.getElementById(rendered.sbId+'_token');
+      var artStatus = document.getElementById(rendered.sbId+'_artstatus');
+      if(tokenEl && svgArt) {
+        tokenEl.innerHTML = svgArt;
+        tokenEl.style.background = 'transparent';
+        var svgEl = tokenEl.querySelector('svg');
+        if(svgEl){svgEl.setAttribute('width','110');svgEl.setAttribute('height','110');svgEl.style.cssText='border-radius:50%;display:block';}
+      }
+      if(artStatus) artStatus.style.display='none';
+      status.classList.add('hidden');
+      if(typeof window._sbOnComplete==='function') window._sbOnComplete();
+    });
   })
-  .catch(function(){
-    clearTimeout(timer);
-    if(callback){ callback(null); callback=null; }
-  });
+  .catch(function(e){status.textContent='Failed: '+e.message;});
+}
+
+function generateStatblockArt(sb,desc,callback){
+  var apiKey=getApiKey(); if(!apiKey){if(callback)callback(null);return;}
+  var prompt='Generate SVG token art (viewBox 0 0 180 180) for a D&D creature: '+sb.name+' a '+sb.size+' '+sb.type+'. Description: '+desc+'. Dark background circle, recognisable geometric silhouette, 3-5 creature-appropriate colours. Return ONLY the SVG starting with <svg.';
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
+  .then(function(res){return res.json();})
+  .then(function(data){
+    var svg=data.content.map(function(i){return i.text||'';}).join('').trim();
+    var si=svg.indexOf('<svg'); if(si===-1){if(callback)callback(null);return;}
+    svg=svg.slice(si);
+    if(callback)callback(svg);
+  })
+  .catch(function(){if(callback)callback(null);});
 }
 
 function renderStatblockCard(sb, art) {
@@ -6655,7 +6686,7 @@ function renderStatblockCard(sb, art) {
     var v=sb[s]||10; var mod=Math.floor((v-10)/2);
     return '<td style="text-align:center;padding:4px 6px"><strong>'+s.toUpperCase()+'</strong><br>'+v+' ('+(mod>=0?'+':'')+mod+')</td>';
   }).join('');
-  var blk=function(arr){return (arr||[]).map(function(a){var n=a.name||a.n||'';var d=a.desc||a.description||'';return n||d?'<p style="margin:4px 0">'+(n?'<em><strong>'+n+'.</strong></em> ':'')+d+'</p>':'';}).join('');};
+  var blk=function(arr){return (arr||[]).map(function(a){return '<p style="margin:4px 0"><em><strong>'+a.name+'.</strong></em> '+a.desc+'</p>';}).join('');};
   var sec=function(label,arr){return arr&&arr.length?'<h4 style="color:#7a2020;border-bottom:1px solid #9a5a3a;margin:8px 0 4px;font-size:13px">'+label+'</h4>'+blk(arr):'';};
   var extras=[sb.savingThrows?'<strong>Saving Throws</strong> '+sb.savingThrows:'',sb.skills?'<strong>Skills</strong> '+sb.skills:'',sb.damageImmunities?'<strong>Damage Immunities</strong> '+sb.damageImmunities:'',sb.conditionImmunities?'<strong>Condition Immunities</strong> '+sb.conditionImmunities:'','<strong>Senses</strong> '+(sb.senses||'passive Perception 10'),'<strong>Languages</strong> '+(sb.languages||'—'),'<strong>Challenge</strong> '+sb.cr+' (Prof. Bonus '+sb.profBonus+')'].filter(Boolean).map(function(s){return '<p style="margin:2px 0;font-size:13px">'+s+'</p>';}).join('');
 
@@ -6665,27 +6696,7 @@ function renderStatblockCard(sb, art) {
     +'<div style="border-bottom:1px solid #9a5a3a;margin-bottom:6px"><p style="margin:2px 0;font-size:13px"><strong>Armor Class</strong> '+sb.ac+(sb.acNote?' ('+sb.acNote+')':'')+'</p><p style="margin:2px 0;font-size:13px"><strong>Hit Points</strong> '+sb.hp+' ('+sb.hpDice+')</p><p style="margin:2px 0;font-size:13px"><strong>Speed</strong> '+sb.speed+'</p></div>'
     +'<table style="width:100%;border-collapse:collapse;background:rgba(154,90,58,0.15);margin-bottom:6px;font-size:13px"><tr>'+mods+'</tr></table>'
     +'<div style="border-bottom:1px solid #9a5a3a;margin-bottom:6px">'+extras+'</div>'
-    +sec('TRAITS',sb.traits)+sec('ACTIONS',sb.actions)+sec('BONUS ACTIONS',sb.bonusActions)+sec('REACTIONS',sb.reactions)+sec('LEGENDARY ACTIONS',sb.legendaryActions)
-    +(function(){
-      if(!sb.spells) return '';
-      var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-      var hasSpells = levels.some(function(l){ return sb.spells[l] && sb.spells[l].length; });
-      if(!hasSpells) return '';
-      var slots = sb.spellSlots || {};
-      var html = '<h4 style="color:#7a2020;border-bottom:1px solid #9a5a3a;margin:8px 0 4px;font-size:13px">SPELLCASTING</h4>';
-      html += '<p style="margin:2px 0;font-size:13px"><em><strong>Spellcasting.</strong></em> ';
-      html += (sb.spellcastingAbility ? 'Spellcasting ability: '+sb.spellcastingAbility+'. ' : '');
-      html += (sb.spellSaveDC ? 'Spell save DC '+sb.spellSaveDC+', ' : '');
-      html += (sb.spellAttackBonus ? '+'+ sb.spellAttackBonus+' to spell attacks.' : '') + '</p>';
-      levels.forEach(function(lvl){
-        var spellList = sb.spells[lvl];
-        if(!spellList || !spellList.length) return;
-        var slotNote = (lvl !== 'cantrips' && slots[lvl]) ? ' ('+slots[lvl]+' slots)' : '';
-        html += '<p style="margin:2px 0;font-size:12px"><strong>'+(lvl==='cantrips'?'Cantrips':lvl+' level'+slotNote)+':</strong> ';
-        html += spellList.map(function(sp){ return typeof sp === 'string' ? sp : sp.name; }).join(', ') + '</p>';
-      });
-      return html;
-    })();
+    +sec('TRAITS',sb.traits)+sec('ACTIONS',sb.actions)+sec('BONUS ACTIONS',sb.bonusActions)+sec('REACTIONS',sb.reactions)+sec('LEGENDARY ACTIONS',sb.legendaryActions);
 
   var btns = document.createElement('div');
   btns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:8px;background:var(--panel);border-top:1px solid var(--border)';
@@ -6702,21 +6713,6 @@ function renderStatblockCard(sb, art) {
 
   btns.appendChild(dlBtn);
   btns.appendChild(trackerBtn);
-
-  // Spell cards button - only if creature has spells
-  if(sb.spells && (function(){
-    var lvls=['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-    return lvls.some(function(l){ return sb.spells[l]&&sb.spells[l].length; });
-  })()){
-    var spellBtn = document.createElement('button');
-    spellBtn.className = 'btn-ghost btn-sm';
-    spellBtn.setAttribute('data-sb-spell-btn','1');
-    spellBtn.innerHTML = '&#9997; Spell Cards PNG';
-    spellBtn.style.color = 'var(--muted)';
-    spellBtn.title = 'Loading spell details...';
-    (function(capSb){ spellBtn.onclick = function(){ downloadSpellCardsPng(capSb); }; })(sb);
-    btns.appendChild(spellBtn);
-  }
   container.appendChild(card);
   container.appendChild(btns);
 
@@ -6724,211 +6720,6 @@ function renderStatblockCard(sb, art) {
   if(list) list.appendChild(container);
 
   return {sbId:sbId, card:card};
-}
-
-function downloadStatblockById(sb, cardId, tokenId) {
-  var W = 600, PAD = 24, INNER = 552;
-  var canvas = document.createElement('canvas');
-  var ctx = canvas.getContext('2d');
-
-  // Measure all text first to calculate height
-  ctx.font = '13px Georgia';
-  function wrap(text, maxW) {
-    var words = text.split(' '), lines = [], cur = '';
-    words.forEach(function(w) { var t = cur ? cur+' '+w : w; if(ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
-    if(cur) lines.push(cur); return lines;
-  }
-
-  var BG='#fdf6e3', RED='#7a2020', DARK='#2c1810', MID='#5a3010', GOLD='#9a5a3a';
-  var y = PAD;
-  // Token
-  var TOKEN_R = 56, TOKEN_CY = y + TOKEN_R; y += TOKEN_R*2 + 16;
-  // Name
-  var NAME_Y = y; y += 30;
-  // Subtitle
-  var SUB_Y = y; y += 20;
-  // Divider
-  var DIV1_Y = y; y += 12;
-  // Core stats
-  var CORE_Y = y;
-  ['AC','HP','SPD'].forEach(function(){ y += 18; });
-  y += 6;
-  // Ability row
-  var ABROW_Y = y; y += 44;
-  y += 8;
-  // Extra props
-  var extras = [
-    sb.savingThrows ? 'Saving Throws  '+sb.savingThrows : '',
-    sb.skills ? 'Skills  '+sb.skills : '',
-    sb.damageImmunities ? 'Damage Immunities  '+sb.damageImmunities : '',
-    sb.conditionImmunities ? 'Condition Immunities  '+sb.conditionImmunities : '',
-    'Senses  '+(sb.senses||'passive Perception 10'),
-    'Languages  '+(sb.languages||'—'),
-    'Challenge  '+sb.cr+' (Prof. Bonus '+sb.profBonus+')'
-  ].filter(Boolean);
-  var EXTRAS_Y = y;
-  ctx.font = '12px Georgia';
-  extras.forEach(function(e) { y += wrap(e, INNER).length * 16; });
-  y += 10;
-  // Sections
-  // Build spell items for SPELLCASTING section
-  var spellItems = [];
-  if(sb.spells) {
-    var spLevels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-    if(sb.spellcastingAbility || sb.spellSaveDC) {
-      spellItems.push({name:'Spellcasting', desc:(sb.spellcastingAbility?'Ability: '+sb.spellcastingAbility+'. ':'')+(sb.spellSaveDC?'Spell save DC '+sb.spellSaveDC+(sb.spellAttackBonus?', +'+sb.spellAttackBonus+' to hit.':''):'')});
-    }
-    spLevels.forEach(function(lvl){
-      var list=sb.spells[lvl]; if(!list||!list.length) return;
-      var slots=sb.spellSlots&&sb.spellSlots[lvl]?' ('+sb.spellSlots[lvl]+' slots)':'';
-      var names=list.map(function(sp){return typeof sp==='string'?sp:sp.name;}).join(', ');
-      spellItems.push({name:(lvl==='cantrips'?'Cantrips':lvl+' level'+slots), desc:names});
-    });
-  }
-  SECTIONS = [
-    {label:'TRAITS', items: sb.traits||[]},
-    {label:'SPELLCASTING', items: spellItems},
-    {label:'ACTIONS', items: sb.actions||[]},
-    {label:'BONUS ACTIONS', items: sb.bonusActions||[]},
-    {label:'REACTIONS', items: sb.reactions||[]},
-    {label:'LEGENDARY ACTIONS', items: sb.legendaryActions||[]}
-  ];
-  var sectionData = [];
-  SECTIONS.forEach(function(sec) {
-    if(!sec.items.length) return;
-    var sy = y; y += 22;
-    var itemData = [];
-    sec.items.forEach(function(item) {
-      var full = (item.name||item.n||'?')+'. '+(item.desc||item.description||'');
-      ctx.font = '12px Georgia';
-      var ls = wrap(full, INNER);
-      itemData.push({item:item, lines:ls, y:y});
-      y += ls.length * 16 + 5;
-    });
-    sectionData.push({label:sec.label, y:sy, items:itemData});
-    y += 8;
-  });
-  y += PAD;
-
-  // Now size canvas and draw
-  canvas.width = W * 2; canvas.height = y * 2;
-  ctx.scale(2, 2);
-
-  // Background + border
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, y);
-  ctx.strokeStyle = RED; ctx.lineWidth = 3;
-  ctx.strokeRect(3, 3, W-6, y-6);
-
-  // Token circle
-  var tcx = W/2;
-  ctx.save();
-  ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2); ctx.clip();
-  ctx.fillStyle = GOLD; ctx.fillRect(tcx-TOKEN_R, TOKEN_CY-TOKEN_R, TOKEN_R*2, TOKEN_R*2);
-  ctx.restore();
-  // Initial letter fallback
-  ctx.fillStyle = '#fdf6e3'; ctx.font = 'bold 48px Georgia';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText((sb.name||'?').charAt(0).toUpperCase(), tcx, TOKEN_CY);
-  ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2);
-  ctx.strokeStyle = RED; ctx.lineWidth = 3; ctx.stroke();
-
-  ctx.textBaseline = 'top';
-
-  // Name
-  ctx.fillStyle = RED; ctx.font = 'bold 24px Georgia'; ctx.textAlign = 'center';
-  ctx.fillText(sb.name||'Unknown', W/2, NAME_Y);
-
-  // Subtitle
-  ctx.fillStyle = MID; ctx.font = 'italic 13px Georgia';
-  ctx.fillText((sb.size||'')+' '+(sb.type||'')+', '+(sb.alignment||''), W/2, SUB_Y);
-
-  // Divider 1
-  ctx.strokeStyle = '#9a5a3a'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(PAD, DIV1_Y); ctx.lineTo(W-PAD, DIV1_Y); ctx.stroke();
-
-  // Core stats
-  ctx.fillStyle = DARK; ctx.font = '13px Georgia'; ctx.textAlign = 'left';
-  var coreLines = [
-    'Armor Class  '+sb.ac+(sb.acNote?' ('+sb.acNote+')':''),
-    'Hit Points  '+sb.hp+' ('+sb.hpDice+')',
-    'Speed  '+sb.speed
-  ];
-  coreLines.forEach(function(l, i) { ctx.fillText(l, PAD, CORE_Y + i*18); });
-
-  // Ability score row
-  var abStats = ['str','dex','con','int','wis','cha'];
-  var colW = INNER / 6;
-  ctx.fillStyle = 'rgba(154,90,58,0.15)';
-  ctx.fillRect(PAD, ABROW_Y, INNER, 40);
-  abStats.forEach(function(st, si) {
-    var v = sb[st]||10, mod = Math.floor((v-10)/2);
-    var ax = PAD + colW*si + colW/2;
-    ctx.fillStyle = RED; ctx.font = 'bold 9px Georgia'; ctx.textAlign = 'center';
-    ctx.fillText(st.toUpperCase(), ax, ABROW_Y+4);
-    ctx.fillStyle = DARK; ctx.font = '11px Georgia';
-    ctx.fillText(v+' ('+(mod>=0?'+':'')+mod+')', ax, ABROW_Y+18);
-  });
-
-  // Extras
-  ctx.fillStyle = DARK; ctx.font = '12px Georgia'; ctx.textAlign = 'left';
-  var ey = EXTRAS_Y;
-  extras.forEach(function(e) {
-    wrap(e, INNER).forEach(function(l) { ctx.fillText(l, PAD, ey); ey += 16; });
-  });
-
-  // Sections
-  sectionData.forEach(function(sec) {
-    // Section heading
-    ctx.fillStyle = RED; ctx.font = 'bold 11px Georgia'; ctx.textAlign = 'left';
-    ctx.fillText(sec.label, PAD, sec.y);
-    ctx.strokeStyle = '#9a5a3a'; ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.moveTo(PAD, sec.y+14); ctx.lineTo(W-PAD, sec.y+14); ctx.stroke();
-
-    sec.items.forEach(function(d) {
-      d.lines.forEach(function(line, li) {
-        ctx.textAlign = 'left';
-        if(li === 0) {
-          // Bold name part
-          ctx.font = 'bold italic 12px Georgia';
-          var nameStr = d.item.n+'.';
-          var nw = ctx.measureText(nameStr+' ').width;
-          ctx.fillStyle = RED; ctx.fillText(nameStr, PAD, d.y + li*16);
-          ctx.fillStyle = DARK; ctx.font = '12px Georgia';
-          ctx.fillText(line.slice(nameStr.length+1), PAD+nw, d.y + li*16);
-        } else {
-          ctx.fillStyle = DARK; ctx.font = '12px Georgia';
-          ctx.fillText(line, PAD, d.y + li*16);
-        }
-      });
-    });
-  });
-
-  // Trigger download
-  var link = document.createElement('a');
-  link.download = (sb.name||'statblock').replace(/\s+/g,'_') + '.png';
-  link.href = canvas.toDataURL('image/png');
-  document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  var spellItems = [];
-  if(sb.spells) {
-    var spLevels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-    if(sb.spellcastingAbility || sb.spellSaveDC) {
-      spellItems.push({name:'Spellcasting', desc:(sb.spellcastingAbility ? 'Ability: '+sb.spellcastingAbility+'. ' : '')+(sb.spellSaveDC ? 'Spell save DC '+sb.spellSaveDC+(sb.spellAttackBonus ? ', +'+sb.spellAttackBonus+' to hit.' : '') : '')});
-    }
-    spLevels.forEach(function(lvl){
-      var list = sb.spells[lvl]; if(!list||!list.length) return;
-      var slots = sb.spellSlots&&sb.spellSlots[lvl] ? ' ('+sb.spellSlots[lvl]+' slots)' : '';
-      var names = list.map(function(sp){return typeof sp==='string'?sp:sp.name;}).join(', ');
-      spellItems.push({name:(lvl==='cantrips'?'Cantrips':lvl+' level'+slots), desc:names});
-    });
-  }
-  SECTIONS = [
-    {label:'TRAITS', items: sb.traits||[]},
-    {label:'SPELLCASTING', items: spellItems},
-    {label:'ACTIONS', items: sb.actions||[]},
-    {label:'BONUS ACTIONS', items: sb.bonusActions||[]},
-    {label:'REACTIONS', items: sb.reactions||[]},
-    {label:'LEGENDARY ACTIONS', items: sb.legendaryActions||[]}
-  ];
 }
 
 function downloadStatblockById(sb, cardId, tokenId) {
@@ -6989,7 +6780,7 @@ function downloadStatblockById(sb, cardId, tokenId) {
     var sy = y; y += 22;
     var itemData = [];
     sec.items.forEach(function(item) {
-      var full = (item.name||item.n||'?')+'. '+(item.desc||item.description||'');
+      var full = item.n+'. '+item.desc;
       ctx.font = '12px Georgia';
       var ls = wrap(full, INNER);
       itemData.push({item:item, lines:ls, y:y});
@@ -7317,7 +7108,6 @@ function askRulesQuestionCraft() {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
@@ -7972,7 +7762,7 @@ function openFactionModal(id) {
   document.getElementById('faction-goal').value = f?f.goal||'':'';
   document.getElementById('faction-leader').value = f?f.leader||'':'';
   document.getElementById('faction-rep').value = f?f.rep||'neutral':'neutral';
-  document.getElementById('faction-members').value = f?f.members||'':'';
+  // faction-members handled via NPC member system
   document.getElementById('faction-notes').value = f?f.notes||'':'';
   var delBtn = document.getElementById('faction-delete-btn');
   if(delBtn) delBtn.classList.toggle('hidden', !id);
@@ -8232,7 +8022,7 @@ function generateLoot() {
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:apiHeaders(),
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();})
   .then(function(data){
@@ -8789,7 +8579,7 @@ function generateCrew() {
   if(genBtn){genBtn.textContent='Generating...';genBtn.disabled=true;}
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:apiHeaders(),
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:800,messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();})
   .then(function(data){
@@ -8956,7 +8746,7 @@ function handlePrepUpload(event) {
 
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: apiHeaders(),
+      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
     }).then(function(r){return r.json();})
     .then(function(data){
@@ -9902,7 +9692,7 @@ function generateSessionRecap() {
   if(result) result.classList.add('hidden');
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:apiHeaders(),
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,messages:[{role:'user',content:'Write a dramatic "Previously in..." recap paragraph (3-5 sentences, past tense, exciting tone) for a D&D session based on these notes. End on the cliffhanger if provided.\n\n'+text}]})
   }).then(function(r){return r.json();})
   .then(function(data){
@@ -10516,7 +10306,7 @@ function handleModuleUpload(event) {
       var prompt = 'You are extracting structured data from a D&D module. From this text section, extract any named: LOCATIONS (places, buildings, rooms, areas), NPCS (named characters with their role/title), EVENTS/PLOT HOOKS (named story events or quest hooks), and FACTIONS (organisations, guilds, cults).\n\nReturn ONLY a JSON object with these exact keys. Use empty arrays if nothing found in this section. Each NPC needs: name, role, location (if mentioned), notes (brief description). Each location needs: name, type (city/town/dungeon/building/room), notes. Each event needs: label, notes (brief). Each faction needs: name, goal.\n\n{"locations":[],"npcs":[],"events":[],"factions":[]}\n\nTEXT SECTION '+(idx+1)+' OF '+chunks.length+':\n'+chunks[idx];
       fetch('https://api.anthropic.com/v1/messages',{
         method:'POST',
-        headers:apiHeaders(),
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
       }).then(function(r){return r.json();})
       .then(function(data){
@@ -11427,78 +11217,104 @@ function toggleDashStatus() {
 // -- Session Notes v2 -----------------------------------------
 
 function handleUpcomingSessionUpload(event) {
-  var file = event.target.files[0];
-  if(!file) return;
-  if(!getApiKey()) {
-    showToast('No API key set — add one via the ⚙ Settings button', 'error');
-    return;
-  }
-  var statusEl = document.getElementById('sn-upcoming-status');
-  var resultEl = document.getElementById('sn-upcoming-result');
-  if(statusEl){ statusEl.style.display='block'; statusEl.textContent='Reading '+file.name+'...'; }
-  if(resultEl) resultEl.style.display='none';
+  var file = event.target.files[0]; if(!file) return;
+  var apiKey = getApiKey();
+  if(!apiKey) { showToast('Set your API key in Settings first','error'); return; }
+  var status = document.getElementById('sn-upcoming-status');
+  var result = document.getElementById('sn-upcoming-result');
+  if(status) { status.style.display='block'; status.textContent='Reading file...'; }
+  if(result) result.style.display='none';
+
+  // Load PCs for context
   var pcs = typeof loadPcs !== 'undefined' ? loadPcs() : [];
-  var pcContext = pcs.length
-    ? pcs.map(function(p){ return p.name+(p.pcClass?' ('+p.pcClass+(p.level?' Lv'+p.level:'')+')'  :''); }).join(', ')
-    : 'No characters recorded';
+  var pcContext = pcs.length ? pcs.map(function(p){ return p.name + ' (' + (p.pcClass||'') + (p.level?' Lv'+p.level:'') + ')'; }).join(', ') : 'No characters yet';
+
+  // Read file
   var reader = new FileReader();
   reader.onload = function(e) {
-    if(file.name.match(/\.docx?$/i) && typeof mammoth !== 'undefined') {
-      mammoth.extractRawText({arrayBuffer:e.target.result})
-        .then(function(r){ analyseUpcomingSession(r.value, pcContext, statusEl, resultEl); })
-        .catch(function(){ analyseUpcomingSession('[Could not read '+file.name+']', pcContext, statusEl, resultEl); });
-    } else if(file.name.match(/\.txt$/i)) {
-      analyseUpcomingSession(e.target.result, pcContext, statusEl, resultEl);
+    var text = '';
+    if(file.name.endsWith('.txt')) {
+      text = e.target.result;
+      analyseUpcomingSession(text, pcContext, status, result);
     } else {
-      analyseUpcomingSession('[PDF: '+file.name+' — upload as .txt or .docx for best results]', pcContext, statusEl, resultEl);
+      // Use mammoth for docx, basic text extract for pdf
+      try {
+        if(typeof mammoth !== 'undefined' && (file.name.endsWith('.docx') || file.name.endsWith('.doc'))) {
+          mammoth.extractRawText({arrayBuffer: e.target.result}).then(function(r){
+            analyseUpcomingSession(r.value, pcContext, status, result);
+          });
+        } else {
+          // PDF - try to get text
+          text = 'Session prep file uploaded: ' + file.name;
+          analyseUpcomingSession(text, pcContext, status, result);
+        }
+      } catch(err) {
+        if(status) status.textContent = 'Could not read file: ' + err.message;
+      }
     }
   };
-  if(file.name.match(/\.txt$/i)) reader.readAsText(file);
+  if(file.name.endsWith('.txt')) reader.readAsText(file);
   else reader.readAsArrayBuffer(file);
-  event.target.value='';
 }
 
 function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
-  if(statusEl){ statusEl.style.display='block'; statusEl.textContent='Analysing with Claude...'; }
-  var prompt = 'You are an expert Dungeon Master assistant. Carefully analyse the following session prep notes.'
-    + '\n\nParty composition: ' + pcContext
-    + '\n\nSession prep notes:\n' + prepText.slice(0,6000)
-    + '\n\nReturn ONLY valid JSON (no markdown, no preamble) with these exact keys:'
-    + '\n{"annotated":"The full prep text rewritten with [INSIGHT: your note] markers inserted inline at relevant moments",'
-    + '"oversights":["3-6 specific risks or gaps given the party skills and the plan"],'
-    + '"considerations":["3-6 concrete actionable suggestions for the DM to prepare"]}';
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:apiHeaders(),
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]})
+  if(statusEl) statusEl.textContent = 'Analysing session prep...';
+  
+  var prompt = 'You are an expert DM assistant. Analyse this session prep.\n\nParty: ' + pcContext + '\n\nPrep:\n' + prepText.slice(0,5000) + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills), considerations (array of 3-5 tips). No markdown.';;
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    })
   })
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(data.error) throw new Error(data.error.message);
-    var raw=(data.content||[]).map(function(c){return c.text||'';}).join('');
-    try{
-      var parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
-      var annotEl=document.getElementById('sn-annotated-text');
-      if(annotEl) annotEl.innerHTML=(parsed.annotated||prepText).replace(/\[INSIGHT:\s*([^\]]+)\]/g,
-        '<mark style="background:rgba(212,168,67,0.18);border-radius:3px;padding:1px 5px;cursor:help;font-style:normal" title="$1">&#128161; [insight]</mark>');
-      var ovEl=document.getElementById('sn-oversights');
-      if(ovEl) ovEl.innerHTML=(parsed.oversights||[]).map(function(o){
-        return '<div style="margin-bottom:7px;padding:7px 10px;background:rgba(205,74,74,0.08);border-left:2px solid rgba(205,74,74,0.5);border-radius:0 3px 3px 0;font-size:12px;font-style:normal;color:var(--text)">&#9888; '+o+'</div>';
-      }).join('');
-      var conEl=document.getElementById('sn-considerations');
-      if(conEl) conEl.innerHTML=(parsed.considerations||[]).map(function(c){
-        return '<div style="margin-bottom:7px;padding:7px 10px;background:rgba(212,168,67,0.06);border-left:2px solid var(--gold-dim);border-radius:0 3px 3px 0;font-size:12px;font-style:normal;color:var(--text)">&#128161; '+c+'</div>';
-      }).join('');
-      window._snUpcomingText=prepText;
-      window._snUpcomingAnalysis=parsed;
-      if(statusEl) statusEl.style.display='none';
-      if(resultEl) resultEl.style.display='block';
-    }catch(err){
-      if(statusEl) statusEl.textContent='Parse error: '+err.message;
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    var text = (data.content||[]).map(function(c){ return c.text||''; }).join('');
+    try {
+      var clean = text.replace(/```json|```/g,'').trim();
+      var parsed = JSON.parse(clean);
+
+      // Annotated text - style [INSIGHT: ...] markers
+      var annotated = (parsed.annotated || prepText).replace(
+        /\[INSIGHT:\s*([^\]]+)\]/g,
+        '<mark style="background:rgba(212,168,67,0.2);border-radius:3px;padding:1px 4px;cursor:help" title="$1">&#128161; [insight]</mark>'
+      );
+      var annotEl = document.getElementById('sn-annotated-text');
+      if(annotEl) annotEl.innerHTML = annotated;
+
+      // Oversights
+      var ovEl = document.getElementById('sn-oversights');
+      if(ovEl && parsed.oversights) {
+        ovEl.innerHTML = parsed.oversights.map(function(o){
+          return '<div style="margin-bottom:8px;padding:8px;background:rgba(205,74,74,0.08);border-left:2px solid rgba(205,74,74,0.5);border-radius:0 4px 4px 0;font-size:12px">&#9888; ' + o + '</div>';
+        }).join('');
+      }
+
+      // Considerations
+      var conEl = document.getElementById('sn-considerations');
+      if(conEl && parsed.considerations) {
+        conEl.innerHTML = parsed.considerations.map(function(c){
+          return '<div style="margin-bottom:8px;padding:8px;background:rgba(212,168,67,0.06);border-left:2px solid var(--gold-dim);border-radius:0 4px 4px 0;font-size:12px">&#128161; ' + c + '</div>';
+        }).join('');
+      }
+
+      if(statusEl) statusEl.style.display = 'none';
+      if(resultEl) resultEl.style.display = 'block';
+
+      // Store for saving
+      window._snUpcomingText = prepText;
+      window._snUpcomingAnalysis = parsed;
+
+    } catch(err) {
+      if(statusEl) statusEl.textContent = 'Analysis error: ' + err.message + ' | Raw: ' + text.slice(0,200);
     }
   })
-  .catch(function(err){
-    if(statusEl) statusEl.textContent='Error: '+err.message;
+  .catch(function(err) {
+    if(statusEl) statusEl.textContent = 'Request failed: ' + err.message;
   });
 }
 
@@ -12069,7 +11885,39 @@ function openNewSessionNoteModal() {
 }
 
 
+// ── API Headers helper ────────────────────────────────────────
+function apiHeaders() {
+  var key = getApiKey();
+  if(!key) { showToast('No API key set. Click \u2699 Settings to add your key.', 'error'); return null; }
+  return { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' };
+}
 
+// ── Combat scenario select reset ──────────────────────────────
+function onScenarioSelect(id) {
+  if(!id) {
+    var container = document.getElementById('enemy-rows');
+    if(container){ container.innerHTML=''; enemyRows=[]; }
+    document.querySelectorAll('.pc-combat-check').forEach(function(cb){ cb.checked=false; selectedCombatPcs[cb.dataset.id]=false; });
+    var result = document.getElementById('combat-result');
+    if(result) result.classList.add('hidden');
+  } else { loadScenario(id); }
+}
+
+// ── Loot generator reset ──────────────────────────────────────
+function resetLootGenerator() {
+  var enemies = document.getElementById('loot-enemies');
+  var content = document.getElementById('loot-content');
+  var result = document.getElementById('loot-result');
+  var status = document.getElementById('loot-status');
+  var panel = document.getElementById('loot-generator-panel');
+  if(enemies) enemies.value='';
+  if(content) content.innerHTML='';
+  if(result) result.classList.add('hidden');
+  if(status) status.classList.add('hidden');
+  if(panel) panel.style.display='none';
+}
+
+// ── Token art prompt ──────────────────────────────────────────
 function showTokenPrompt(sb, originalDesc) {
   var existing = document.getElementById('sb-token-prompt');
   if(existing) existing.remove();
@@ -12079,11 +11927,8 @@ function showTokenPrompt(sb, originalDesc) {
   var defaultDesc = sb.name + ', a ' + sb.size + ' ' + sb.type + (originalDesc ? '. ' + originalDesc : '');
   prompt.innerHTML = '<div style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em;margin-bottom:10px">&#127912; GENERATE TOKEN ART</div>'
     + '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Describe the token appearance. Be specific about colours, features, expression, weapon and style.</div>'
-    + '<textarea id="sb-token-desc" style="width:100%;height:60px;resize:vertical;margin-bottom:8px;font-size:13px;box-sizing:border-box" placeholder="e.g. A scarred bandit captain with grey beard, black leather armour, holding a warhammer. Dark fantasy style.">' + defaultDesc + '</textarea>'
-    + '<div style="display:flex;gap:8px;align-items:center">'
-    + '<button class="btn-gold btn-sm" onclick="generateTokenArt()">&#127912; Generate Token</button>'
-    + '<span id="sb-token-status" style="font-size:12px;color:var(--muted);font-style:italic"></span>'
-    + '</div>';
+    + '<textarea id="sb-token-desc" style="width:100%;height:60px;resize:vertical;margin-bottom:8px;font-size:13px;box-sizing:border-box">' + defaultDesc + '</textarea>'
+    + '<div style="display:flex;gap:8px;align-items:center"><button class="btn-gold btn-sm" onclick="generateTokenArt()">&#127912; Generate Token</button><span id="sb-token-status" style="font-size:12px;color:var(--muted);font-style:italic"></span></div>';
   var result = document.getElementById('statblock-result');
   if(result) result.appendChild(prompt);
   setTimeout(function(){ var t=document.getElementById('sb-token-desc'); if(t) t.focus(); }, 100);
@@ -12098,350 +11943,234 @@ function generateTokenArt() {
   var btn = document.querySelector('#sb-token-prompt .btn-gold');
   if(statusEl) statusEl.textContent = 'Generating art...';
   if(btn){ btn.disabled=true; btn.textContent='Generating...'; }
-
-  var prompt = 'Create an SVG token for a D&D creature. viewBox="0 0 180 180". Dark circular background. Description: '
-    + desc
-    + '. Style: flat digital art, high contrast, dark fantasy. Show creature from chest up or as silhouette. Use 4-6 colours. Return ONLY the SVG starting with <svg and ending with </svg>. No explanation, no markdown.';
-
+  var prompt = 'Create an SVG token for a D&D creature. viewBox="0 0 180 180". Dark circular background. Description: '+desc+'. Style: flat digital art, high contrast, dark fantasy. Return ONLY the SVG starting with <svg and ending with </svg>.';
   var timedOut = false;
-  var timer = setTimeout(function(){
-    timedOut = true;
-    if(statusEl) statusEl.textContent = 'Timed out. Try again.';
-    if(btn){ btn.disabled=false; btn.textContent='&#127912; Generate Token'; }
-  }, 30000);
-
-  fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500, messages:[{role:'user',content:prompt}]})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
-    clearTimeout(timer);
-    if(timedOut) return;
+  var timer = setTimeout(function(){ timedOut=true; if(statusEl) statusEl.textContent='Timed out.'; if(btn){ btn.disabled=false; btn.textContent='&#127912; Retry'; } }, 30000);
+  fetch('https://api.anthropic.com/v1/messages',{ method:'POST', headers:apiHeaders(), body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]}) })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    clearTimeout(timer); if(timedOut) return;
     if(data.error) throw new Error(data.error.message);
-    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
-    var s = text.indexOf('<svg'); var e = text.lastIndexOf('</svg>');
-    if(s === -1) throw new Error('No SVG in response');
-    var svgArt = text.slice(s, e+6);
-    var tokenEl = document.querySelector('[id$="_token"]');
-    if(tokenEl){
-      tokenEl.innerHTML = svgArt;
-      tokenEl.style.background = 'transparent';
-      var svgEl = tokenEl.querySelector('svg');
-      if(svgEl){ svgEl.setAttribute('width','110'); svgEl.setAttribute('height','110'); svgEl.style.cssText='border-radius:50%;display:block'; }
-    }
-    if(statusEl) statusEl.textContent = 'Done! ✓';
+    var text=(data.content||[]).map(function(c){return c.text||'';}).join('');
+    var s=text.indexOf('<svg'); var e=text.lastIndexOf('</svg>');
+    if(s===-1) throw new Error('No SVG returned');
+    var svgArt=text.slice(s,e+6);
+    var tokenEl=document.querySelector('[id$="_token"]');
+    if(tokenEl){ tokenEl.innerHTML=svgArt; tokenEl.style.background='transparent'; var sv=tokenEl.querySelector('svg'); if(sv){sv.setAttribute('width','110');sv.setAttribute('height','110');sv.style.cssText='border-radius:50%;display:block';} }
+    if(statusEl) statusEl.textContent='Done! \u2713';
     if(btn){ btn.disabled=false; btn.textContent='&#128260; Regenerate'; }
   })
-  .catch(function(err){
-    clearTimeout(timer);
-    if(timedOut) return;
-    if(statusEl) statusEl.textContent = 'Failed: '+err.message;
-    if(btn){ btn.disabled=false; btn.textContent='&#127912; Generate Token'; }
-  });
+  .catch(function(err){ clearTimeout(timer); if(timedOut) return; if(statusEl) statusEl.textContent='Failed: '+err.message; if(btn){ btn.disabled=false; btn.textContent='&#127912; Generate Token'; } });
 }
 
-function showSpellCardPrompt(sb) {
-  var existing = document.getElementById('sb-spell-prompt');
-  if(existing) existing.remove();
-  var div = document.createElement('div');
-  div.id = 'sb-spell-prompt';
-  div.style.cssText = 'margin-top:10px;padding:14px;background:rgba(90,50,160,0.08);border:1px solid rgba(120,80,200,0.3);border-radius:6px';
-  div.innerHTML = '<div style="font-family:Cinzel,serif;font-size:10px;color:#a080e0;letter-spacing:.1em;margin-bottom:8px">&#10024; SPELL CARDS</div>'
-    + '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">This creature uses magic. Generate printable spell cards with full details for each spell.</div>'
-    + '<div style="display:flex;gap:8px;align-items:center">'
-    + '<button class="btn-gold btn-sm" onclick="generateSpellCards()">&#10024; Generate Spell Cards</button>'
-    + '<span id="sb-spell-status" style="font-size:12px;color:var(--muted);font-style:italic"></span>'
-    + '</div>';
-  var result = document.getElementById('statblock-result');
-  if(result) result.appendChild(div);
-}
-
-function generateSpellCards() {
-  if(!currentStatblock){ showToast('No statblock loaded','error'); return; }
-  if(!getApiKey()){ showToast('No API key set','error'); return; }
-  var statusEl = document.getElementById('sb-spell-status');
-  var btn = document.querySelector('#sb-spell-prompt .btn-gold');
-  if(statusEl) statusEl.textContent = 'Getting spell details...';
-  if(btn){ btn.disabled=true; btn.textContent='Generating...'; }
-
-  var sb = currentStatblock;
-  // Collect all spell names from statblock
-  var spellNames = [];
-  if(sb.spells) {
-    Object.keys(sb.spells).forEach(function(level) {
-      var arr = sb.spells[level];
-      if(Array.isArray(arr)) arr.forEach(function(s){ if(s && spellNames.indexOf(s)===-1) spellNames.push(s); });
-    });
-  }
-  // Also extract from traits
-  (sb.traits||[]).forEach(function(t){
-    if(/spellcast/i.test(t.name) && t.desc) {
-      var matches = t.desc.match(/\b([A-Z][a-z]+(?: [A-Z][a-z]+)*)\b/g);
-      if(matches) matches.forEach(function(s){
-        if(s.length > 3 && spellNames.indexOf(s)===-1) spellNames.push(s);
-      });
+// ── Spell cards PNG ───────────────────────────────────────────
+function fetchSpellDetails(sb, spellEntries) {
+  if(!spellEntries.length) return;
+  var BATCH=6, batches=[], allDetails=[];
+  for(var i=0;i<spellEntries.length;i+=BATCH) batches.push(spellEntries.slice(i,i+BATCH));
+  function fetchBatch(idx){
+    if(idx>=batches.length){
+      var byName={};
+      allDetails.forEach(function(sp){byName[sp.name.toLowerCase()]=sp;});
+      var levels=['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+      levels.forEach(function(lvl){ var list=sb.spells&&sb.spells[lvl]?sb.spells[lvl]:[]; sb.spells[lvl]=list.map(function(sp){var key=(typeof sp==='string'?sp:sp.name).toLowerCase();return byName[key]||{name:typeof sp==='string'?sp:sp.name,level:lvl,school:'',castingTime:'',range:'',components:'',duration:'',desc:''};});});
+      showToast('Spell cards ready \u2713','success');
+      document.querySelectorAll('[data-sb-spell-btn]').forEach(function(btn){btn.style.color='var(--gold)';btn.style.borderColor='var(--gold)';btn.title='Download spell cards PNG';});
+      return;
     }
-  });
-
-  if(!spellNames.length) {
-    // Ask Claude to infer spells from statblock
-    spellNames = ['Identify spells from the statblock traits and actions'];
+    var batch=batches[idx];
+    var names=batch.map(function(s){return s.name;}).join(', ');
+    var prompt='Give me full D&D 5e details for these spells: '+names+'. Return ONLY a JSON array: [{"name":"spell name","school":"school","castingTime":"1 action","range":"60 ft","components":"V, S","duration":"Instantaneous","desc":"Full description."}]';
+    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.error){fetchBatch(idx+1);return;}
+      var text=(data.content||[]).map(function(c){return c.text||'';}).join('');
+      var s=text.indexOf('[');var e=text.lastIndexOf(']');
+      if(s!==-1){try{allDetails=allDetails.concat(JSON.parse(text.slice(s,e+1)));}catch(err){}}
+      fetchBatch(idx+1);
+    }).catch(function(){fetchBatch(idx+1);});
   }
-
-  var prompt = 'The D&D 5e creature "'+sb.name+'" is a spellcaster. '
-    + (spellNames.length > 1 ? 'Known spells: '+spellNames.join(', ')+'. ' : '')
-    + 'Return ONLY a JSON array of spell objects, no markdown, no preamble. '
-    + 'For each spell provide: {"name":"string","level":"Cantrip or 1st-9th","school":"string","castingTime":"string","range":"string","components":"V,S,M (material)","duration":"string","concentration":false,"ritual":false,"description":"full spell description as printed in rulebook","higherLevels":"when cast at higher levels text or empty string"}. '
-    + 'Include ALL spells the creature would know based on its statblock and CR. If spells were not listed, infer appropriate ones for this creature type and CR '+sb.cr+'.';
-
-  var timer = setTimeout(function(){
-    if(statusEl) statusEl.textContent = 'Timed out. Try again.';
-    if(btn){ btn.disabled=false; btn.textContent='&#10024; Generate Spell Cards'; }
-  }, 45000);
-
-  fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
-    clearTimeout(timer);
-    if(data.error) throw new Error(data.error.message);
-    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
-    var s = text.indexOf('['); var e = text.lastIndexOf(']');
-    if(s === -1) throw new Error('No spell data returned');
-    var spells = JSON.parse(text.slice(s, e+1));
-    if(statusEl) statusEl.textContent = 'Done! Rendering cards...';
-    if(btn){ btn.disabled=false; btn.textContent='&#128260; Regenerate'; }
-    renderSpellCardSheet(sb, spells);
-  })
-  .catch(function(err){
-    clearTimeout(timer);
-    if(statusEl) statusEl.textContent = 'Failed: '+err.message;
-    if(btn){ btn.disabled=false; btn.textContent='&#10024; Generate Spell Cards'; }
-  });
-}
-
-function renderSpellCardSheet(sb, spells) {
-  var existing = document.getElementById('sb-spell-sheet');
-  if(existing) existing.remove();
-
-  var schoolColours = {
-    Abjuration:'#4a7acd', Conjuration:'#9a4acd', Divination:'#4acdcd',
-    Enchantment:'#cd4acd', Evocation:'#cd4a4a', Illusion:'#7a4acd',
-    Necromancy:'#4a7a4a', Transmutation:'#cd9a4a'
-  };
-
-  var cardsHtml = spells.map(function(sp) {
-    var col = schoolColours[sp.school] || '#7a6a4a';
-    var levelText = sp.level === 'Cantrip' ? 'Cantrip' : sp.level + ' level';
-    var tags = '';
-    if(sp.concentration) tags += '<span style="background:rgba(205,74,74,0.2);color:#cd4a4a;padding:1px 5px;border-radius:3px;font-size:9px;margin-right:4px">CONCENTRATION</span>';
-    if(sp.ritual) tags += '<span style="background:rgba(74,122,205,0.2);color:#4a7acd;padding:1px 5px;border-radius:3px;font-size:9px">RITUAL</span>';
-    return '<div style="break-inside:avoid;background:#1a1208;border:1px solid '+col+';border-radius:8px;padding:14px;margin-bottom:12px;page-break-inside:avoid">'
-      + '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px">'
-      + '<div style="font-family:Georgia,serif;font-size:16px;font-weight:bold;color:#e8d5a8">'+sp.name+'</div>'
-      + '<div style="font-size:10px;color:'+col+';font-family:Georgia,serif;font-style:italic">'+sp.school+'</div>'
-      + '</div>'
-      + '<div style="font-size:10px;color:#8a7a5a;font-style:italic;margin-bottom:8px">'+levelText+(tags?' &nbsp;'+tags:'')+'</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:8px;font-size:11px">'
-      + '<div><span style="color:#8a7a5a">Casting Time:</span> <span style="color:#e8d5a8">'+sp.castingTime+'</span></div>'
-      + '<div><span style="color:#8a7a5a">Range:</span> <span style="color:#e8d5a8">'+sp.range+'</span></div>'
-      + '<div><span style="color:#8a7a5a">Components:</span> <span style="color:#e8d5a8">'+sp.components+'</span></div>'
-      + '<div><span style="color:#8a7a5a">Duration:</span> <span style="color:#e8d5a8">'+sp.duration+'</span></div>'
-      + '</div>'
-      + '<div style="font-size:12px;color:#c8b888;line-height:1.6;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px">'+sp.description+'</div>'
-      + (sp.higherLevels ? '<div style="font-size:11px;color:#8a7a5a;font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06)"><strong>At Higher Levels:</strong> '+sp.higherLevels+'</div>' : '')
-      + '</div>';
-  }).join('');
-
-  var sheet = document.createElement('div');
-  sheet.id = 'sb-spell-sheet';
-  sheet.style.cssText = 'margin-top:14px';
-  sheet.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-    + '<div style="font-family:Cinzel,serif;font-size:11px;color:#a080e0;letter-spacing:.1em">&#10024; SPELL CARDS — '+sb.name.toUpperCase()+'</div>'
-    + '<button class="btn-ghost btn-sm" onclick="printSpellCards()" style="font-size:11px">&#128438; Print / Save PDF</button>'
-    + '</div>'
-    + '<div id="spell-cards-content" style="column-count:2;column-gap:12px">'
-    + cardsHtml
-    + '</div>';
-
-  var result = document.getElementById('statblock-result');
-  if(result) result.appendChild(sheet);
-  sheet.scrollIntoView({behavior:'smooth', block:'start'});
-}
-
-function printSpellCards() {
-  var content = document.getElementById('spell-cards-content');
-  var sb = currentStatblock;
-  if(!content || !sb) return;
-  var w = window.open('', '_blank');
-  w.document.write('<!DOCTYPE html><html><head><title>'+sb.name+' Spell Cards</title>'
-    + '<style>body{background:#0e0b07;margin:20px;font-family:Georgia,serif}'
-    + '@media print{body{margin:10px} .no-print{display:none}}'
-    + '@page{size:A4;margin:15mm}'
-    + '</style></head><body>'
-    + '<div class="no-print" style="margin-bottom:16px;text-align:center">'
-    + '<button onclick="window.print()" style="background:#2a1a06;border:1px solid #d4a843;color:#d4a843;padding:8px 24px;border-radius:4px;cursor:pointer;font-size:14px;font-family:Georgia,serif">Print / Save as PDF</button>'
-    + '</div>'
-    + '<h2 style="color:#d4a843;font-family:Georgia,serif;text-align:center;margin-bottom:20px;font-size:18px">'+sb.name+' — Spell Cards</h2>'
-    + content.innerHTML
-    + '</body></html>');
-  w.document.close();
+  fetchBatch(0);
 }
 
 function downloadSpellCardsPng(sb) {
-  var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-  var allSpells = [];
-  levels.forEach(function(lvl){
-    var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
-    list.forEach(function(sp){
-      if(typeof sp === 'string') {
-        allSpells.push({name:sp, level:lvl, school:'', castingTime:'', range:'', components:'', duration:'', desc:''});
-      } else {
-        allSpells.push(Object.assign({level:lvl}, sp));
-      }
-    });
+  var levels=['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+  var allSpells=[];
+  levels.forEach(function(lvl){ var list=sb.spells&&sb.spells[lvl]?sb.spells[lvl]:[];
+    list.forEach(function(sp){ allSpells.push(typeof sp==='string'?{name:sp,level:lvl,school:'',castingTime:'',range:'',components:'',duration:'',desc:''}:Object.assign({level:lvl},sp)); });
   });
-  if(!allSpells.length){ showToast('No spells found','error'); return; }
-
-  var CARD_W = 250, CARD_H = 350, COLS = 4, PAD = 16, GAP = 12;
-  var rows = Math.ceil(allSpells.length / COLS);
-  var canvasW = COLS * CARD_W + (COLS+1) * GAP;
-  var canvasH = rows * CARD_H + (rows+1) * GAP + 50;
-
-  var canvas = document.createElement('canvas');
-  canvas.width = canvasW; canvas.height = canvasH;
-  var ctx = canvas.getContext('2d');
-
-  // Background
-  ctx.fillStyle = '#1a0f05';
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Title
-  ctx.fillStyle = '#d4a843';
-  ctx.font = 'bold 22px Georgia, serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(sb.name + ' — Spell Cards', canvasW/2, 36);
-
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    if(!text) return y;
-    var words = text.split(' ');
-    var line = '';
-    for(var i=0; i<words.length; i++){
-      var testLine = line + words[i] + ' ';
-      if(ctx.measureText(testLine).width > maxWidth && i > 0){
-        ctx.fillText(line.trim(), x, y);
-        line = words[i] + ' ';
-        y += lineHeight;
-      } else { line = testLine; }
-    }
-    if(line.trim()) { ctx.fillText(line.trim(), x, y); y += lineHeight; }
-    return y;
-  }
-
-  allSpells.forEach(function(sp, idx){
-    var col = idx % COLS;
-    var row = Math.floor(idx / COLS);
-    var cx = GAP + col * (CARD_W + GAP);
-    var cy = 50 + GAP + row * (CARD_H + GAP);
-
-    // Card bg
-    ctx.fillStyle = '#2a1a08';
-    ctx.beginPath();
-    ctx.roundRect(cx, cy, CARD_W, CARD_H, 8);
-    ctx.fill();
-
-    // Level colour strip
-    var levelColours = {cantrips:'#4a6a9a','1st':'#4a8a4a','2nd':'#7a6a2a','3rd':'#9a4a2a','4th':'#6a3a8a','5th':'#8a2a2a','6th':'#2a7a8a','7th':'#5a2a6a','8th':'#8a5a2a','9th':'#6a1a1a'};
-    ctx.fillStyle = levelColours[sp.level] || '#4a3420';
-    ctx.beginPath();
-    ctx.roundRect(cx, cy, CARD_W, 28, [8,8,0,0]);
-    ctx.fill();
-
-    // Level label
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 11px Georgia, serif';
-    ctx.textAlign = 'left';
-    ctx.fillText((sp.level==='cantrips'?'Cantrip':sp.level+' Level')+(sp.school?' \u2022 '+sp.school:''), cx+PAD, cy+18);
-
-    // Spell name
-    ctx.fillStyle = '#d4a843';
-    ctx.font = 'bold 14px Georgia, serif';
-    ctx.textAlign = 'left';
-    var nameY = cy + 44;
-    nameY = wrapText(ctx, sp.name, cx+PAD, nameY, CARD_W-PAD*2, 18);
-
-    // Divider
-    ctx.strokeStyle = '#4a3420';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx+PAD, nameY+2); ctx.lineTo(cx+CARD_W-PAD, nameY+2);
-    ctx.stroke();
-    nameY += 10;
-
-    // Stats
-    ctx.fillStyle = '#c8a070';
-    ctx.font = '10px Georgia, serif';
-    var stats = [
-      sp.castingTime ? 'Cast: '+sp.castingTime : null,
-      sp.range ? 'Range: '+sp.range : null,
-      sp.components ? 'Components: '+sp.components : null,
-      sp.duration ? 'Duration: '+sp.duration : null
-    ].filter(Boolean);
-    stats.forEach(function(stat){
-      ctx.fillText(stat, cx+PAD, nameY);
-      nameY += 13;
-    });
-    if(stats.length){ nameY += 4; }
-
-    // Description
-    ctx.fillStyle = '#e8d5a8';
-    ctx.font = '11px Georgia, serif';
-    wrapText(ctx, sp.desc||'', cx+PAD, nameY, CARD_W-PAD*2, 14);
+  if(!allSpells.length){showToast('No spells found','error');return;}
+  var CARD_W=250,CARD_H=350,COLS=4,PAD=16,GAP=12;
+  var rows=Math.ceil(allSpells.length/COLS);
+  var canvas=document.createElement('canvas');
+  canvas.width=(COLS*CARD_W+(COLS+1)*GAP)*2; canvas.height=(rows*CARD_H+(rows+1)*GAP+50)*2;
+  var ctx=canvas.getContext('2d'); ctx.scale(2,2);
+  ctx.fillStyle='#1a0f05'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#d4a843'; ctx.font='bold 22px Georgia,serif'; ctx.textAlign='center';
+  ctx.fillText(sb.name+' \u2014 Spell Cards',(COLS*CARD_W+(COLS+1)*GAP)/2,36);
+  function wrap(ctx,text,x,y,maxW,lh){ if(!text)return y; var words=text.split(' '),line=''; for(var i=0;i<words.length;i++){var tl=line+words[i]+' ';if(ctx.measureText(tl).width>maxW&&i>0){ctx.fillText(line.trim(),x,y);line=words[i]+' ';y+=lh;}else line=tl;} if(line.trim()){ctx.fillText(line.trim(),x,y);y+=lh;} return y; }
+  var lvlColors={cantrips:'#4a6a9a','1st':'#4a8a4a','2nd':'#7a6a2a','3rd':'#9a4a2a','4th':'#6a3a8a','5th':'#8a2a2a','6th':'#2a7a8a','7th':'#5a2a6a','8th':'#8a5a2a','9th':'#6a1a1a'};
+  allSpells.forEach(function(sp,idx){
+    var col=idx%COLS,row=Math.floor(idx/COLS);
+    var cx=GAP+col*(CARD_W+GAP),cy=50+GAP+row*(CARD_H+GAP);
+    ctx.fillStyle='#2a1a08'; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(cx,cy,CARD_W,CARD_H,8); else ctx.rect(cx,cy,CARD_W,CARD_H); ctx.fill();
+    ctx.fillStyle=lvlColors[sp.level]||'#4a3420'; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(cx,cy,CARD_W,28,[8,8,0,0]); else ctx.rect(cx,cy,CARD_W,28); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 11px Georgia,serif'; ctx.textAlign='left';
+    ctx.fillText((sp.level==='cantrips'?'Cantrip':sp.level+' Level')+(sp.school?' \u2022 '+sp.school:''),cx+PAD,cy+18);
+    ctx.fillStyle='#d4a843'; ctx.font='bold 14px Georgia,serif';
+    var ny=cy+44; ny=wrap(ctx,sp.name,cx+PAD,ny,CARD_W-PAD*2,18);
+    ctx.strokeStyle='#4a3420'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(cx+PAD,ny+2); ctx.lineTo(cx+CARD_W-PAD,ny+2); ctx.stroke(); ny+=10;
+    ctx.fillStyle='#c8a070'; ctx.font='10px Georgia,serif';
+    [sp.castingTime?'Cast: '+sp.castingTime:null,sp.range?'Range: '+sp.range:null,sp.components?'Components: '+sp.components:null,sp.duration?'Duration: '+sp.duration:null].filter(Boolean).forEach(function(s){ctx.fillText(s,cx+PAD,ny);ny+=13;});
+    if(sp.castingTime||sp.range) ny+=4;
+    ctx.fillStyle='#e8d5a8'; ctx.font='11px Georgia,serif';
+    wrap(ctx,sp.desc||'',cx+PAD,ny,CARD_W-PAD*2,14);
   });
-
-  // Download
-  canvas.toBlob(function(blob){
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = (sb.name||'creature').replace(/[^a-z0-9]/gi,'_')+'_spell_cards.png';
-    a.click();
-    URL.revokeObjectURL(url);
-  }, 'image/png');
+  canvas.toBlob(function(blob){var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=(sb.name||'creature').replace(/[^a-z0-9]/gi,'_')+'_spell_cards.png';a.click();URL.revokeObjectURL(url);},'image/png');
 }
 
-function onScenarioSelect(id) {
-  if(!id) {
-    // "New Encounter" selected - clear enemy rows
-    var container = document.getElementById('enemy-rows');
-    if(container){ container.innerHTML=''; enemyRows=[]; }
-    // Uncheck all PCs
-    document.querySelectorAll('.pc-combat-check').forEach(function(cb){
-      cb.checked=false; selectedCombatPcs[cb.dataset.id]=false;
-    });
-    // Reset analysis
-    var result = document.getElementById('combat-result');
-    if(result) result.classList.add('hidden');
-  } else {
-    loadScenario(id);
+// ── Pantheon ──────────────────────────────────────────────────
+function loadPantheon(){try{return JSON.parse(localStorage.getItem('fg_pantheon')||'[]');}catch(e){return[];}}
+function savePantheon(p){localStorage.setItem('fg_pantheon',JSON.stringify(p));}
+function switchFactionTab(tab,btn){
+  var fp=document.getElementById('factions-panel');var pp=document.getElementById('pantheon-panel');
+  if(fp)fp.style.display=tab==='factions'?'':'none';if(pp)pp.style.display=tab==='pantheon'?'':'none';
+  ['ftab-factions','ftab-pantheon'].forEach(function(id){var b=document.getElementById(id);if(!b)return;var active=id==='ftab-'+tab;b.style.background=active?'rgba(212,168,67,0.12)':'transparent';b.style.color=active?'var(--gold)':'var(--muted)';b.style.borderColor=active?'var(--gold-dim)':'var(--border)';});
+  if(tab==='pantheon')renderPantheon();
+}
+function openDeityModal(id,alignment){
+  var deity=id?loadPantheon().find(function(d){return d.id===id;}):null;
+  var align=alignment||(deity?deity.alignment:'good');
+  var el=document.getElementById('deity-modal-title');if(el)el.textContent=id?'EDIT DEITY':(align==='evil'?'ADD MALEVOLENT DEITY':'ADD BENEVOLENT DEITY');
+  var setVal=function(eid,v){var e=document.getElementById(eid);if(e)e.value=v||'';};
+  setVal('deity-edit-id',id||'');setVal('deity-alignment',align);setVal('deity-name',deity?deity.name:'');setVal('deity-domain',deity?deity.domain:'');setVal('deity-symbol',deity?deity.symbol:'');setVal('deity-worshippers',deity?deity.worshippers:'');setVal('deity-notes',deity?deity.notes:'');
+  var delBtn=document.getElementById('deity-delete-btn');if(delBtn){if(id)delBtn.classList.remove('hidden');else delBtn.classList.add('hidden');}
+  var modal=document.getElementById('deity-modal');if(modal){modal.style.display='flex';modal.classList.add('show');}
+  setTimeout(function(){var n=document.getElementById('deity-name');if(n)n.focus();},100);
+}
+function saveDeity(){
+  var name=((document.getElementById('deity-name')||{}).value||'').trim();
+  if(!name){showToast('Name required','error');return;}
+  var id=(document.getElementById('deity-edit-id')||{}).value||'';
+  var align=(document.getElementById('deity-alignment')||{}).value||'good';
+  var pantheon=loadPantheon();
+  var deity={id:id||'deity_'+Date.now(),name:name,alignment:align,domain:((document.getElementById('deity-domain')||{}).value||'').trim(),symbol:((document.getElementById('deity-symbol')||{}).value||'').trim(),worshippers:((document.getElementById('deity-worshippers')||{}).value||'').trim(),notes:((document.getElementById('deity-notes')||{}).value||'').trim()};
+  if(id){var idx=pantheon.findIndex(function(d){return d.id===id;});if(idx!==-1)pantheon[idx]=deity;else pantheon.push(deity);}else{pantheon.push(deity);}
+  savePantheon(pantheon);closeModal('deity-modal');renderPantheon();showToast('Deity saved \u2713','success');
+}
+function deleteDeity(){
+  var id=(document.getElementById('deity-edit-id')||{}).value||'';
+  if(!id||!confirm('Delete this deity?'))return;
+  savePantheon(loadPantheon().filter(function(d){return d.id!==id;}));closeModal('deity-modal');renderPantheon();showToast('Deity removed','success');
+}
+function renderPantheon(){
+  var goodList=document.getElementById('pantheon-good-list');var badList=document.getElementById('pantheon-bad-list');if(!goodList||!badList)return;
+  var pantheon=loadPantheon();var good=pantheon.filter(function(d){return d.alignment!=='evil';});var evil=pantheon.filter(function(d){return d.alignment==='evil';});
+  function makeDeityCard(d){var isEvil=d.alignment==='evil';var col=isEvil?'#cd4a4a':'var(--gold)';var card=document.createElement('div');card.className='panel';card.style.cssText='margin-bottom:10px;padding:12px;cursor:pointer;border-left:3px solid '+col+';font-style:normal';card.onclick=function(){openDeityModal(d.id,d.alignment);};var inner='<div style="font-family:Cinzel,serif;font-size:13px;font-weight:bold;color:'+col+'">'+d.name+'</div>';if(d.domain)inner+='<div style="font-size:11px;color:var(--accent);letter-spacing:.06em;margin-top:3px">'+d.domain.toUpperCase()+'</div>';if(d.symbol)inner+='<div style="font-size:12px;color:var(--muted);margin-top:4px">&#9670; '+d.symbol+'</div>';if(d.worshippers)inner+='<div style="font-size:12px;color:var(--text);margin-top:4px">'+d.worshippers+'</div>';if(d.notes)inner+='<div style="font-size:12px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">'+d.notes+'</div>';card.innerHTML=inner;return card;}
+  goodList.innerHTML='';if(good.length)good.forEach(function(d){goodList.appendChild(makeDeityCard(d));});else goodList.innerHTML='<div class="empty-state">No benevolent deities yet.</div>';
+  badList.innerHTML='';if(evil.length)evil.forEach(function(d){badList.appendChild(makeDeityCard(d));});else badList.innerHTML='<div class="empty-state">No malevolent deities yet.</div>';
+}
+
+// ── Faction Members ───────────────────────────────────────────
+var _factionMembersId = null;
+function openFactionMembers(factionId){
+  _factionMembersId=factionId;var faction=loadFactions().find(function(f){return f.id===factionId;});if(!faction)return;
+  var nameEl=document.getElementById('faction-members-name');if(nameEl)nameEl.textContent=faction.name;
+  var searchEl=document.getElementById('faction-member-search');if(searchEl)searchEl.value='';
+  filterFactionNpcSearch();renderFactionMembersList();
+  var modal=document.getElementById('faction-members-modal');if(modal){modal.style.display='flex';modal.classList.add('show');}
+}
+function filterFactionNpcSearch(){
+  var results=document.getElementById('faction-npc-search-results');if(!results)return;
+  var q=((document.getElementById('faction-member-search')||{}).value||'').toLowerCase();
+  var allNpcs=loadNpcs();var faction=_factionMembersId?loadFactions().find(function(f){return f.id===_factionMembersId;}):null;var memberIds=faction?(faction.memberIds||[]):[];
+  var filtered=allNpcs.filter(function(n){if(memberIds.indexOf(n.id)!==-1)return false;if(!q)return true;return n.name.toLowerCase().includes(q)||(n.role||'').toLowerCase().includes(q);}).slice(0,20);
+  results.innerHTML='';
+  if(!filtered.length){results.innerHTML='<div style="padding:10px;font-size:12px;color:var(--muted);text-align:center">'+(q?'No NPCs match.':'Type to search NPCs')+'</div>';return;}
+  filtered.forEach(function(npc){var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.05)';row.innerHTML='<div style="flex:1"><div style="font-size:13px;color:var(--text)">'+npc.name+'</div>'+(npc.role?'<div style="font-size:11px;color:var(--muted)">'+npc.role+'</div>':'')+'</div><button class="btn-gold btn-sm" style="font-size:11px;padding:3px 10px">+ Add</button>';row.querySelector('button').onclick=(function(nid){return function(e){e.stopPropagation();addNpcToFaction(nid);};})(npc.id);results.appendChild(row);});
+}
+function addNpcToFaction(npcId){
+  if(!_factionMembersId)return;var factions=loadFactions();var f=factions.find(function(f){return f.id===_factionMembersId;});if(!f)return;
+  if(!f.memberIds)f.memberIds=[];if(f.memberIds.indexOf(npcId)===-1)f.memberIds.push(npcId);
+  saveFactions(factions);filterFactionNpcSearch();renderFactionMembersList();renderFactions();
+}
+function removeNpcFromFaction(npcId){
+  if(!_factionMembersId)return;var factions=loadFactions();var f=factions.find(function(f){return f.id===_factionMembersId;});if(!f)return;
+  f.memberIds=(f.memberIds||[]).filter(function(id){return id!==npcId;});
+  saveFactions(factions);renderFactionMembersList();renderFactions();
+}
+function renderFactionMembersList(){
+  var list=document.getElementById('faction-members-list');if(!list)return;
+  var faction=_factionMembersId?loadFactions().find(function(f){return f.id===_factionMembersId;}):null;var memberIds=faction?(faction.memberIds||[]):[];
+  var members=memberIds.map(function(id){return loadNpcs().find(function(n){return n.id===id;});}).filter(Boolean);
+  list.innerHTML='';
+  if(!members.length){list.innerHTML='<div style="padding:10px;font-size:12px;color:var(--muted);text-align:center">No members yet.</div>';return;}
+  members.forEach(function(npc){var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)';row.innerHTML='<div style="flex:1"><div style="font-size:13px;color:var(--text)">'+npc.name+'</div>'+(npc.role?'<div style="font-size:11px;color:var(--muted)">'+npc.role+'</div>':'')+'</div>';var remBtn=document.createElement('button');remBtn.className='btn-ghost btn-sm';remBtn.style.cssText='color:var(--danger);border-color:var(--danger);font-size:11px;padding:2px 7px';remBtn.innerHTML='&#10005;';(function(nid){remBtn.onclick=function(){removeNpcFromFaction(nid);};})(npc.id);row.appendChild(remBtn);list.appendChild(row);});
+}
+
+// ── Session notes ─────────────────────────────────────────────
+function loadSessionNotes(){try{return JSON.parse(localStorage.getItem('fg_session_notes')||'[]');}catch(e){return[];}}
+function saveSessionNotes(n){localStorage.setItem('fg_session_notes',JSON.stringify(n));}
+
+// ── Locations management modal ────────────────────────────────
+function openManageLocationsModal(){
+  var modal=document.getElementById('manage-locations-modal');
+  if(!modal){
+    modal=document.createElement('div');modal.id='manage-locations-modal';modal.className='modal-overlay';
+    modal.innerHTML='<div class="modal-box" style="max-width:500px"><div class="modal-title">&#127968; LOCATIONS &amp; REGIONS</div><div style="display:flex;gap:8px;margin-bottom:14px"><input type="text" id="new-loc-name" placeholder="New location name..." style="flex:1"><button class="btn-gold btn-sm" onclick="addLocationFromModal()">+ Add</button></div><div style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em;margin-bottom:4px">REGIONS</div><div style="display:flex;gap:8px;margin-bottom:10px"><input type="text" id="new-region-name" placeholder="New region name..." style="flex:1"><button class="btn-ghost btn-sm" onclick="addRegionFromModal()">+ Add Region</button></div><div id="manage-locs-list" style="max-height:320px;overflow-y:auto"></div><div class="modal-btns" style="margin-top:12px"><button class="btn-ghost" style="flex:1" id="close-locs-modal-btn">Done</button></div></div>';
+    document.body.appendChild(modal);
   }
+  renderManageLocationsList();modal.style.display='flex';modal.classList.add('show');
+  var closeBtn=document.getElementById('close-locs-modal-btn');
+  if(closeBtn)closeBtn.onclick=function(){closeModal('manage-locations-modal');populateRegionFilter&&populateRegionFilter();renderNpcs&&renderNpcs();};
+  setTimeout(function(){var i=document.getElementById('new-loc-name');if(i)i.focus();},100);
+}
+function addLocationFromModal(){
+  var inp=document.getElementById('new-loc-name');if(!inp||!inp.value.trim())return;
+  var loc=addLocation(inp.value.trim());if(!loc){showToast('Location already exists','error');return;}
+  inp.value='';renderManageLocationsList();populateLocationFilter&&populateLocationFilter();showToast('Location added \u2713','success');
+}
+function addRegionFromModal(){
+  var inp=document.getElementById('new-region-name');if(!inp||!inp.value.trim())return;
+  var regions=loadRegions();
+  if(regions.find(function(r){return r.name.toLowerCase()===inp.value.trim().toLowerCase();})){showToast('Region already exists','error');return;}
+  regions.push({id:'reg_'+Date.now(),name:inp.value.trim()});saveRegions(regions);
+  inp.value='';renderManageLocationsList();populateRegionFilter&&populateRegionFilter();showToast('Region added \u2713','success');
+}
+function renderManageLocationsList(){
+  var list=document.getElementById('manage-locs-list');if(!list)return;
+  var locs=loadLocations();var regions=loadRegions();var npcs=loadNpcs();
+  list.innerHTML='';
+  if(!locs.length){list.innerHTML='<div class="empty-state">No locations yet.</div>';return;}
+  var byRegion={};var unassigned=[];
+  locs.forEach(function(loc){if(loc.regionId){if(!byRegion[loc.regionId])byRegion[loc.regionId]=[];byRegion[loc.regionId].push(loc);}else{unassigned.push(loc);}});
+  function makeLocRow(loc){
+    var npcCount=npcs.filter(function(n){return n.locationId===loc.id;}).length;
+    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)';
+    var nameDiv=document.createElement('div');nameDiv.style.cssText='flex:1;font-size:13px;color:var(--text)';nameDiv.textContent=loc.name+(npcCount?' ('+npcCount+' NPC'+(npcCount===1?'':'s')+')':'');
+    var regSel=document.createElement('select');regSel.style.cssText='font-size:11px;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:3px 6px;max-width:130px';regSel.innerHTML='<option value="">No region</option>';
+    regions.forEach(function(r){var o=document.createElement('option');o.value=r.id;o.textContent=r.name;if(loc.regionId===r.id)o.selected=true;regSel.appendChild(o);});
+    (function(lid){regSel.onchange=function(){assignLocationToRegion(lid,this.value);renderManageLocationsList();populateRegionFilter&&populateRegionFilter();showToast('Saved \u2713','success');};})(loc.id);
+    var delBtn=document.createElement('button');delBtn.className='btn-ghost btn-sm';delBtn.style.cssText='color:var(--danger);border-color:var(--danger);padding:2px 6px;font-size:11px';delBtn.innerHTML='&#10005;';
+    (function(lid,lname,count){delBtn.onclick=function(){var msg='Delete "'+lname+'"?';if(count>0)msg+=' This will also delete '+count+' NPC'+(count===1?'':'s')+'.';if(!confirm(msg))return;var ls=loadLocations().filter(function(l){return l.id!==lid;});saveLocations(ls);var ns=loadNpcs().filter(function(n){return n.locationId!==lid;});saveNpcs(ns);renderManageLocationsList();renderNpcs&&renderNpcs();populateLocationFilter&&populateLocationFilter();showToast('Deleted','success');};})(loc.id,loc.name,npcCount);
+    row.appendChild(nameDiv);row.appendChild(regSel);row.appendChild(delBtn);return row;
+  }
+  regions.forEach(function(r){
+    var regionLocs=byRegion[r.id]||[];
+    var hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 0 4px;margin-top:6px';hdr.innerHTML='<span style="font-family:Cinzel,serif;font-size:10px;color:var(--gold);letter-spacing:.1em;flex:1">'+r.name.toUpperCase()+' ('+regionLocs.length+')</span>';
+    var delRegBtn=document.createElement('button');delRegBtn.className='btn-ghost btn-sm';delRegBtn.style.cssText='color:var(--danger);border-color:var(--danger);padding:2px 6px;font-size:10px';delRegBtn.innerHTML='&#10005; Region';
+    (function(rid,rname){delRegBtn.onclick=function(){if(!confirm('Delete region "'+rname+'"?'))return;saveRegions(loadRegions().filter(function(r2){return r2.id!==rid;}));var ls=loadLocations();ls.forEach(function(l){if(l.regionId===rid)l.regionId=null;});saveLocations(ls);renderManageLocationsList();populateRegionFilter&&populateRegionFilter();};})(r.id,r.name);
+    hdr.appendChild(delRegBtn);list.appendChild(hdr);
+    regionLocs.forEach(function(loc){list.appendChild(makeLocRow(loc));});
+    if(!regionLocs.length){var empty=document.createElement('div');empty.style.cssText='font-size:12px;color:var(--muted);padding:4px 0;font-style:italic';empty.textContent='No locations assigned';list.appendChild(empty);}
+  });
+  if(unassigned.length){var uhdr=document.createElement('div');uhdr.style.cssText='font-family:Cinzel,serif;font-size:10px;color:var(--muted);letter-spacing:.08em;padding:10px 0 4px;margin-top:6px';uhdr.textContent='UNASSIGNED LOCATIONS';list.appendChild(uhdr);unassigned.forEach(function(loc){list.appendChild(makeLocRow(loc));});}
 }
 
-function resetLootGenerator() {
-  document.getElementById('loot-enemies').value = '';
-  document.getElementById('loot-content').innerHTML = '';
-  var result = document.getElementById('loot-result');
-  var status = document.getElementById('loot-status');
-  if(result) result.classList.add('hidden');
-  if(status) status.classList.add('hidden');
-  var panel = document.getElementById('loot-generator-panel');
-  if(panel) panel.style.display = 'none';
-}
+// ── statblock updated versions ────────────────────────────────
+var currentStatblock = null;
+
 </script>
 </body>
 </html>
