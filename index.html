@@ -6504,9 +6504,10 @@ function generateStatblock() {
   status.classList.remove('hidden'); status.textContent = 'Generating '+desc+'...';
   result.classList.remove('hidden');
 
+  // Step 1: Generate statblock with spell NAMES only (compact)
   var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'.'
     + (isLegendary ? ' Make it LEGENDARY with 3 Legendary Actions, 3 Legendary Resistances, and Lair Actions.' : '')
-    + ' If this is a spellcaster, include full spell details. Return ONLY a single valid JSON object, no markdown, no explanation:'
+    + ' If a spellcaster, list spell names only (no descriptions). Return ONLY valid JSON, no markdown:'
     + ' {"name":"string","size":"'+size+'","type":"string","alignment":"string","ac":10,"acNote":"string",'
     + '"hp":20,"hpDice":"4d8+4","speed":"30 ft","str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10,'
     + '"savingThrows":"string","skills":"string","damageImmunities":"string","conditionImmunities":"string",'
@@ -6517,19 +6518,16 @@ function generateStatblock() {
     + '"legendaryResistances":0,"legendaryActions":[],"lairActions":[],'
     + '"spellcastingAbility":"","spellSaveDC":0,"spellAttackBonus":0,'
     + '"spellSlots":{"1st":0,"2nd":0,"3rd":0,"4th":0,"5th":0,"6th":0,"7th":0,"8th":0,"9th":0},'
-    + '"spells":{"cantrips":[{"name":"string","school":"string","castingTime":"string","range":"string","components":"string","duration":"string","desc":"string"}],'
-    + '"1st":[{"name":"string","school":"string","castingTime":"string","range":"string","components":"string","duration":"string","desc":"string"}],'
-    + '"2nd":[],"3rd":[],"4th":[],"5th":[],"6th":[],"7th":[],"8th":[],"9th":[]}}';
+    + '"spells":{"cantrips":["spell name"],"1st":["spell name"],"2nd":[],"3rd":[],"4th":[],"5th":[],"6th":[],"7th":[],"8th":[],"9th":[]}}';
 
   var timer = setTimeout(function(){
     status.textContent = 'Request timed out. Please try again.';
   }, 45000);
 
-  console.log('[Statblock] Starting fetch, key:', getApiKey() ? 'SET' : 'MISSING');
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: apiHeaders(),
-    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
+    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:2500, messages:[{role:'user',content:prompt}]})
   })
   .then(function(r){ return r.json(); })
   .then(function(data) {
@@ -6537,19 +6535,67 @@ function generateStatblock() {
     if(data.error) throw new Error(data.error.message);
     var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
     var s = text.indexOf('{'); var e = text.lastIndexOf('}');
-    if(s === -1) throw new Error('No JSON returned: '+text.slice(0,100));
+    if(s === -1) throw new Error('No JSON returned');
     var sb = JSON.parse(text.slice(s, e+1));
     currentStatblock = sb;
     renderStatblockCard(sb, null);
     status.classList.add('hidden');
     showTokenPrompt(sb, desc);
+    // Step 2: if spellcaster, fetch full spell details in background
+    var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+    var spellNames = [];
+    levels.forEach(function(lvl){
+      var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
+      list.forEach(function(sp){ if(typeof sp === 'string' && sp) spellNames.push({name:sp, level:lvl}); });
+    });
+    if(spellNames.length) fetchSpellDetails(sb, spellNames);
     if(typeof window._sbOnComplete==='function') window._sbOnComplete();
   })
   .catch(function(err) {
     clearTimeout(timer);
-    console.error('[Statblock] Error:', err);
     status.textContent = 'Failed: '+err.message;
   });
+}
+
+function fetchSpellDetails(sb, spellEntries) {
+  var names = spellEntries.map(function(s){ return s.name; }).join(', ');
+  var prompt = 'Provide full D&D 5e spell details for these spells: '+names
+    + '. Return ONLY valid JSON array, no markdown: '
+    + '[{"name":"spell name","level":"cantrip or 1st etc","school":"Evocation","castingTime":"1 action","range":"60 ft","components":"V, S, M (a bit of fleece)","duration":"Concentration, up to 1 minute","desc":"Full spell description."}]';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    if(data.error) return;
+    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
+    var s = text.indexOf('['); var e = text.lastIndexOf(']');
+    if(s === -1) return;
+    var spellDetails = JSON.parse(text.slice(s, e+1));
+    // Merge into sb.spells keyed by name
+    var byName = {};
+    spellDetails.forEach(function(sp){ byName[sp.name.toLowerCase()] = sp; });
+    var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+    levels.forEach(function(lvl){
+      var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
+      sb.spells[lvl] = list.map(function(sp){
+        var key = (typeof sp === 'string' ? sp : sp.name).toLowerCase();
+        return byName[key] || {name: typeof sp === 'string' ? sp : sp.name, level:lvl, school:'', castingTime:'', range:'', components:'', duration:'', desc:''};
+      });
+    });
+    // Show spell cards button now that details are loaded
+    showToast('Spell details loaded \u2713', 'success');
+    // Update the spell cards button to be active
+    var spellBtns = document.querySelectorAll('[data-sb-spell-btn]');
+    spellBtns.forEach(function(btn){
+      btn.style.color = 'var(--gold)';
+      btn.style.borderColor = 'var(--gold)';
+    });
+  })
+  .catch(function(){}); // fail silently - spell names still show on card
 }
 
 function generateStatblockArt(sb, desc, callback) {
@@ -6646,7 +6692,10 @@ function renderStatblockCard(sb, art) {
   })()){
     var spellBtn = document.createElement('button');
     spellBtn.className = 'btn-ghost btn-sm';
-    spellBtn.innerHTML = '&#9881; Spell Cards PNG';
+    spellBtn.setAttribute('data-sb-spell-btn','1');
+    spellBtn.innerHTML = '&#9997; Spell Cards PNG';
+    spellBtn.style.color = 'var(--muted)';
+    spellBtn.title = 'Loading spell details...';
     (function(capSb){ spellBtn.onclick = function(){ downloadSpellCardsPng(capSb); }; })(sb);
     btns.appendChild(spellBtn);
   }
