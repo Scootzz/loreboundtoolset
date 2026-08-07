@@ -4400,12 +4400,11 @@ function addEnemyRow() {
 }
 
 async function analyseEncounter() {
-  var apiKey = getApiKey();
-  if (!apiKey) { (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
+  if(!getApiKey()) { showToast('No API key set — add one via ⚙ Settings','error'); return; }
   var pcs = loadPcs();
-  var selected = pcs.filter(function(p) { return selectedCombatPcs[p.id]; });
-  if (!selected.length) { alert('Select at least one player character.'); return; }
-  if (!enemyRows.length) { alert('Add at least one enemy.'); return; }
+  var selected = pcs.filter(function(p){ return selectedCombatPcs[p.id]; });
+  if(!selected.length){ alert('Select at least one player character.'); return; }
+  if(!enemyRows.length){ alert('Add at least one enemy.'); return; }
 
   var result = document.getElementById('combat-result');
   var content = document.getElementById('combat-result-content');
@@ -4413,54 +4412,48 @@ async function analyseEncounter() {
   content.innerHTML = '<p class="text-center loading-pulse" style="color:var(--muted);font-style:italic;padding:24px 0">Analysing the encounter...</p>';
   result.scrollIntoView({behavior:'smooth',block:'nearest'});
 
-  var playerSummary = selected.map(function(p) {
-    return p.name + ' - ' + (p.pcClass||'Unknown class') + ' Level ' + (p.level||'?') + (p.notes ? ' (' + p.notes.slice(0,120) + ')' : '');
+  var playerSummary = selected.map(function(p){
+    return p.name+' - '+(p.pcClass||'Unknown')+' Level '+(p.level||'?')+(p.notes?' ('+p.notes.slice(0,80)+')':'');
   }).join(', ');
 
-  var enemySummary = enemyRows.map(function(r) {
+  var enemySummary = enemyRows.map(function(r){
     var c = CREATURES[r.creature];
-    var legFlag = r.legendary ? ' [LEGENDARY]' : '';
-    return r.qty + 'x ' + r.creature + legFlag + ' (CR ' + (c?c.cr:'?') + ', Type: ' + (c?c.type:'?') + ', Primary: ' + (c?c.primary:'?') + ')';
+    return r.qty+'x '+r.creature+(r.legendary?' [LEGENDARY]':'')+' (CR '+(c?c.cr:'?')+', '+(c?c.type:'?')+')';
   }).join(', ');
 
-  var jsonSchema = '{"difficulty":"Easy OR Medium OR Hard OR Deadly","xp_note":"brief XP/milestone note","tips":["tip 1","tip 2","tip 3"],"scaling_warning":"EMPTY STRING unless enemies are significantly under-levelled (CR 3+ below party level), then suggest specific upgrades","scale_suggestions":["specific enemy to add or upgrade","e.g. replace Bandits with Veterans CR3","add a named leader with legendary actions"],"if_too_easy":["suggestion 1","suggestion 2"],"if_too_hard":["suggestion 1","suggestion 2"]}';
+  var jsonSchema = '{"difficulty":"Easy|Medium|Hard|Deadly","xp_note":"brief note","tips":["tip1","tip2","tip3"],"scaling_warning":"empty string or warning","scale_suggestions":["suggestion if needed"],"if_too_easy":["suggestion1","suggestion2"],"if_too_hard":["suggestion1","suggestion2"]}';
+
   var messageContent = [];
   var pdfPcs = selected.filter(function(p){ return p.pdfData; });
 
-  if (pdfPcs.length > 0) {
-    pdfPcs.forEach(function(p) {
-      messageContent.push({type:'document', source:{type:'base64', media_type:'application/pdf', data:p.pdfData}});
+  if(pdfPcs.length > 0) {
+    pdfPcs.forEach(function(p){
+      messageContent.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:p.pdfData}});
     });
     var pdfNames = pdfPcs.map(function(p){return p.name;}).join(', ');
-    var nonPdfPcs = selected.filter(function(p){return !p.pdfData;});
-    var nonPdfNote = nonPdfPcs.length ? ' Additional players (class/level only): ' + nonPdfPcs.map(function(p){return p.name+' ('+p.pcClass+' Lv'+p.level+')';}).join(', ') : '';
-    var pdfText = 'You are a D&D 5e DM assistant. The attached PDFs are character sheets for: ' + pdfNames + '.' + nonPdfNote;
-    pdfText += ' ENEMIES: ' + enemySummary;
-    pdfText += ' Analyse this encounter and return ONLY valid JSON, no markdown: ' + jsonSchema;
-    messageContent.push({type:'text', text: pdfText});
+    var nonPdf = selected.filter(function(p){return !p.pdfData;});
+    var extraNote = nonPdf.length ? ' Additional: '+nonPdf.map(function(p){return p.name+' ('+p.pcClass+' Lv'+p.level+')';}).join(', ') : '';
+    messageContent.push({type:'text',text:'You are a D&D 5e DM assistant. Character sheets attached for: '+pdfNames+'.'+extraNote+' ENEMIES: '+enemySummary+' You MUST respond with ONLY a single JSON object. No explanation, no markdown, no preamble. JSON schema: '+jsonSchema});
   } else {
-    var plainText = 'You are a D&D 5e DM assistant.';
-    plainText += ' PLAYERS: ' + playerSummary;
-    plainText += ' ENEMIES: ' + enemySummary;
-    plainText += ' Analyse this encounter. If enemies are significantly below party level (trivially easy), flag this in scaling_warning and provide specific scale_suggestions to make it more challenging (e.g. add legendary actions, increase CR, add numbers). Return ONLY valid JSON, no markdown: ' + jsonSchema;
-    messageContent.push({type:'text', text: plainText});
+    messageContent.push({type:'text',text:'You are a D&D 5e DM assistant. You MUST respond with ONLY a single JSON object matching the schema below — no explanation, no markdown, no preamble, no other text whatsoever. PLAYERS: '+playerSummary+' ENEMIES: '+enemySummary+' JSON schema: '+jsonSchema});
   }
 
-  try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: apiHeaders(),
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:800, messages:[{role:'user',content:messageContent}]})
-    });
-    if (!res.ok) { var t = await res.text(); throw new Error(res.status + ': ' + t.slice(0,200)); }
-    var data = await res.json();
-    var text = data.content.map(function(i){return i.text||'';}).join('');
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:apiHeaders(),
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:messageContent}]})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.error) throw new Error(data.error.message);
+    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
     var clean = text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
     var analysis = JSON.parse(clean);
     renderCombatResult(analysis, selected, enemyRows);
-  } catch(e) {
-    content.innerHTML = '<p class="text-center" style="color:var(--danger);font-style:italic">Analysis failed.<br><small style="opacity:.7">' + e.message + '</small></p>';
-  }
+  })
+  .catch(function(e){
+    content.innerHTML = '<p class="text-center" style="color:var(--danger);font-style:italic">Analysis failed.<br><small style="opacity:.7">'+e.message+'</small></p>';
+  });
 }
 
 function saveCombatEncounter(analysis, players, enemies) {
