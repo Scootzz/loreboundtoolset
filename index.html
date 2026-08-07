@@ -6498,7 +6498,7 @@ function generateStatblock() {
   if(!desc){ document.getElementById('statblock-desc').focus(); return; }
   var size = document.getElementById('statblock-size').value;
   var isLegendary = !!(document.getElementById('statblock-legendary') && document.getElementById('statblock-legendary').checked);
-  if(!getApiKey()){ showToast('No API key set — add one via ⚙ Settings','error'); return; }
+  if(!getApiKey()){ showToast('No API key set \u2014 add one via \u2699 Settings','error'); return; }
   var status = document.getElementById('statblock-status');
   var result = document.getElementById('statblock-result');
   status.classList.remove('hidden'); status.textContent = 'Generating '+desc+'...';
@@ -6506,7 +6506,7 @@ function generateStatblock() {
 
   var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'.'
     + (isLegendary ? ' Make it LEGENDARY with 3 Legendary Actions, 3 Legendary Resistances, and Lair Actions.' : '')
-    + ' Return ONLY a single valid JSON object, no markdown, no explanation, no other text:'
+    + ' If this is a spellcaster, include full spell details. Return ONLY a single valid JSON object, no markdown, no explanation:'
     + ' {"name":"string","size":"'+size+'","type":"string","alignment":"string","ac":10,"acNote":"string",'
     + '"hp":20,"hpDice":"4d8+4","speed":"30 ft","str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10,'
     + '"savingThrows":"string","skills":"string","damageImmunities":"string","conditionImmunities":"string",'
@@ -6514,18 +6514,22 @@ function generateStatblock() {
     + '"traits":[{"name":"string","desc":"string"}],'
     + '"actions":[{"name":"string","desc":"string"}],'
     + '"bonusActions":[],"reactions":[],'
-    + '"legendaryResistances":0,"legendaryActions":[],"lairActions":[]}';
+    + '"legendaryResistances":0,"legendaryActions":[],"lairActions":[],'
+    + '"spellcastingAbility":"","spellSaveDC":0,"spellAttackBonus":0,'
+    + '"spellSlots":{"1st":0,"2nd":0,"3rd":0,"4th":0,"5th":0,"6th":0,"7th":0,"8th":0,"9th":0},'
+    + '"spells":{"cantrips":[{"name":"string","school":"string","castingTime":"string","range":"string","components":"string","duration":"string","desc":"string"}],'
+    + '"1st":[{"name":"string","school":"string","castingTime":"string","range":"string","components":"string","duration":"string","desc":"string"}],'
+    + '"2nd":[],"3rd":[],"4th":[],"5th":[],"6th":[],"7th":[],"8th":[],"9th":[]}}';
 
   var timer = setTimeout(function(){
-    status.textContent = 'Request timed out after 30 seconds. Please try again.';
-    status.classList.remove('hidden');
-  }, 30000);
+    status.textContent = 'Request timed out. Please try again.';
+  }, 45000);
 
   console.log('[Statblock] Starting fetch, key:', getApiKey() ? 'SET' : 'MISSING');
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: apiHeaders(),
-    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:2000, messages:[{role:'user',content:prompt}]})
+    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
   })
   .then(function(r){ return r.json(); })
   .then(function(data) {
@@ -6533,24 +6537,13 @@ function generateStatblock() {
     if(data.error) throw new Error(data.error.message);
     var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
     var s = text.indexOf('{'); var e = text.lastIndexOf('}');
-    if(s === -1) throw new Error('No JSON in response: '+text.slice(0,100));
+    if(s === -1) throw new Error('No JSON returned: '+text.slice(0,100));
     var sb = JSON.parse(text.slice(s, e+1));
     currentStatblock = sb;
-    var rendered = renderStatblockCard(sb, null);
-    status.textContent = 'Generating token art...';
-    generateStatblockArt(sb, desc, function(svgArt) {
-      if(svgArt) {
-        var tokenEl = document.getElementById(rendered.sbId+'_token');
-        var artStatus = document.getElementById(rendered.sbId+'_artstatus');
-        if(tokenEl){ tokenEl.innerHTML=svgArt; tokenEl.style.background='transparent';
-          var svgEl=tokenEl.querySelector('svg');
-          if(svgEl){svgEl.setAttribute('width','110');svgEl.setAttribute('height','110');svgEl.style.cssText='border-radius:50%;display:block';}
-        }
-        if(artStatus) artStatus.style.display='none';
-      }
-      status.classList.add('hidden');
-      if(typeof window._sbOnComplete==='function') window._sbOnComplete();
-    });
+    renderStatblockCard(sb, null);
+    status.classList.add('hidden');
+    showTokenPrompt(sb, desc);
+    if(typeof window._sbOnComplete==='function') window._sbOnComplete();
   })
   .catch(function(err) {
     clearTimeout(timer);
@@ -6608,7 +6601,27 @@ function renderStatblockCard(sb, art) {
     +'<div style="border-bottom:1px solid #9a5a3a;margin-bottom:6px"><p style="margin:2px 0;font-size:13px"><strong>Armor Class</strong> '+sb.ac+(sb.acNote?' ('+sb.acNote+')':'')+'</p><p style="margin:2px 0;font-size:13px"><strong>Hit Points</strong> '+sb.hp+' ('+sb.hpDice+')</p><p style="margin:2px 0;font-size:13px"><strong>Speed</strong> '+sb.speed+'</p></div>'
     +'<table style="width:100%;border-collapse:collapse;background:rgba(154,90,58,0.15);margin-bottom:6px;font-size:13px"><tr>'+mods+'</tr></table>'
     +'<div style="border-bottom:1px solid #9a5a3a;margin-bottom:6px">'+extras+'</div>'
-    +sec('TRAITS',sb.traits)+sec('ACTIONS',sb.actions)+sec('BONUS ACTIONS',sb.bonusActions)+sec('REACTIONS',sb.reactions)+sec('LEGENDARY ACTIONS',sb.legendaryActions);
+    +sec('TRAITS',sb.traits)+sec('ACTIONS',sb.actions)+sec('BONUS ACTIONS',sb.bonusActions)+sec('REACTIONS',sb.reactions)+sec('LEGENDARY ACTIONS',sb.legendaryActions)
+    +(function(){
+      if(!sb.spells) return '';
+      var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+      var hasSpells = levels.some(function(l){ return sb.spells[l] && sb.spells[l].length; });
+      if(!hasSpells) return '';
+      var slots = sb.spellSlots || {};
+      var html = '<h4 style="color:#7a2020;border-bottom:1px solid #9a5a3a;margin:8px 0 4px;font-size:13px">SPELLCASTING</h4>';
+      html += '<p style="margin:2px 0;font-size:13px"><em><strong>Spellcasting.</strong></em> ';
+      html += (sb.spellcastingAbility ? 'Spellcasting ability: '+sb.spellcastingAbility+'. ' : '');
+      html += (sb.spellSaveDC ? 'Spell save DC '+sb.spellSaveDC+', ' : '');
+      html += (sb.spellAttackBonus ? '+'+ sb.spellAttackBonus+' to spell attacks.' : '') + '</p>';
+      levels.forEach(function(lvl){
+        var spellList = sb.spells[lvl];
+        if(!spellList || !spellList.length) return;
+        var slotNote = (lvl !== 'cantrips' && slots[lvl]) ? ' ('+slots[lvl]+' slots)' : '';
+        html += '<p style="margin:2px 0;font-size:12px"><strong>'+(lvl==='cantrips'?'Cantrips':lvl+' level'+slotNote)+':</strong> ';
+        html += spellList.map(function(sp){ return typeof sp === 'string' ? sp : sp.name; }).join(', ') + '</p>';
+      });
+      return html;
+    })();
 
   var btns = document.createElement('div');
   btns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:8px;background:var(--panel);border-top:1px solid var(--border)';
@@ -6625,6 +6638,18 @@ function renderStatblockCard(sb, art) {
 
   btns.appendChild(dlBtn);
   btns.appendChild(trackerBtn);
+
+  // Spell cards button - only if creature has spells
+  if(sb.spells && (function(){
+    var lvls=['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+    return lvls.some(function(l){ return sb.spells[l]&&sb.spells[l].length; });
+  })()){
+    var spellBtn = document.createElement('button');
+    spellBtn.className = 'btn-ghost btn-sm';
+    spellBtn.innerHTML = '&#9881; Spell Cards PNG';
+    (function(capSb){ spellBtn.onclick = function(){ downloadSpellCardsPng(capSb); }; })(sb);
+    btns.appendChild(spellBtn);
+  }
   container.appendChild(card);
   container.appendChild(btns);
 
@@ -11843,6 +11868,279 @@ function generateTokenArt() {
     if(statusEl) statusEl.textContent = 'Failed: '+err.message;
     if(btn){ btn.disabled=false; btn.textContent='&#127912; Generate Token'; }
   });
+}
+
+function showSpellCardPrompt(sb) {
+  var existing = document.getElementById('sb-spell-prompt');
+  if(existing) existing.remove();
+  var div = document.createElement('div');
+  div.id = 'sb-spell-prompt';
+  div.style.cssText = 'margin-top:10px;padding:14px;background:rgba(90,50,160,0.08);border:1px solid rgba(120,80,200,0.3);border-radius:6px';
+  div.innerHTML = '<div style="font-family:Cinzel,serif;font-size:10px;color:#a080e0;letter-spacing:.1em;margin-bottom:8px">&#10024; SPELL CARDS</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">This creature uses magic. Generate printable spell cards with full details for each spell.</div>'
+    + '<div style="display:flex;gap:8px;align-items:center">'
+    + '<button class="btn-gold btn-sm" onclick="generateSpellCards()">&#10024; Generate Spell Cards</button>'
+    + '<span id="sb-spell-status" style="font-size:12px;color:var(--muted);font-style:italic"></span>'
+    + '</div>';
+  var result = document.getElementById('statblock-result');
+  if(result) result.appendChild(div);
+}
+
+function generateSpellCards() {
+  if(!currentStatblock){ showToast('No statblock loaded','error'); return; }
+  if(!getApiKey()){ showToast('No API key set','error'); return; }
+  var statusEl = document.getElementById('sb-spell-status');
+  var btn = document.querySelector('#sb-spell-prompt .btn-gold');
+  if(statusEl) statusEl.textContent = 'Getting spell details...';
+  if(btn){ btn.disabled=true; btn.textContent='Generating...'; }
+
+  var sb = currentStatblock;
+  // Collect all spell names from statblock
+  var spellNames = [];
+  if(sb.spells) {
+    Object.keys(sb.spells).forEach(function(level) {
+      var arr = sb.spells[level];
+      if(Array.isArray(arr)) arr.forEach(function(s){ if(s && spellNames.indexOf(s)===-1) spellNames.push(s); });
+    });
+  }
+  // Also extract from traits
+  (sb.traits||[]).forEach(function(t){
+    if(/spellcast/i.test(t.name) && t.desc) {
+      var matches = t.desc.match(/\b([A-Z][a-z]+(?: [A-Z][a-z]+)*)\b/g);
+      if(matches) matches.forEach(function(s){
+        if(s.length > 3 && spellNames.indexOf(s)===-1) spellNames.push(s);
+      });
+    }
+  });
+
+  if(!spellNames.length) {
+    // Ask Claude to infer spells from statblock
+    spellNames = ['Identify spells from the statblock traits and actions'];
+  }
+
+  var prompt = 'The D&D 5e creature "'+sb.name+'" is a spellcaster. '
+    + (spellNames.length > 1 ? 'Known spells: '+spellNames.join(', ')+'. ' : '')
+    + 'Return ONLY a JSON array of spell objects, no markdown, no preamble. '
+    + 'For each spell provide: {"name":"string","level":"Cantrip or 1st-9th","school":"string","castingTime":"string","range":"string","components":"V,S,M (material)","duration":"string","concentration":false,"ritual":false,"description":"full spell description as printed in rulebook","higherLevels":"when cast at higher levels text or empty string"}. '
+    + 'Include ALL spells the creature would know based on its statblock and CR. If spells were not listed, infer appropriate ones for this creature type and CR '+sb.cr+'.';
+
+  var timer = setTimeout(function(){
+    if(statusEl) statusEl.textContent = 'Timed out. Try again.';
+    if(btn){ btn.disabled=false; btn.textContent='&#10024; Generate Spell Cards'; }
+  }, 45000);
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    clearTimeout(timer);
+    if(data.error) throw new Error(data.error.message);
+    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
+    var s = text.indexOf('['); var e = text.lastIndexOf(']');
+    if(s === -1) throw new Error('No spell data returned');
+    var spells = JSON.parse(text.slice(s, e+1));
+    if(statusEl) statusEl.textContent = 'Done! Rendering cards...';
+    if(btn){ btn.disabled=false; btn.textContent='&#128260; Regenerate'; }
+    renderSpellCardSheet(sb, spells);
+  })
+  .catch(function(err){
+    clearTimeout(timer);
+    if(statusEl) statusEl.textContent = 'Failed: '+err.message;
+    if(btn){ btn.disabled=false; btn.textContent='&#10024; Generate Spell Cards'; }
+  });
+}
+
+function renderSpellCardSheet(sb, spells) {
+  var existing = document.getElementById('sb-spell-sheet');
+  if(existing) existing.remove();
+
+  var schoolColours = {
+    Abjuration:'#4a7acd', Conjuration:'#9a4acd', Divination:'#4acdcd',
+    Enchantment:'#cd4acd', Evocation:'#cd4a4a', Illusion:'#7a4acd',
+    Necromancy:'#4a7a4a', Transmutation:'#cd9a4a'
+  };
+
+  var cardsHtml = spells.map(function(sp) {
+    var col = schoolColours[sp.school] || '#7a6a4a';
+    var levelText = sp.level === 'Cantrip' ? 'Cantrip' : sp.level + ' level';
+    var tags = '';
+    if(sp.concentration) tags += '<span style="background:rgba(205,74,74,0.2);color:#cd4a4a;padding:1px 5px;border-radius:3px;font-size:9px;margin-right:4px">CONCENTRATION</span>';
+    if(sp.ritual) tags += '<span style="background:rgba(74,122,205,0.2);color:#4a7acd;padding:1px 5px;border-radius:3px;font-size:9px">RITUAL</span>';
+    return '<div style="break-inside:avoid;background:#1a1208;border:1px solid '+col+';border-radius:8px;padding:14px;margin-bottom:12px;page-break-inside:avoid">'
+      + '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px">'
+      + '<div style="font-family:Georgia,serif;font-size:16px;font-weight:bold;color:#e8d5a8">'+sp.name+'</div>'
+      + '<div style="font-size:10px;color:'+col+';font-family:Georgia,serif;font-style:italic">'+sp.school+'</div>'
+      + '</div>'
+      + '<div style="font-size:10px;color:#8a7a5a;font-style:italic;margin-bottom:8px">'+levelText+(tags?' &nbsp;'+tags:'')+'</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:8px;font-size:11px">'
+      + '<div><span style="color:#8a7a5a">Casting Time:</span> <span style="color:#e8d5a8">'+sp.castingTime+'</span></div>'
+      + '<div><span style="color:#8a7a5a">Range:</span> <span style="color:#e8d5a8">'+sp.range+'</span></div>'
+      + '<div><span style="color:#8a7a5a">Components:</span> <span style="color:#e8d5a8">'+sp.components+'</span></div>'
+      + '<div><span style="color:#8a7a5a">Duration:</span> <span style="color:#e8d5a8">'+sp.duration+'</span></div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:#c8b888;line-height:1.6;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px">'+sp.description+'</div>'
+      + (sp.higherLevels ? '<div style="font-size:11px;color:#8a7a5a;font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06)"><strong>At Higher Levels:</strong> '+sp.higherLevels+'</div>' : '')
+      + '</div>';
+  }).join('');
+
+  var sheet = document.createElement('div');
+  sheet.id = 'sb-spell-sheet';
+  sheet.style.cssText = 'margin-top:14px';
+  sheet.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    + '<div style="font-family:Cinzel,serif;font-size:11px;color:#a080e0;letter-spacing:.1em">&#10024; SPELL CARDS — '+sb.name.toUpperCase()+'</div>'
+    + '<button class="btn-ghost btn-sm" onclick="printSpellCards()" style="font-size:11px">&#128438; Print / Save PDF</button>'
+    + '</div>'
+    + '<div id="spell-cards-content" style="column-count:2;column-gap:12px">'
+    + cardsHtml
+    + '</div>';
+
+  var result = document.getElementById('statblock-result');
+  if(result) result.appendChild(sheet);
+  sheet.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function printSpellCards() {
+  var content = document.getElementById('spell-cards-content');
+  var sb = currentStatblock;
+  if(!content || !sb) return;
+  var w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>'+sb.name+' Spell Cards</title>'
+    + '<style>body{background:#0e0b07;margin:20px;font-family:Georgia,serif}'
+    + '@media print{body{margin:10px} .no-print{display:none}}'
+    + '@page{size:A4;margin:15mm}'
+    + '</style></head><body>'
+    + '<div class="no-print" style="margin-bottom:16px;text-align:center">'
+    + '<button onclick="window.print()" style="background:#2a1a06;border:1px solid #d4a843;color:#d4a843;padding:8px 24px;border-radius:4px;cursor:pointer;font-size:14px;font-family:Georgia,serif">Print / Save as PDF</button>'
+    + '</div>'
+    + '<h2 style="color:#d4a843;font-family:Georgia,serif;text-align:center;margin-bottom:20px;font-size:18px">'+sb.name+' — Spell Cards</h2>'
+    + content.innerHTML
+    + '</body></html>');
+  w.document.close();
+}
+
+function downloadSpellCardsPng(sb) {
+  var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+  var allSpells = [];
+  levels.forEach(function(lvl){
+    var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
+    list.forEach(function(sp){
+      if(typeof sp === 'string') {
+        allSpells.push({name:sp, level:lvl, school:'', castingTime:'', range:'', components:'', duration:'', desc:''});
+      } else {
+        allSpells.push(Object.assign({level:lvl}, sp));
+      }
+    });
+  });
+  if(!allSpells.length){ showToast('No spells found','error'); return; }
+
+  var CARD_W = 250, CARD_H = 350, COLS = 4, PAD = 16, GAP = 12;
+  var rows = Math.ceil(allSpells.length / COLS);
+  var canvasW = COLS * CARD_W + (COLS+1) * GAP;
+  var canvasH = rows * CARD_H + (rows+1) * GAP + 50;
+
+  var canvas = document.createElement('canvas');
+  canvas.width = canvasW; canvas.height = canvasH;
+  var ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#1a0f05';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Title
+  ctx.fillStyle = '#d4a843';
+  ctx.font = 'bold 22px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(sb.name + ' — Spell Cards', canvasW/2, 36);
+
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    if(!text) return y;
+    var words = text.split(' ');
+    var line = '';
+    for(var i=0; i<words.length; i++){
+      var testLine = line + words[i] + ' ';
+      if(ctx.measureText(testLine).width > maxWidth && i > 0){
+        ctx.fillText(line.trim(), x, y);
+        line = words[i] + ' ';
+        y += lineHeight;
+      } else { line = testLine; }
+    }
+    if(line.trim()) { ctx.fillText(line.trim(), x, y); y += lineHeight; }
+    return y;
+  }
+
+  allSpells.forEach(function(sp, idx){
+    var col = idx % COLS;
+    var row = Math.floor(idx / COLS);
+    var cx = GAP + col * (CARD_W + GAP);
+    var cy = 50 + GAP + row * (CARD_H + GAP);
+
+    // Card bg
+    ctx.fillStyle = '#2a1a08';
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, CARD_W, CARD_H, 8);
+    ctx.fill();
+
+    // Level colour strip
+    var levelColours = {cantrips:'#4a6a9a','1st':'#4a8a4a','2nd':'#7a6a2a','3rd':'#9a4a2a','4th':'#6a3a8a','5th':'#8a2a2a','6th':'#2a7a8a','7th':'#5a2a6a','8th':'#8a5a2a','9th':'#6a1a1a'};
+    ctx.fillStyle = levelColours[sp.level] || '#4a3420';
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, CARD_W, 28, [8,8,0,0]);
+    ctx.fill();
+
+    // Level label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText((sp.level==='cantrips'?'Cantrip':sp.level+' Level')+(sp.school?' \u2022 '+sp.school:''), cx+PAD, cy+18);
+
+    // Spell name
+    ctx.fillStyle = '#d4a843';
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'left';
+    var nameY = cy + 44;
+    nameY = wrapText(ctx, sp.name, cx+PAD, nameY, CARD_W-PAD*2, 18);
+
+    // Divider
+    ctx.strokeStyle = '#4a3420';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx+PAD, nameY+2); ctx.lineTo(cx+CARD_W-PAD, nameY+2);
+    ctx.stroke();
+    nameY += 10;
+
+    // Stats
+    ctx.fillStyle = '#c8a070';
+    ctx.font = '10px Georgia, serif';
+    var stats = [
+      sp.castingTime ? 'Cast: '+sp.castingTime : null,
+      sp.range ? 'Range: '+sp.range : null,
+      sp.components ? 'Components: '+sp.components : null,
+      sp.duration ? 'Duration: '+sp.duration : null
+    ].filter(Boolean);
+    stats.forEach(function(stat){
+      ctx.fillText(stat, cx+PAD, nameY);
+      nameY += 13;
+    });
+    if(stats.length){ nameY += 4; }
+
+    // Description
+    ctx.fillStyle = '#e8d5a8';
+    ctx.font = '11px Georgia, serif';
+    wrapText(ctx, sp.desc||'', cx+PAD, nameY, CARD_W-PAD*2, 14);
+  });
+
+  // Download
+  canvas.toBlob(function(blob){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (sb.name||'creature').replace(/[^a-z0-9]/gi,'_')+'_spell_cards.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
 }
 </script>
 </body>
