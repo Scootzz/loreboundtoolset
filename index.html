@@ -2636,8 +2636,8 @@ function loadSessions() { try{return JSON.parse(localStorage.getItem('fg_session
 function saveSessions(s) { localStorage.setItem('fg_sessions',JSON.stringify(s)); }
 function loadTlCards() { try{return JSON.parse(localStorage.getItem('fg_tlcards')||'[]');}catch(e){return [];} }
 function saveTlCards(c) { localStorage.setItem('fg_tlcards',JSON.stringify(c)); }
-function loadCombatHistory() { try{return JSON.parse(localStorage.getItem('fg_combats')||'[]');}catch(e){return [];} }
-function saveCombatHistory(h) { localStorage.setItem('fg_combats',JSON.stringify(h)); }
+function loadCombatHistory() { try{return JSON.parse(localStorage.getItem('fg_combat_history')||'[]');}catch(e){return [];} }
+function saveCombatHistory(h) { localStorage.setItem('fg_combat_history',JSON.stringify(h)); }
 function getApiKey() { return localStorage.getItem('fg_api_key')||''; }
 
 function apiHeaders() {
@@ -4303,6 +4303,18 @@ function renderCombatHistory() {
 }
 
 function renderCombatTab() {
+  // Restore tracker state if combatants are empty (e.g. after page reload)
+  if(!trackerCombatants.length) {
+    try {
+      var saved = JSON.parse(localStorage.getItem('fg_tracker_state')||'null');
+      if(saved && saved.combatants && saved.combatants.length) {
+        trackerCombatants = saved.combatants;
+        trackerRound = saved.round || 1;
+        trackerActiveTurn = saved.active || 0;
+        trackerStarted = saved.started || false;
+      }
+    } catch(e) {}
+  }
   var container = document.getElementById('combat-pc-checkboxes');
   if(!container) return;
   var pcs = loadPcs();
@@ -5695,6 +5707,7 @@ var CONDITION_COLORS = {
 };
 
 function renderTracker() {
+  try{ localStorage.setItem("fg_tracker_state", JSON.stringify({combatants:trackerCombatants,round:trackerRound,active:trackerActiveTurn,started:trackerStarted})); }catch(e){}
   if(!document.getElementById('tracker-bar-inner')) return;
   var bar = document.getElementById('tracker-bar-inner');
   if(!bar) return;
@@ -6528,18 +6541,28 @@ function generateStatblock() {
   .catch(function(e){status.textContent='Failed: '+e.message;});
 }
 
-function generateStatblockArt(sb,desc,callback){
-  var apiKey=getApiKey(); if(!apiKey){if(callback)callback(null);return;}
-  var prompt='Generate SVG token art (viewBox 0 0 180 180) for a D&D creature: '+sb.name+' a '+sb.size+' '+sb.type+'. Description: '+desc+'. Dark background circle, recognisable geometric silhouette, 3-5 creature-appropriate colours. Return ONLY the SVG starting with <svg.';
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
-  .then(function(res){return res.json();})
-  .then(function(data){
-    var svg=data.content.map(function(i){return i.text||'';}).join('').trim();
-    var si=svg.indexOf('<svg'); if(si===-1){if(callback)callback(null);return;}
-    svg=svg.slice(si);
-    if(callback)callback(svg);
+function generateStatblockArt(sb, desc, callback) {
+  if(!getApiKey()){ if(callback) callback(null); return; }
+  var prompt = 'Create a simple SVG token (viewBox="0 0 180 180") for a D&D creature: '+sb.name+', a '+sb.size+' '+sb.type+'. Dark circle background, simple silhouette. Return ONLY the SVG element, starting with <svg.';
+  var timer = setTimeout(function(){ if(callback) callback(null); callback=null; }, 15000);
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:apiHeaders(),
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompt}]})
   })
-  .catch(function(){if(callback)callback(null);});
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    clearTimeout(timer);
+    if(!callback) return;
+    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
+    var s = text.indexOf('<svg'); var e = text.lastIndexOf('</svg>');
+    callback(s !== -1 ? text.slice(s, e+6) : null);
+    callback = null;
+  })
+  .catch(function(){
+    clearTimeout(timer);
+    if(callback){ callback(null); callback=null; }
+  });
 }
 
 function renderStatblockCard(sb, art) {
