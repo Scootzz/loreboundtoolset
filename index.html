@@ -6558,44 +6558,58 @@ function generateStatblock() {
 }
 
 function fetchSpellDetails(sb, spellEntries) {
-  var names = spellEntries.map(function(s){ return s.name; }).join(', ');
-  var prompt = 'Provide full D&D 5e spell details for these spells: '+names
-    + '. Return ONLY valid JSON array, no markdown: '
-    + '[{"name":"spell name","level":"cantrip or 1st etc","school":"Evocation","castingTime":"1 action","range":"60 ft","components":"V, S, M (a bit of fleece)","duration":"Concentration, up to 1 minute","desc":"Full spell description."}]';
+  if(!spellEntries.length) return;
+  var BATCH = 6;
+  var batches = [];
+  for(var i=0; i<spellEntries.length; i+=BATCH) batches.push(spellEntries.slice(i,i+BATCH));
+  var allDetails = [];
 
-  fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:prompt}]})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
-    if(data.error) return;
-    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
-    var s = text.indexOf('['); var e = text.lastIndexOf(']');
-    if(s === -1) return;
-    var spellDetails = JSON.parse(text.slice(s, e+1));
-    // Merge into sb.spells keyed by name
-    var byName = {};
-    spellDetails.forEach(function(sp){ byName[sp.name.toLowerCase()] = sp; });
-    var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-    levels.forEach(function(lvl){
-      var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
-      sb.spells[lvl] = list.map(function(sp){
-        var key = (typeof sp === 'string' ? sp : sp.name).toLowerCase();
-        return byName[key] || {name: typeof sp === 'string' ? sp : sp.name, level:lvl, school:'', castingTime:'', range:'', components:'', duration:'', desc:''};
+  function fetchBatch(idx) {
+    if(idx >= batches.length) {
+      // All batches done - merge into sb
+      var byName = {};
+      allDetails.forEach(function(sp){ byName[sp.name.toLowerCase()] = sp; });
+      var levels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+      levels.forEach(function(lvl){
+        var list = sb.spells && sb.spells[lvl] ? sb.spells[lvl] : [];
+        sb.spells[lvl] = list.map(function(sp){
+          var key = (typeof sp==='string'?sp:sp.name).toLowerCase();
+          return byName[key] || {name:typeof sp==='string'?sp:sp.name,level:lvl,school:'',castingTime:'',range:'',components:'',duration:'',desc:''};
+        });
       });
-    });
-    // Show spell cards button now that details are loaded
-    showToast('Spell details loaded \u2713', 'success');
-    // Update the spell cards button to be active
-    var spellBtns = document.querySelectorAll('[data-sb-spell-btn]');
-    spellBtns.forEach(function(btn){
-      btn.style.color = 'var(--gold)';
-      btn.style.borderColor = 'var(--gold)';
-    });
-  })
-  .catch(function(){}); // fail silently - spell names still show on card
+      showToast('Spell cards ready \u2713','success');
+      document.querySelectorAll('[data-sb-spell-btn]').forEach(function(btn){
+        btn.style.color='var(--gold)'; btn.style.borderColor='var(--gold)';
+        btn.title='Download spell cards PNG';
+      });
+      return;
+    }
+    var batch = batches[idx];
+    var names = batch.map(function(s){return s.name;}).join(', ');
+    var prompt = 'Give me full D&D 5e details for these spells: '+names
+      +'. Return ONLY a JSON array with no markdown, no preamble:'
+      +' [{"name":"exact spell name","school":"school","castingTime":"1 action","range":"60 ft","components":"V, S","duration":"Instantaneous","desc":"Full description of what the spell does."}]';
+    fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:apiHeaders(),
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.error){console.warn('Spell batch error:',data.error.message); fetchBatch(idx+1); return;}
+      var text=(data.content||[]).map(function(c){return c.text||'';}).join('');
+      var s=text.indexOf('['); var e=text.lastIndexOf(']');
+      if(s!==-1){
+        try{
+          var parsed=JSON.parse(text.slice(s,e+1));
+          allDetails = allDetails.concat(parsed);
+        }catch(err){console.warn('Spell JSON parse error:',err.message,text.slice(s,s+200));}
+      }
+      fetchBatch(idx+1);
+    })
+    .catch(function(err){console.warn('Spell fetch error:',err); fetchBatch(idx+1);});
+  }
+  fetchBatch(0);
 }
 
 function generateStatblockArt(sb, desc, callback) {
