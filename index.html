@@ -6497,48 +6497,63 @@ function generateStatblock() {
   var desc = document.getElementById('statblock-desc').value.trim();
   if(!desc){ document.getElementById('statblock-desc').focus(); return; }
   var size = document.getElementById('statblock-size').value;
-  var apiKey = getApiKey();
-  if(!apiKey){ (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
+  if(!getApiKey()){ showToast('No API key set — add one via ⚙ Settings','error'); return; }
   var status = document.getElementById('statblock-status');
   var result = document.getElementById('statblock-result');
   status.classList.remove('hidden'); status.textContent = 'Generating '+desc+'...';
   result.classList.remove('hidden');
-  var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'. Choose an appropriate CR based on the description.'+(isLegendary?' THIS IS A LEGENDARY CREATURE: give it 3 Legendary Actions, 3 Legendary Resistances per day as a trait, and at least 1 Lair Action if it has a lair. Make it significantly more powerful than a normal creature of its type.':'')
-    +' Return ONLY valid JSON, no markdown, no extra text:'
-    +'{"name":"creature name","size":"'+size+'","type":"creature type","alignment":"alignment","ac":10,"acNote":"armor",'
-    +'"hp":20,"hpDice":"4d8+4","speed":"30 ft","str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10,'
-    +'"savingThrows":"","skills":"","damageImmunities":"","conditionImmunities":"",'
-    +'"senses":"darkvision 60 ft, passive Perception 10","languages":"Common","cr":"CR value","profBonus":"+2",'
-    +'"traits":[{"name":"Trait","desc":"desc"}],'
-    +'"actions":[{"name":"Attack","desc":"Melee Weapon Attack: +X to hit, reach 5 ft., one target. Hit: X (XdX+X) damage."}],'
-    +'"bonusActions":[],"reactions":[],"legendaryResistances":3,"legendaryActions":[{"name":"Attack (1 Action)","desc":"The creature makes one attack."}],"lairActions":[]}';  
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
-  .then(function(res){return res.json();})
-  .then(function(data){
+
+  var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'.'
+    + (isLegendary ? ' Make it LEGENDARY with 3 Legendary Actions, 3 Legendary Resistances, and Lair Actions.' : '')
+    + ' Return ONLY a single valid JSON object, no markdown, no explanation, no other text:'
+    + ' {"name":"string","size":"'+size+'","type":"string","alignment":"string","ac":10,"acNote":"string",'
+    + '"hp":20,"hpDice":"4d8+4","speed":"30 ft","str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10,'
+    + '"savingThrows":"string","skills":"string","damageImmunities":"string","conditionImmunities":"string",'
+    + '"senses":"string","languages":"Common","cr":"1","profBonus":"+2",'
+    + '"traits":[{"name":"string","desc":"string"}],'
+    + '"actions":[{"name":"string","desc":"string"}],'
+    + '"bonusActions":[],"reactions":[],'
+    + '"legendaryResistances":0,"legendaryActions":[],"lairActions":[]}';
+
+  var timer = setTimeout(function(){
+    status.textContent = 'Request timed out after 30 seconds. Please try again.';
+    status.classList.remove('hidden');
+  }, 30000);
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:2000, messages:[{role:'user',content:prompt}]})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    clearTimeout(timer);
     if(data.error) throw new Error(data.error.message);
-    var text=data.content.map(function(i){return i.text||'';}).join('');
-    var s=text.indexOf('{'); var e=text.lastIndexOf('}');
-    if(s===-1) throw new Error('No statblock returned');
-    var sb=JSON.parse(text.slice(s,e+1));
+    var text = (data.content||[]).map(function(c){return c.text||'';}).join('');
+    var s = text.indexOf('{'); var e = text.lastIndexOf('}');
+    if(s === -1) throw new Error('No JSON in response: '+text.slice(0,100));
+    var sb = JSON.parse(text.slice(s, e+1));
     currentStatblock = sb;
     var rendered = renderStatblockCard(sb, null);
-    status.textContent='Generating artwork for '+sb.name+'...';
+    status.textContent = 'Generating token art...';
     generateStatblockArt(sb, desc, function(svgArt) {
-      // Update token in card
-      var tokenEl = document.getElementById(rendered.sbId+'_token');
-      var artStatus = document.getElementById(rendered.sbId+'_artstatus');
-      if(tokenEl && svgArt) {
-        tokenEl.innerHTML = svgArt;
-        tokenEl.style.background = 'transparent';
-        var svgEl = tokenEl.querySelector('svg');
-        if(svgEl){svgEl.setAttribute('width','110');svgEl.setAttribute('height','110');svgEl.style.cssText='border-radius:50%;display:block';}
+      if(svgArt) {
+        var tokenEl = document.getElementById(rendered.sbId+'_token');
+        var artStatus = document.getElementById(rendered.sbId+'_artstatus');
+        if(tokenEl){ tokenEl.innerHTML=svgArt; tokenEl.style.background='transparent';
+          var svgEl=tokenEl.querySelector('svg');
+          if(svgEl){svgEl.setAttribute('width','110');svgEl.setAttribute('height','110');svgEl.style.cssText='border-radius:50%;display:block';}
+        }
+        if(artStatus) artStatus.style.display='none';
       }
-      if(artStatus) artStatus.style.display='none';
       status.classList.add('hidden');
       if(typeof window._sbOnComplete==='function') window._sbOnComplete();
     });
   })
-  .catch(function(e){status.textContent='Failed: '+e.message;});
+  .catch(function(err) {
+    clearTimeout(timer);
+    status.textContent = 'Failed: '+err.message;
+  });
 }
 
 function generateStatblockArt(sb, desc, callback) {
