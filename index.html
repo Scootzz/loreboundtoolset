@@ -1044,10 +1044,14 @@ select option{background:#1a1208}
         <input type="number" id="loot-party-level" value="3" min="1" max="20" style="width:70px">
       </div>
       <button class="btn-gold btn-sm" onclick="generateLoot()">&#127775; Generate Loot</button>
+        <button class="btn-ghost btn-sm" onclick="resetLootGenerator()" style="white-space:nowrap">&#10005; Clear</button>
     </div>
     <div id="loot-status" class="hidden" style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">Generating...</div>
     <div id="loot-result" class="hidden" style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:12px">
       <div id="loot-content"></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn-ghost btn-sm" onclick="resetLootGenerator()">&#10005; Clear &amp; Close</button>
+      </div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn-ghost btn-sm" onclick="copyLoot()">&#128203; Copy</button>
         <button class="btn-ghost btn-sm" onclick="saveLootToSession()" style="color:var(--gold);border-color:var(--gold-dim)">&#128190; Save</button>
@@ -1069,7 +1073,7 @@ select option{background:#1a1208}
     <div class="panel-label">Encounter Builder</div>
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
         <span style="font-size:12px;color:var(--muted);font-family:Cinzel,serif;letter-spacing:.05em">SCENARIO:</span>
-        <select id="scenario-select" style="flex:1;font-size:13px;min-width:140px">
+        <select id="scenario-select" style="flex:1;font-size:13px;min-width:140px" onchange="onScenarioSelect(this.value)">
           <option value="">— New Encounter —</option>
         </select>
         <button class="btn-ghost btn-sm" id="save-scenario-btn">&#128190; Save</button>
@@ -6651,7 +6655,7 @@ function renderStatblockCard(sb, art) {
     var v=sb[s]||10; var mod=Math.floor((v-10)/2);
     return '<td style="text-align:center;padding:4px 6px"><strong>'+s.toUpperCase()+'</strong><br>'+v+' ('+(mod>=0?'+':'')+mod+')</td>';
   }).join('');
-  var blk=function(arr){return (arr||[]).map(function(a){return '<p style="margin:4px 0"><em><strong>'+a.name+'.</strong></em> '+a.desc+'</p>';}).join('');};
+  var blk=function(arr){return (arr||[]).map(function(a){var n=a.name||a.n||'';var d=a.desc||a.description||'';return n||d?'<p style="margin:4px 0">'+(n?'<em><strong>'+n+'.</strong></em> ':'')+d+'</p>':'';}).join('');};
   var sec=function(label,arr){return arr&&arr.length?'<h4 style="color:#7a2020;border-bottom:1px solid #9a5a3a;margin:8px 0 4px;font-size:13px">'+label+'</h4>'+blk(arr):'';};
   var extras=[sb.savingThrows?'<strong>Saving Throws</strong> '+sb.savingThrows:'',sb.skills?'<strong>Skills</strong> '+sb.skills:'',sb.damageImmunities?'<strong>Damage Immunities</strong> '+sb.damageImmunities:'',sb.conditionImmunities?'<strong>Condition Immunities</strong> '+sb.conditionImmunities:'','<strong>Senses</strong> '+(sb.senses||'passive Perception 10'),'<strong>Languages</strong> '+(sb.languages||'—'),'<strong>Challenge</strong> '+sb.cr+' (Prof. Bonus '+sb.profBonus+')'].filter(Boolean).map(function(s){return '<p style="margin:2px 0;font-size:13px">'+s+'</p>';}).join('');
 
@@ -6767,6 +6771,211 @@ function downloadStatblockById(sb, cardId, tokenId) {
   extras.forEach(function(e) { y += wrap(e, INNER).length * 16; });
   y += 10;
   // Sections
+  // Build spell items for SPELLCASTING section
+  var spellItems = [];
+  if(sb.spells) {
+    var spLevels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+    if(sb.spellcastingAbility || sb.spellSaveDC) {
+      spellItems.push({name:'Spellcasting', desc:(sb.spellcastingAbility?'Ability: '+sb.spellcastingAbility+'. ':'')+(sb.spellSaveDC?'Spell save DC '+sb.spellSaveDC+(sb.spellAttackBonus?', +'+sb.spellAttackBonus+' to hit.':''):'')});
+    }
+    spLevels.forEach(function(lvl){
+      var list=sb.spells[lvl]; if(!list||!list.length) return;
+      var slots=sb.spellSlots&&sb.spellSlots[lvl]?' ('+sb.spellSlots[lvl]+' slots)':'';
+      var names=list.map(function(sp){return typeof sp==='string'?sp:sp.name;}).join(', ');
+      spellItems.push({name:(lvl==='cantrips'?'Cantrips':lvl+' level'+slots), desc:names});
+    });
+  }
+  SECTIONS = [
+    {label:'TRAITS', items: sb.traits||[]},
+    {label:'SPELLCASTING', items: spellItems},
+    {label:'ACTIONS', items: sb.actions||[]},
+    {label:'BONUS ACTIONS', items: sb.bonusActions||[]},
+    {label:'REACTIONS', items: sb.reactions||[]},
+    {label:'LEGENDARY ACTIONS', items: sb.legendaryActions||[]}
+  ];
+  var sectionData = [];
+  SECTIONS.forEach(function(sec) {
+    if(!sec.items.length) return;
+    var sy = y; y += 22;
+    var itemData = [];
+    sec.items.forEach(function(item) {
+      var full = (item.name||item.n||'?')+'. '+(item.desc||item.description||'');
+      ctx.font = '12px Georgia';
+      var ls = wrap(full, INNER);
+      itemData.push({item:item, lines:ls, y:y});
+      y += ls.length * 16 + 5;
+    });
+    sectionData.push({label:sec.label, y:sy, items:itemData});
+    y += 8;
+  });
+  y += PAD;
+
+  // Now size canvas and draw
+  canvas.width = W * 2; canvas.height = y * 2;
+  ctx.scale(2, 2);
+
+  // Background + border
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, y);
+  ctx.strokeStyle = RED; ctx.lineWidth = 3;
+  ctx.strokeRect(3, 3, W-6, y-6);
+
+  // Token circle
+  var tcx = W/2;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2); ctx.clip();
+  ctx.fillStyle = GOLD; ctx.fillRect(tcx-TOKEN_R, TOKEN_CY-TOKEN_R, TOKEN_R*2, TOKEN_R*2);
+  ctx.restore();
+  // Initial letter fallback
+  ctx.fillStyle = '#fdf6e3'; ctx.font = 'bold 48px Georgia';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText((sb.name||'?').charAt(0).toUpperCase(), tcx, TOKEN_CY);
+  ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2);
+  ctx.strokeStyle = RED; ctx.lineWidth = 3; ctx.stroke();
+
+  ctx.textBaseline = 'top';
+
+  // Name
+  ctx.fillStyle = RED; ctx.font = 'bold 24px Georgia'; ctx.textAlign = 'center';
+  ctx.fillText(sb.name||'Unknown', W/2, NAME_Y);
+
+  // Subtitle
+  ctx.fillStyle = MID; ctx.font = 'italic 13px Georgia';
+  ctx.fillText((sb.size||'')+' '+(sb.type||'')+', '+(sb.alignment||''), W/2, SUB_Y);
+
+  // Divider 1
+  ctx.strokeStyle = '#9a5a3a'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(PAD, DIV1_Y); ctx.lineTo(W-PAD, DIV1_Y); ctx.stroke();
+
+  // Core stats
+  ctx.fillStyle = DARK; ctx.font = '13px Georgia'; ctx.textAlign = 'left';
+  var coreLines = [
+    'Armor Class  '+sb.ac+(sb.acNote?' ('+sb.acNote+')':''),
+    'Hit Points  '+sb.hp+' ('+sb.hpDice+')',
+    'Speed  '+sb.speed
+  ];
+  coreLines.forEach(function(l, i) { ctx.fillText(l, PAD, CORE_Y + i*18); });
+
+  // Ability score row
+  var abStats = ['str','dex','con','int','wis','cha'];
+  var colW = INNER / 6;
+  ctx.fillStyle = 'rgba(154,90,58,0.15)';
+  ctx.fillRect(PAD, ABROW_Y, INNER, 40);
+  abStats.forEach(function(st, si) {
+    var v = sb[st]||10, mod = Math.floor((v-10)/2);
+    var ax = PAD + colW*si + colW/2;
+    ctx.fillStyle = RED; ctx.font = 'bold 9px Georgia'; ctx.textAlign = 'center';
+    ctx.fillText(st.toUpperCase(), ax, ABROW_Y+4);
+    ctx.fillStyle = DARK; ctx.font = '11px Georgia';
+    ctx.fillText(v+' ('+(mod>=0?'+':'')+mod+')', ax, ABROW_Y+18);
+  });
+
+  // Extras
+  ctx.fillStyle = DARK; ctx.font = '12px Georgia'; ctx.textAlign = 'left';
+  var ey = EXTRAS_Y;
+  extras.forEach(function(e) {
+    wrap(e, INNER).forEach(function(l) { ctx.fillText(l, PAD, ey); ey += 16; });
+  });
+
+  // Sections
+  sectionData.forEach(function(sec) {
+    // Section heading
+    ctx.fillStyle = RED; ctx.font = 'bold 11px Georgia'; ctx.textAlign = 'left';
+    ctx.fillText(sec.label, PAD, sec.y);
+    ctx.strokeStyle = '#9a5a3a'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(PAD, sec.y+14); ctx.lineTo(W-PAD, sec.y+14); ctx.stroke();
+
+    sec.items.forEach(function(d) {
+      d.lines.forEach(function(line, li) {
+        ctx.textAlign = 'left';
+        if(li === 0) {
+          // Bold name part
+          ctx.font = 'bold italic 12px Georgia';
+          var nameStr = d.item.n+'.';
+          var nw = ctx.measureText(nameStr+' ').width;
+          ctx.fillStyle = RED; ctx.fillText(nameStr, PAD, d.y + li*16);
+          ctx.fillStyle = DARK; ctx.font = '12px Georgia';
+          ctx.fillText(line.slice(nameStr.length+1), PAD+nw, d.y + li*16);
+        } else {
+          ctx.fillStyle = DARK; ctx.font = '12px Georgia';
+          ctx.fillText(line, PAD, d.y + li*16);
+        }
+      });
+    });
+  });
+
+  // Trigger download
+  var link = document.createElement('a');
+  link.download = (sb.name||'statblock').replace(/\s+/g,'_') + '.png';
+  link.href = canvas.toDataURL('image/png');
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  var spellItems = [];
+  if(sb.spells) {
+    var spLevels = ['cantrips','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+    if(sb.spellcastingAbility || sb.spellSaveDC) {
+      spellItems.push({name:'Spellcasting', desc:(sb.spellcastingAbility ? 'Ability: '+sb.spellcastingAbility+'. ' : '')+(sb.spellSaveDC ? 'Spell save DC '+sb.spellSaveDC+(sb.spellAttackBonus ? ', +'+sb.spellAttackBonus+' to hit.' : '') : '')});
+    }
+    spLevels.forEach(function(lvl){
+      var list = sb.spells[lvl]; if(!list||!list.length) return;
+      var slots = sb.spellSlots&&sb.spellSlots[lvl] ? ' ('+sb.spellSlots[lvl]+' slots)' : '';
+      var names = list.map(function(sp){return typeof sp==='string'?sp:sp.name;}).join(', ');
+      spellItems.push({name:(lvl==='cantrips'?'Cantrips':lvl+' level'+slots), desc:names});
+    });
+  }
+  SECTIONS = [
+    {label:'TRAITS', items: sb.traits||[]},
+    {label:'SPELLCASTING', items: spellItems},
+    {label:'ACTIONS', items: sb.actions||[]},
+    {label:'BONUS ACTIONS', items: sb.bonusActions||[]},
+    {label:'REACTIONS', items: sb.reactions||[]},
+    {label:'LEGENDARY ACTIONS', items: sb.legendaryActions||[]}
+  ];
+}
+
+function downloadStatblockById(sb, cardId, tokenId) {
+  var W = 600, PAD = 24, INNER = 552;
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+
+  // Measure all text first to calculate height
+  ctx.font = '13px Georgia';
+  function wrap(text, maxW) {
+    var words = text.split(' '), lines = [], cur = '';
+    words.forEach(function(w) { var t = cur ? cur+' '+w : w; if(ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
+    if(cur) lines.push(cur); return lines;
+  }
+
+  var BG='#fdf6e3', RED='#7a2020', DARK='#2c1810', MID='#5a3010', GOLD='#9a5a3a';
+  var y = PAD;
+  // Token
+  var TOKEN_R = 56, TOKEN_CY = y + TOKEN_R; y += TOKEN_R*2 + 16;
+  // Name
+  var NAME_Y = y; y += 30;
+  // Subtitle
+  var SUB_Y = y; y += 20;
+  // Divider
+  var DIV1_Y = y; y += 12;
+  // Core stats
+  var CORE_Y = y;
+  ['AC','HP','SPD'].forEach(function(){ y += 18; });
+  y += 6;
+  // Ability row
+  var ABROW_Y = y; y += 44;
+  y += 8;
+  // Extra props
+  var extras = [
+    sb.savingThrows ? 'Saving Throws  '+sb.savingThrows : '',
+    sb.skills ? 'Skills  '+sb.skills : '',
+    sb.damageImmunities ? 'Damage Immunities  '+sb.damageImmunities : '',
+    sb.conditionImmunities ? 'Condition Immunities  '+sb.conditionImmunities : '',
+    'Senses  '+(sb.senses||'passive Perception 10'),
+    'Languages  '+(sb.languages||'—'),
+    'Challenge  '+sb.cr+' (Prof. Bonus '+sb.profBonus+')'
+  ].filter(Boolean);
+  var EXTRAS_Y = y;
+  ctx.font = '12px Georgia';
+  extras.forEach(function(e) { y += wrap(e, INNER).length * 16; });
+  y += 10;
+  // Sections
   var SECTIONS = [
     {label:'TRAITS', items: sb.traits||[]},
     {label:'ACTIONS', items: sb.actions||[]},
@@ -6780,7 +6989,7 @@ function downloadStatblockById(sb, cardId, tokenId) {
     var sy = y; y += 22;
     var itemData = [];
     sec.items.forEach(function(item) {
-      var full = item.n+'. '+item.desc;
+      var full = (item.name||item.n||'?')+'. '+(item.desc||item.description||'');
       ctx.font = '12px Georgia';
       var ls = wrap(full, INNER);
       itemData.push({item:item, lines:ls, y:y});
@@ -12204,6 +12413,34 @@ function downloadSpellCardsPng(sb) {
     a.click();
     URL.revokeObjectURL(url);
   }, 'image/png');
+}
+
+function onScenarioSelect(id) {
+  if(!id) {
+    // "New Encounter" selected - clear enemy rows
+    var container = document.getElementById('enemy-rows');
+    if(container){ container.innerHTML=''; enemyRows=[]; }
+    // Uncheck all PCs
+    document.querySelectorAll('.pc-combat-check').forEach(function(cb){
+      cb.checked=false; selectedCombatPcs[cb.dataset.id]=false;
+    });
+    // Reset analysis
+    var result = document.getElementById('combat-result');
+    if(result) result.classList.add('hidden');
+  } else {
+    loadScenario(id);
+  }
+}
+
+function resetLootGenerator() {
+  document.getElementById('loot-enemies').value = '';
+  document.getElementById('loot-content').innerHTML = '';
+  var result = document.getElementById('loot-result');
+  var status = document.getElementById('loot-status');
+  if(result) result.classList.add('hidden');
+  if(status) status.classList.add('hidden');
+  var panel = document.getElementById('loot-generator-panel');
+  if(panel) panel.style.display = 'none';
 }
 </script>
 </body>
