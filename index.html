@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0e0b07">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-/* v2.2 */
+/* v3.0 */
 .char-card *{font-style:normal!important}.char-card .panel-label,.char-card .char-faction{font-style:normal}
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -6497,6 +6497,7 @@ function generateStatblock() {
   var desc = document.getElementById('statblock-desc').value.trim();
   if(!desc){ document.getElementById('statblock-desc').focus(); return; }
   var size = document.getElementById('statblock-size').value;
+  var isLegendary = !!(document.getElementById('statblock-legendary') && document.getElementById('statblock-legendary').checked);
   if(!getApiKey()){ showToast('No API key set — add one via ⚙ Settings','error'); return; }
   var status = document.getElementById('statblock-status');
   var result = document.getElementById('statblock-result');
@@ -6520,6 +6521,7 @@ function generateStatblock() {
     status.classList.remove('hidden');
   }, 30000);
 
+  console.log('[Statblock] Starting fetch, key:', getApiKey() ? 'SET' : 'MISSING');
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: apiHeaders(),
@@ -6552,6 +6554,7 @@ function generateStatblock() {
   })
   .catch(function(err) {
     clearTimeout(timer);
+    console.error('[Statblock] Error:', err);
     status.textContent = 'Failed: '+err.message;
   });
 }
