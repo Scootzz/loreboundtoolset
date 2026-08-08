@@ -2701,34 +2701,67 @@ function initCreatureFilter() {
   types.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
 }
 function renderCreatures() {
-  if(!document.getElementById('creature-search')) return;
-  var q=document.getElementById('creature-search').value.toLowerCase();
-  var type=document.getElementById('type-filter').value;
-  var grid=document.getElementById('creature-grid'); if(!grid) return; grid.innerHTML='';
-  var entries=Object.entries(CREATURES).filter(function(e){return(!q||e[0].toLowerCase().includes(q))&&(!type||e[1].type===type);}).sort(function(a,b){return a[0].localeCompare(b[0]);});
-  if(!entries.length){grid.innerHTML='<span style="color:var(--muted);font-style:italic;font-size:13px">No creatures found</span>';return;}
-  entries.forEach(function(e){
-    var name=e[0]; var btn=document.createElement('button'); btn.className='creature-btn'+(name===selectedCreature?' selected':'');
-    btn.textContent=name.charAt(0)+name.slice(1).toLowerCase(); btn.title=CREATURES[name].type+' CR '+CREATURES[name].cr;
-    btn.onclick=(function(n){return function(){selectCreature(n);};})(name);
+  var grid = document.getElementById('creature-grid'); if(!grid) return;
+  var q = ((document.getElementById('creature-search')||{}).value||'').toLowerCase();
+  var type = (document.getElementById('type-filter')||{value:''}).value;
+  var compendium = loadCompendium();
+  // Only show creatures that have at least one component defined
+  var available = compendium.filter(function(c){ return c.components && c.components.length > 0; });
+  // Populate type filter
+  var tf = document.getElementById('type-filter');
+  if(tf) {
+    var types = [];
+    compendium.forEach(function(c){ if(c.type && types.indexOf(c.type)===-1) types.push(c.type); });
+    types.sort();
+    var curType = tf.value;
+    tf.innerHTML = '<option value="">All types</option>' + types.map(function(t){
+      return '<option value="'+t+'"'+(t===curType?' selected':'')+'>'+t+'</option>';
+    }).join('');
+  }
+  var filtered = available.filter(function(c){
+    if(q && c.name.toLowerCase().indexOf(q)===-1) return false;
+    if(type && c.type !== type) return false;
+    return true;
+  }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+  grid.innerHTML = '';
+  if(!compendium.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-style:italic;font-size:13px;padding:10px 0">No creatures in your compendium yet. Click \u201c+ Add Creature\u201d to begin.</div>';
+    return;
+  }
+  if(!filtered.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-style:italic;font-size:13px;padding:10px 0">'+(q||type?'No matching creatures.':'Add components to your creatures to forge items from them.')+'</div>';
+    return;
+  }
+  filtered.forEach(function(c){
+    var btn = document.createElement('button');
+    btn.className = 'creature-btn' + (c.id === selectedCreature ? ' selected' : '');
+    btn.textContent = c.name;
+    btn.title = (c.type||'?') + ' CR ' + (c.cr||'?') + ' \u2014 ' + c.components.length + ' component(s)';
+    btn.onclick = (function(id){ return function(){ selectCreature(id); }; })(c.id);
     grid.appendChild(btn);
   });
 }
-function selectCreature(name) {
-  selectedCreature=name; selectedComponent=null; renderCreatures();
-  var data=CREATURES[name];
-  $cl('component-panel').remove('hidden');
-  $cl('craft-panel').add('hidden');
-  $cl('result-panel').add('hidden');
-  document.getElementById('creature-info').textContent=(data.type||'?')+' - CR '+(data.cr||'?')+' - '+(data.primary||'?')+' / '+(data.secondary||'?');
-  var list=document.getElementById('component-list'); list.innerHTML='';
-  data.components.forEach(function(comp){
-    var btn=document.createElement('button'); btn.className='comp-btn';
-    var rc='rarity-'+comp.rarity.replace(' ','-');
-    btn.innerHTML='<div style="min-width:0"><span class="comp-name">'+comp.name+'</span><span class="comp-meta">'+comp.aspect+' - '+comp.themes+'</span></div><span class="rarity '+rc+'">'+comp.rarity+'</span>';
-    btn.onclick=(function(c,b){return function(){selectComponent(c,b);};})(comp,btn);
+function selectCreature(id) {
+  selectedCreature = id;
+  selectedComponent = null;
+  renderCreatures();
+  var data = loadCompendium().find(function(c){return c.id===id;});
+  if(!data) return;
+  document.getElementById('creature-info').textContent =
+    (data.type||'?') + ' \u2014 CR ' + (data.cr||'?') + ' \u2014 ' + (data.primary||'Str') + ' / ' + (data.secondary||'Agi');
+  var list = document.getElementById('component-list'); list.innerHTML = '';
+  (data.components||[]).forEach(function(comp){
+    var btn = document.createElement('button'); btn.className = 'comp-btn';
+    var rc = 'rarity-' + (comp.rarity||'Common').replace(' ','-');
+    btn.innerHTML = '<div style="min-width:0"><span class="comp-name">'+(comp.name||'?')+'</span>'
+      + '<span class="comp-meta">'+(comp.aspect||'')+'</span></div>'
+      + '<span class="rarity '+rc+'">'+(comp.rarity||'Common')+'</span>';
+    btn.onclick = (function(c,b){ return function(){ selectComponent(c,b); }; })(comp, btn);
     list.appendChild(btn);
   });
+  document.getElementById('component-panel').classList.remove('hidden');
+  document.getElementById('craft-panel').classList.add('hidden');
+  document.getElementById('result-panel').classList.add('hidden');
   document.getElementById('component-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function selectComponent(comp, btn) {
@@ -5705,7 +5738,8 @@ function renderTracker() {
     .sort(function(a,b){
       var ai = a.c.initiative!=null ? a.c.initiative : -1;
       var bi = b.c.initiative!=null ? b.c.initiative : -1;
-      return bi - ai;
+      if(bi !== ai) return bi - ai;
+      return a.i - b.i; // stable: preserve original order on tie
     });
 
   sorted.forEach(function(item, si) {
@@ -5748,6 +5782,54 @@ function renderTracker() {
       + '<div class="tracker-name" title="'+c.name+'">'+c.name+'</div>'
       + '<div class="tracker-ac">AC '+(c.ac||'?')+'</div>'
       + '<div class="tracker-hp '+hpClass+'">'+(c.hpMax>0 ? c.hpCur+'/'+c.hpMax : '— HP')+'</div>';
+
+    // HP delta row for all combatants
+    if(c.hpMax > 0) {
+      var hpRow = document.createElement('div');
+      hpRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center';
+      var hpInput = document.createElement('input');
+      hpInput.type = 'number';
+      hpInput.min = '1';
+      hpInput.placeholder = 'amt';
+      hpInput.style.cssText = 'width:52px;font-size:12px;padding:3px 5px;text-align:center;background:var(--input-bg);border:1px solid var(--border);border-radius:3px;color:var(--text)';
+      var dmgBtn = document.createElement('button');
+      dmgBtn.innerHTML = '&#9876; DMG';
+      dmgBtn.style.cssText = 'font-size:10px;padding:3px 7px;background:rgba(205,74,74,0.15);border:1px solid rgba(205,74,74,0.5);color:#cd4a4a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.04em';
+      var healBtn = document.createElement('button');
+      healBtn.innerHTML = '&#10084; HEAL';
+      healBtn.style.cssText = 'font-size:10px;padding:3px 7px;background:rgba(74,205,74,0.12);border:1px solid rgba(74,205,74,0.4);color:#4acd7a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.04em';
+      (function(oi, inp) {
+        dmgBtn.onclick = function() {
+          var amt = parseInt(inp.value);
+          if(!amt || amt <= 0) { inp.focus(); return; }
+          trackerCombatants[oi].hpCur = Math.max(0, trackerCombatants[oi].hpCur - amt);
+          if(trackerCombatants[oi].hpCur === 0) {
+            var deadCond = {name:'Dead', icon:'&#9760;', color:'#888'};
+            var conds = trackerCombatants[oi].conditions;
+            if(!conds.some(function(x){return x.name==='Dead';})) conds.push(deadCond);
+          }
+          inp.value = '';
+          renderTracker();
+        };
+        healBtn.onclick = function() {
+          var amt = parseInt(inp.value);
+          if(!amt || amt <= 0) { inp.focus(); return; }
+          trackerCombatants[oi].hpCur = Math.min(trackerCombatants[oi].hpMax, trackerCombatants[oi].hpCur + amt);
+          // Remove dead condition if healed
+          trackerCombatants[oi].conditions = trackerCombatants[oi].conditions.filter(function(x){return x.name!=='Dead' && x.name!=='Dying (0 HP)';});
+          inp.value = '';
+          renderTracker();
+        };
+        // Also allow Enter key on the input to deal damage
+        inp.onkeydown = function(e) {
+          if(e.key==='Enter') { e.preventDefault(); dmgBtn.click(); }
+        };
+      })(origIdx, hpInput);
+      hpRow.appendChild(hpInput);
+      hpRow.appendChild(dmgBtn);
+      hpRow.appendChild(healBtn);
+      card.appendChild(hpRow);
+    }
 
     // Legendary / concentration badges on card
     if(c.legendary) {
