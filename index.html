@@ -398,6 +398,7 @@ select option{background:#1a1208}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
 </head>
 <body>
 <div id="toast-container"></div>
@@ -504,6 +505,8 @@ select option{background:#1a1208}
         <button class="btn-ghost btn-sm" onclick="(function(){var m=document.getElementById('campaign-selector-modal');if(m){m.style.display='flex';m.classList.add('show');renderCampaignSelector();}else{alert('modal not found');}})();" style="letter-spacing:.06em" title="Switch campaigns">&#9812; Campaigns</button>
       </div>
     </div>
+  </div><!-- /dashboard-header -->
+
   <!-- Campaign Status (collapsible) -->
   <div class="panel" style="margin-bottom:12px">
     <div onclick="toggleDashStatus()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">
@@ -584,7 +587,7 @@ select option{background:#1a1208}
     </div>
   </div>
 
-</div>
+</div><!-- /tab-welcome -->
 
 <!-- ═══ INVENTORY TAB ═══ -->
 <!-- Inventory tab removed -->
@@ -1173,21 +1176,18 @@ select option{background:#1a1208}
         <button class="btn-ghost btn-sm" onclick="clearUpcomingAnalysis()">&#10005; Clear</button>
       </div>
     </div>
-  </div>
+  
 
-  <!-- ── PAST SESSIONS ──────────────────────────────────── -->
   <div class="panel">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div class="panel-label" style="margin:0">&#128218; Past Sessions</div>
-      <button class="btn-ghost btn-sm" onclick="document.getElementById('sn-past-upload').click()">&#128196; Upload Session</button>
-      <input type="file" id="sn-past-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handlePastSessionUpload(event)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="panel-label" style="margin:0">&#128218; Past Sessions</div>
+        <button class="btn-ghost btn-sm" onclick="document.getElementById('sn-past-upload').click()">&#128196; Upload Session</button>
+        <input type="file" id="sn-past-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handlePastSessionUpload(event)">
+      </div>
+      <div id="sn-past-status" style="display:none;padding:9px 12px;background:rgba(212,168,67,0.07);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+      <div id="session-notes-list"></div>
     </div>
-    <div id="sn-past-status" style="display:none;padding:9px 12px;background:rgba(212,168,67,0.07);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted);margin-bottom:10px"></div>
-    <div id="session-notes-list"></div>
-  </div>
 
-</div>
-  <div id="sessions-standalone-list"></div>
 </div>
 
 <!-- === RUMOURS MAIN TAB === -->
@@ -2407,17 +2407,6 @@ function onScenarioSelect(id) {
   } else {
     loadScenario(id);
   }
-}
-
-function resetLootGenerator() {
-  document.getElementById('loot-enemies').value = '';
-  document.getElementById('loot-content').innerHTML = '';
-  var result = document.getElementById('loot-result');
-  var status = document.getElementById('loot-status');
-  if(result) result.classList.add('hidden');
-  if(status) status.classList.add('hidden');
-  var panel = document.getElementById('loot-generator-panel');
-  if(panel) panel.style.display = 'none';
 }
 <script>
 
@@ -5420,7 +5409,6 @@ function enterTab(name) {
   if(name==='music') renderMusic();
   if(name==='naval') renderNaval();
   if(name==='store') setTimeout(renderStore,0);
-  if(name==='sessions'||name==='sessions-main') renderSessionNotesList();
   if(name==='inventory') setTimeout(renderInventory,0);
   if(name==='sessions-main') setTimeout(renderSessionsStandalone,0);
   if(name==='rumours-main') setTimeout(renderRumoursStandalone,0);
