@@ -635,9 +635,12 @@ select option{background:#1a1208}
 <!-- ═══ FORGE TAB ═══ -->
 <div id="tab-forge" class="tab-pane">
   <div class="panel">
-    <div class="panel-label">I. Choose Creature</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="panel-label" style="margin:0">I. Choose Creature</div>
+      <button class="btn-gold btn-sm" onclick="openCompendiumModal()">+ Add Creature</button>
+    </div>
     <div class="search-row">
-      <input type="text" id="creature-search" placeholder="Search creatures..." oninput="renderCreatures()">
+      <input type="text" id="creature-search" placeholder="Search your compendium..." oninput="renderCreatures()">
       <select id="type-filter" onchange="renderCreatures()"><option value="">All types</option></select>
     </div>
     <div class="creature-grid" id="creature-grid"></div>
@@ -2253,6 +2256,34 @@ select option{background:#1a1208}
     </div>
   </div>
 </div>
+
+
+
+<!-- Compendium Modal -->
+<div class="modal-overlay" id="compendium-modal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title" id="comp-modal-title">ADD CREATURE TO COMPENDIUM</div>
+    <input type="hidden" id="comp-edit-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
+      <div><span class="field-label">Name *</span><input type="text" id="comp-name" placeholder="e.g. Shadow Drake"></div>
+      <div><span class="field-label">Type</span><input type="text" id="comp-type" placeholder="e.g. Dragon"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:9px">
+      <div><span class="field-label">CR</span><input type="text" id="comp-cr" placeholder="e.g. 5"></div>
+      <div><span class="field-label">Primary Stat</span><input type="text" id="comp-primary" placeholder="e.g. Strength"></div>
+      <div><span class="field-label">Secondary Stat</span><input type="text" id="comp-secondary" placeholder="e.g. Agility"></div>
+    </div>
+    <div style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em;margin-bottom:8px">HARVESTABLE COMPONENTS</div>
+    <div id="comp-components-list" style="margin-bottom:8px"></div>
+    <button class="btn-ghost btn-sm" onclick="addCompComponent()" style="margin-bottom:12px">+ Add Component</button>
+    <div class="modal-btns">
+      <button class="btn-gold" style="flex:1" onclick="saveCompendiumCreature()">Save</button>
+      <button class="btn-ghost" onclick="closeModal('compendium-modal')">Cancel</button>
+      <button class="btn-danger hidden" id="comp-delete-btn" onclick="deleteCompendiumCreature()">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 
@@ -12004,6 +12035,92 @@ function renderManageLocationsList(){
 // ── statblock updated versions ────────────────────────────────
 var currentStatblock = null;
 
+
+// ── Creature Compendium ───────────────────────────────────────
+function loadCompendium(){ try{return JSON.parse(localStorage.getItem('fg_compendium')||'[]');}catch(e){return[];} }
+function saveCompendium(c){ localStorage.setItem('fg_compendium',JSON.stringify(c)); }
+
+function openCompendiumModal(id) {
+  var c = id ? loadCompendium().find(function(x){return x.id===id;}) : null;
+  document.getElementById('comp-modal-title').textContent = id ? 'EDIT CREATURE' : 'ADD CREATURE TO COMPENDIUM';
+  document.getElementById('comp-edit-id').value = id||'';
+  document.getElementById('comp-name').value = c?c.name:'';
+  document.getElementById('comp-type').value = c?c.type:'';
+  document.getElementById('comp-cr').value = c?c.cr:'';
+  document.getElementById('comp-primary').value = c?c.primary:'';
+  document.getElementById('comp-secondary').value = c?c.secondary:'';
+  renderCompComponentsList(c ? c.components : []);
+  var delBtn = document.getElementById('comp-delete-btn');
+  if(delBtn){ if(id) delBtn.classList.remove('hidden'); else delBtn.classList.add('hidden'); }
+  var modal = document.getElementById('compendium-modal');
+  if(modal){ modal.style.display='flex'; modal.classList.add('show'); }
+  setTimeout(function(){ var n=document.getElementById('comp-name'); if(n) n.focus(); }, 100);
+}
+
+function renderCompComponentsList(components) {
+  var list = document.getElementById('comp-components-list');
+  if(!list) return;
+  list.innerHTML = '';
+  (components||[]).forEach(function(comp, idx) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center';
+    row.innerHTML = '<input type="text" placeholder="Component name" value="'+(comp.name||'')+'" data-idx="'+idx+'">'
+      + '<input type="text" placeholder="Aspect (e.g. Fire)" value="'+(comp.aspect||'')+'" data-idx="'+idx+'">'
+      + '<select data-idx="'+idx+'">'
+      + ['Common','Uncommon','Rare','Very Rare','Legendary'].map(function(r){return '<option'+(comp.rarity===r?' selected':'')+'>'+r+'</option>';}).join('')
+      + '</select>'
+      + '<button class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger);padding:2px 7px;font-size:11px" onclick="removeCompComponent('+idx+')">&#10005;</button>';
+    list.appendChild(row);
+  });
+}
+
+function _getCompComponents() {
+  var rows = document.querySelectorAll('#comp-components-list > div');
+  var comps = [];
+  rows.forEach(function(row) {
+    var inputs = row.querySelectorAll('input,select');
+    comps.push({ name:inputs[0]?inputs[0].value:'', aspect:inputs[1]?inputs[1].value:'', rarity:inputs[2]?inputs[2].value:'Common', themes:'' });
+  });
+  return comps;
+}
+
+function addCompComponent() {
+  renderCompComponentsList(_getCompComponents().concat([{name:'',aspect:'',rarity:'Common',themes:''}]));
+}
+
+function removeCompComponent(idx) {
+  var c = _getCompComponents(); c.splice(idx,1); renderCompComponentsList(c);
+}
+
+function saveCompendiumCreature() {
+  var name = (document.getElementById('comp-name').value||'').trim();
+  if(!name){ showToast('Name required','error'); return; }
+  var id = document.getElementById('comp-edit-id').value || 'cc_'+Date.now();
+  var creature = {
+    id:id, name:name,
+    type:(document.getElementById('comp-type').value||'').trim()||'Unknown',
+    cr:(document.getElementById('comp-cr').value||'').trim()||'?',
+    primary:(document.getElementById('comp-primary').value||'').trim()||'Strength',
+    secondary:(document.getElementById('comp-secondary').value||'').trim()||'Agility',
+    components:_getCompComponents().filter(function(c){return c.name;})
+  };
+  var comp = loadCompendium();
+  var idx = comp.findIndex(function(x){return x.id===id;});
+  if(idx!==-1) comp[idx]=creature; else comp.push(creature);
+  saveCompendium(comp);
+  closeModal('compendium-modal');
+  renderCreatures();
+  showToast('Creature saved \u2713','success');
+}
+
+function deleteCompendiumCreature() {
+  var id = document.getElementById('comp-edit-id').value;
+  if(!id||!confirm('Remove this creature?')) return;
+  saveCompendium(loadCompendium().filter(function(x){return x.id!==id;}));
+  closeModal('compendium-modal');
+  renderCreatures();
+  showToast('Removed','success');
+}
 </script>
 </body>
 </html>
