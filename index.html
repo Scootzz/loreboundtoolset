@@ -644,7 +644,9 @@ select option{background:#1a1208}
       <select id="type-filter" onchange="renderCreatures()"><option value="">All types</option></select>
     </div>
     <div class="creature-grid" id="creature-grid"></div>
-  </div>
+  
+  </div><!-- /creature-grid panel -->
+
   <div class="panel hidden" id="component-panel">
     <div class="panel-label">II. Select Component</div>
     <div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px" id="creature-info"></div>
@@ -674,7 +676,8 @@ select option{background:#1a1208}
     <button class="btn-gold" style="width:100%;margin-top:6px;font-size:13px;letter-spacing:.2em;padding:13px" id="forge-btn" onclick="forgeItem()">&#9874;&ensp;Forge the Item</button>
   </div>
   <div class="result-panel hidden" id="result-panel"><div id="result-content"></div></div>
-</div>
+
+</div><!-- /tab-forge -->
 
 <!-- ═══ SETTLEMENT TAB ═══ -->
 <div id="tab-settlement" class="tab-pane">
