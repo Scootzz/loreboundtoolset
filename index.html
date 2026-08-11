@@ -2803,10 +2803,29 @@ function forgeItem() {
   }).catch(function(e){rc.innerHTML='<p class="text-center" style="color:var(--danger);font-style:italic">The forge misfired.<br><small style="font-size:12px;opacity:.7">'+e.message+'</small></p>';});
 }
 function renderResult(item) {
-  var rc='rarity-'+item.r.replace(' ','-');
-  var props=item.properties.map(function(p){return '<li>'+p+'</li>';}).join('');
+  // Normalise field names - API returns full names, old code used short names
+  var name = item.name || item.n || 'Unknown Item';
+  var rarity = item.rarity || item.r || 'Common';
+  var type = item.type || '';
+  var attunement = item.attunement || '';
+  var description = item.description || '';
+  var lore = item.lore || '';
+  var properties = item.properties || [];
+  var rc = 'rarity-' + rarity.replace(' ', '-');
+  var props = properties.map(function(p){ return '<li>' + p + '</li>'; }).join('');
   var _lastForgedItem = item;
-  ($id('result-content')).innerHTML='<p class="item-name">'+item.n+'</p><div class="item-meta"><span>'+item.type+'</span><span class="rarity '+rc+'">'+item.r+'</span><span>'+item.attunement+'</span></div><p class="item-section">Description</p><p class="item-desc">'+item.description+'</p><hr class="item-divider"><p class="item-section">Properties</p><ul class="item-props">'+props+'</ul><hr class="item-divider"><p class="item-section">Lore</p><p class="item-lore">'+item.lore+'</p><div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn-ghost" onclick="copyResult()">Copy</button><button class="btn-gold btn-sm" onclick="saveForgedItemToHomebrew(_lastForgedItem)">&#128220; Save to Homebrew</button><button class="btn-ghost btn-sm" onclick="saveForgedToInventory(_lastForgedItem)" style="color:var(--gold);border-color:var(--gold-dim)">&#127809; Add to Inventory</button></div>';
+  ($id('result-content')).innerHTML =
+    '<p class="item-name">' + name + '</p>'
+    + '<div class="item-meta"><span>' + type + '</span><span class="rarity ' + rc + '">' + rarity + '</span><span>' + attunement + '</span></div>'
+    + '<p class="item-section">Description</p><p class="item-desc">' + description + '</p>'
+    + '<hr class="item-divider">'
+    + '<p class="item-section">Properties</p><ul class="item-props">' + props + '</ul>'
+    + '<hr class="item-divider">'
+    + '<p class="item-section">Lore</p><p class="item-lore">' + lore + '</p>'
+    + '<div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">'
+    + '<button class="btn-ghost" onclick="copyResult()">Copy</button>'
+    + '<button class="btn-gold btn-sm" onclick="saveForgedItemToHomebrew(_lastForgedItem)">&#128220; Save to Homebrew</button>'
+    + '</div>';
 }
 function copyResult() {
   var el=document.getElementById('result-content');
