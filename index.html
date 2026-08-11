@@ -2770,8 +2770,11 @@ function forgeItem() {
   var apiKey=getApiKey();
   if(!concept){document.getElementById('item-concept').focus();return;}
   if(!apiKey){(document.getElementById('api-banner')||document.createElement('div')).classList.add('show');return;}
+  var cData=selectedCreature ? CREATURES[selectedCreature] : null;
+  var comp=selectedComponent;
+  if(!cData){showToast('Select a creature first','error');return;}
+  if(!comp){showToast('Select a component first','error');return;}
   var tier=document.getElementById('craft-tier').value;
-  var cData=CREATURES[selectedCreature]; var comp=selectedComponent;
   var rg={Common:'minor convenience, no attunement, one simple property',Uncommon:'minor magical benefit, may require attunement, 1-2 properties',Rare:'notable power, usually requires attunement, 2-3 meaningful properties','Very Rare':'powerful ability, requires attunement, 3-4 strong properties',Legendary:'legendary power, requires attunement, 4-5 campaign-defining properties',Artifact:'world-altering artifact, requires attunement, multiple unique legendary properties'};
   var lines=[
     'You are a master magical item creator for D&D 5e. Generate a complete magic item.',
@@ -2792,7 +2795,9 @@ function forgeItem() {
   fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})})
   .then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error(res.status+': '+t.slice(0,200));});return res.json();})
   .then(function(data){
-    var text=data.content.map(function(i){return i.text||'';}).join('');
+    if(data.error) throw new Error(data.error.message||'API error');
+    var text=(data.content||[]).map(function(i){return i.text||'';}).join('');
+    if(!text) throw new Error('Empty response from API');
     var clean=text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
     renderResult(JSON.parse(clean));
   }).catch(function(e){rc.innerHTML='<p class="text-center" style="color:var(--danger);font-style:italic">The forge misfired.<br><small style="font-size:12px;opacity:.7">'+e.message+'</small></p>';});
