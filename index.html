@@ -2663,7 +2663,8 @@ function switchTab(name, btn) {
 function switchCraftTab(name, btn) {
   craftSubTab=name;
   ['professions','buildings','sessions','combat-ref','magic-ref','rules','homebrew','rumours'].forEach(function(t){
-    var tabBtn=document.getElementById('craft-tab-'+t);
+    var btnId=(t==='combat-ref'?'craft-tab-combat-ref':t==='magic-ref'?'craft-tab-magic-ref':'craft-tab-'+t);
+    var tabBtn=document.getElementById(btnId);
     var pane=document.getElementById('craft-'+t);
     if(tabBtn) tabBtn.classList.toggle('active',name===t);
     if(pane) pane.classList.toggle('hidden',name!==t);
@@ -2683,9 +2684,9 @@ function closeModal(id) { var m=document.getElementById(id); if(m){ m.classList.
 
 // ═══════════════════════════ FORGE ═══════════════════════════
 function initCreatureFilter() {
+  var sel=document.getElementById('type-filter'); if(!sel) return;
   var types=Object.values(CREATURES).map(function(c){return c.type;});
   types=types.filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
-  var sel=document.getElementById('type-filter');
   types.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
 }
 function renderCreatures() {
@@ -7704,7 +7705,6 @@ function openFactionModal(id) {
   document.getElementById('faction-goal').value = f?f.goal||'':'';
   document.getElementById('faction-leader').value = f?f.leader||'':'';
   document.getElementById('faction-rep').value = f?f.rep||'neutral':'neutral';
-  document.getElementById('faction-members').value = f?f.members||'':'';
   document.getElementById('faction-notes').value = f?f.notes||'':'';
   var delBtn = document.getElementById('faction-delete-btn');
   if(delBtn) delBtn.classList.toggle('hidden', !id);
@@ -7789,8 +7789,8 @@ function renderRumoursInCraft() {
 }
 
 function addRumour() {
-  var inp = document.getElementById('rumour-input');
-  var src = document.getElementById('rumour-source');
+  var inp = document.getElementById('rumour-standalone-input');
+  var src = document.getElementById('rumour-standalone-source');
   if(!inp || !inp.value.trim()) { if(inp) inp.focus(); return; }
   var rumours = loadRumours();
   rumours.push({id:'rum_'+Date.now(), text:inp.value.trim(), source:src?src.value:'', status:'unverified', addedAt:new Date().toLocaleDateString()});
@@ -7811,7 +7811,7 @@ function deleteRumour(id) {
 }
 
 function renderRumoursList() {
-  var list = document.getElementById('rumours-list');
+  var list = document.getElementById('rumours-standalone-list');
   if(!list) return;
   var rumours = loadRumours();
   var STATUS_STYLES = {
