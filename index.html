@@ -478,7 +478,7 @@ select option{background:#1a1208}
   <button class="main-tab" data-tab="npcs" onclick="enterTab('npcs')">&#128101;&#xFE0E; NPCs</button>
   <button class="main-tab" data-tab="timeline" onclick="enterTab('timeline')">&#128337;&#xFE0E; Timeline</button>
   <button class="main-tab" data-tab="combat" onclick="enterTab('combat')">&#9760;&#xFE0E; Combat</button>
-  <button class="main-tab" data-tab="crafting" onclick="enterTab('crafting')">&#128220;&#xFE0E; Reference</button>
+  <button class="main-tab" data-tab="crafting" onclick="enterTab('crafting');setTimeout(function(){switchCraftTab('rules',document.getElementById('craft-tab-rules'));},50)">&#128220;&#xFE0E; Crafting</button>
   <button class="main-tab" data-tab="store" onclick="enterTab('store')">&#9878;&#xFE0E; Store</button>
   
   <button class="main-tab" data-tab="sessions-main" onclick="enterTab('sessions-main')">&#128221;&#xFE0E; Sessions</button>
@@ -580,7 +580,7 @@ select option{background:#1a1208}
       <button class="landing-tile" onclick="enterTab('factions')"><span class="landing-icon">&#9830;&#xFE0E;</span><span class="landing-name">Factions</span></button>
       <button class="landing-tile" onclick="enterTab('naval')"><span class="landing-icon">&#9875;&#xFE0E;</span><span class="landing-name">Naval</span></button>
       <button class="landing-tile" onclick="enterTab('music')"><span class="landing-icon">&#9836;&#xFE0E;</span><span class="landing-name">Music</span></button>
-      <button class="landing-tile" onclick="enterTab('crafting')"><span class="landing-icon">&#128220;&#xFE0E;</span><span class="landing-name">Reference</span></button>
+      <button class="landing-tile" onclick="enterTab('crafting');setTimeout(function(){switchCraftTab('rules',document.getElementById('craft-tab-rules'));},50)"><span class="landing-icon">&#128220;&#xFE0E;</span><span class="landing-name">Reference</span></button>
 
       <button class="landing-tile" onclick="enterTab('sessions-main')"><span class="landing-icon">&#128221;&#xFE0E;</span><span class="landing-name">Sessions</span></button>
       <button class="landing-tile" onclick="enterTab('rumours-main')"><span class="landing-icon">&#128065;&#xFE0E;</span><span class="landing-name">Rumours</span></button>
@@ -1227,8 +1227,19 @@ select option{background:#1a1208}
   <div id="craft-combat-ref" class="hidden"></div>
   <div id="craft-magic-ref" class="hidden"></div>
   <div id="craft-sessions" class="hidden"></div>
-  <div id="craft-rules" class="hidden"></div>
-  <div id="craft-homebrew" class="hidden"></div>
+  <div id="craft-rules" class="hidden"><div style="padding:4px 0">
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Ask any rules question — Claude answers from the 2024 PHB.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input type="text" id="rules-question" placeholder="e.g. How does grappling work?" style="flex:1" onkeydown="if(event.key==='Enter')askRules()">
+      <button class="btn-gold" onclick="askRules()">&#128214; Ask</button>
+    </div>
+    <div id="rules-status" style="font-size:12px;color:var(--muted);font-style:italic;display:none"></div>
+    <div id="rules-answer" class="hidden" style="margin-top:8px;padding:14px;background:rgba(5,3,1,0.8);border:1px solid var(--border-lit);border-radius:4px;font-size:14px;line-height:1.8;color:var(--text)"></div>
+  </div></div>
+  <div id="craft-homebrew" class="hidden"><div style="padding:4px 0">
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Magic items generated in the Forge.</p>
+    <div id="homebrew-forged-list"></div>
+  </div></div>
   <div id="craft-rumours" class="hidden"></div>
 </div>
 
@@ -1465,30 +1476,9 @@ select option{background:#1a1208}
 
 
 <!-- ═══ RULES TAB ═══ -->
-<div id="tab-rules" class="tab-pane">
-  <div class="panel">
-    <div class="panel-label">D&D 5e 2024 Rules Search</div>
-    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Ask any rules question — Claude answers from its built-in 2024 PHB knowledge.</p>
-    
-    <div id="rules-answer" class="hidden" style="margin-top:12px;padding:14px;background:rgba(5,3,1,0.8);border:1px solid var(--border-lit);border-radius:4px;font-size:14px;line-height:1.8;color:var(--text)"></div>
-  </div>
-</div>
-
 </div>
 
 <!-- ═══ HOMEBREW TAB ═══ -->
-<div id="tab-homebrew" class="tab-pane">
-  <div class="panel">
-    <div class="panel-label">Homebrew Rules</div>
-    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Your custom rules, house rules, and campaign-specific mechanics. All changes save automatically.</p>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <button class="btn-gold btn-sm" onclick="addHomebrewSection()">+ Add Section</button>
-      <input type="text" id="homebrew-search" placeholder="Search rules..." oninput="renderHomebrew()" style="flex:1;min-width:120px">
-    </div>
-    <div id="homebrew-sections"></div>
-  </div>
-</div>
-
 <!-- Homebrew Section Modal -->
 <div class="modal-overlay" id="homebrew-modal">
   <div class="modal-box">
@@ -2659,7 +2649,7 @@ function switchTab(name, btn) {
   if(name==='pcs') renderPcs();
   if(name==='settlement') { renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); }
   if(name==='timeline') { if(!webCanvas){initWeb();}else{renderTimeline();} }
-  if(name==='crafting') { renderCrafting(); switchCraftTab(craftSubTab||'professions', document.getElementById('craft-tab-'+(craftSubTab||'professions'))); }
+  if(name==='crafting') { renderCrafting(); switchCraftTab(craftSubTab||'rules', document.getElementById('craft-tab-'+(craftSubTab||'professions'))); }
   if(name==='combat') renderCombatTab();
   if(name==='homebrew') renderHomebrew();
   if(name==='music') renderMusic();
