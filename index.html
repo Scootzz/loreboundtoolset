@@ -5323,6 +5323,7 @@ function enterTab(name) {
   if(name==='music') renderMusic();
   if(name==='naval') renderNaval();
   if(name==='store') setTimeout(renderStore,0);
+  if(name==='rules') renderForgedItems();
   if(name==='inventory') setTimeout(renderInventory,0);
   if(name==='sessions-main') setTimeout(renderSessionsStandalone,0);
   if(name==='rumours-main') setTimeout(renderRumoursStandalone,0);
@@ -12160,6 +12161,69 @@ function deleteCompendiumCreature() {
   showToast('Removed','success');
 }
 
-</script>
+
+
+function askRules() {
+  var q = ((document.getElementById('rules-question')||{}).value||'').trim();
+  if(!q) { var qi=document.getElementById('rules-question'); if(qi) qi.focus(); return; }
+  var apiKey = getApiKey();
+  if(!apiKey) { showToast('No API key set','error'); return; }
+  var status = document.getElementById('rules-status');
+  var answer = document.getElementById('rules-answer');
+  if(status) { status.textContent='Consulting the rulebook...'; status.style.display='block'; }
+  if(answer) { answer.classList.add('hidden'); answer.innerHTML=''; }
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',
+      content:'You are a D&D 5e 2024 rules expert. Answer this rules question clearly and concisely, citing the relevant rule. Keep it brief and practical.\n\nQuestion: '+q}]})
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(status) status.style.display='none';
+    if(data.error) throw new Error(data.error.message);
+    var text=(data.content||[]).map(function(c){return c.text||'';}).join('');
+    if(answer){ answer.innerHTML=text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>'); answer.classList.remove('hidden'); }
+  })
+  .catch(function(e){
+    if(status){ status.textContent='Error: '+e.message; status.style.display='block'; }
+  });
+}
+
+function renderForgedItems() {
+  var list = document.getElementById('homebrew-forged-list');
+  if(!list) return;
+  var items = (typeof loadHbItems==='function') ? loadHbItems() : [];
+  var forged = items.filter(function(i){return i.source==='forge';});
+  if(!forged.length){
+    list.innerHTML='<div style="font-size:13px;color:var(--muted);font-style:italic">No forged items yet. Generate items in the Forge tab and save them here.</div>';
+    return;
+  }
+  list.innerHTML='';
+  forged.forEach(function(item){
+    var rc='rarity-'+(item.rarity||'Common').replace(' ','-');
+    var card=document.createElement('div');
+    card.className='panel';
+    card.style.cssText='margin-bottom:8px;padding:12px;cursor:pointer';
+    card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+      +'<div style="font-family:Cinzel,serif;font-size:13px;color:var(--gold)">'+(item.name||'Unnamed')+'</div>'
+      +'<span class="rarity '+rc+'">'+(item.rarity||'Common')+'</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+(item.type||'')+' '+(item.attunement?'\u2022 '+item.attunement:'')+'</div>'
+      +'<div style="font-size:12px;color:var(--text);margin-top:8px">'+(item.description||'')+'</div>'
+      +'<div style="display:flex;justify-content:flex-end;margin-top:8px">'
+      +'<button class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger);font-size:11px" onclick="deleteForgedItem(\''+item.id+'\')">&#10005; Remove</button>'
+      +'</div>';
+    list.appendChild(card);
+  });
+}
+
+function deleteForgedItem(id) {
+  if(!confirm('Remove this item?')) return;
+  if(typeof loadHbItems==='function'){
+    saveHbItems(loadHbItems().filter(function(i){return i.id!==id;}));
+    renderForgedItems();
+  }
+}</script>
 </body>
 </html>
