@@ -2661,24 +2661,38 @@ function switchTab(name, btn) {
   if(name==='factions') renderFactions();
 }
 function switchCraftTab(name, btn) {
-  craftSubTab=name;
-  ['professions','buildings','sessions','combat-ref','magic-ref','rules','homebrew','rumours'].forEach(function(t){
-    var btnId=(t==='combat-ref'?'craft-tab-combat-ref':t==='magic-ref'?'craft-tab-magic-ref':'craft-tab-'+t);
-    var tabBtn=document.getElementById(btnId);
-    var pane=document.getElementById('craft-'+t);
-    if(tabBtn) tabBtn.classList.toggle('active',name===t);
-    if(pane) pane.classList.toggle('hidden',name!==t);
+  craftSubTab = name;
+  // Map tab names to button IDs (some are abbreviated in HTML)
+  var btnIdMap = {
+    'professions': 'craft-tab-prof',
+    'buildings': 'craft-tab-bld',
+    'combat-ref': 'craft-tab-combat-ref',
+    'magic-ref': 'craft-tab-magic-ref',
+    'sessions': 'craft-tab-sessions',
+    'rules': 'craft-tab-rules',
+    'homebrew': 'craft-tab-homebrew',
+    'rumours': 'craft-tab-rumours'
+  };
+  var tabNames = ['professions','buildings','sessions','combat-ref','magic-ref','rules','homebrew','rumours'];
+  tabNames.forEach(function(t) {
+    var tabBtn = document.getElementById(btnIdMap[t] || ('craft-tab-'+t));
+    var pane = document.getElementById('craft-'+t);
+    if(tabBtn) tabBtn.classList.toggle('active', name===t);
+    if(pane) pane.classList.toggle('hidden', name!==t);
   });
-  // Show search bar only on professions/buildings tabs
+  // Show search bar only for professions/buildings
   var searchPanel = document.getElementById('craft-search-panel');
   if(searchPanel) searchPanel.style.display = (name==='professions'||name==='buildings') ? '' : 'none';
-  if(name==='sessions') renderSessionNotesInCraft();
-  if(name==='rules') renderRulesBooksInCraft();
-  if(name==='combat-ref') renderCombatRefInCraft();
-  if(name==='magic-ref') renderMagicRefInCraft();
-  if(name==='homebrew') renderHomebrewInCraft();
-  if(name==='rumours') renderRumoursInCraft();
-  if(name==='professions'||name==='buildings') renderCrafting();
+  // Render content for selected sub-tab
+  try {
+    if(name==='sessions') renderSessionNotesInCraft();
+    else if(name==='rules') renderRulesBooksInCraft();
+    else if(name==='combat-ref') renderCombatRefInCraft();
+    else if(name==='magic-ref') renderMagicRefInCraft();
+    else if(name==='homebrew') renderHomebrewInCraft();
+    else if(name==='rumours') renderRumoursInCraft();
+    else if(name==='professions'||name==='buildings') renderCrafting();
+  } catch(e) { console.error('switchCraftTab render error:', e); }
 }
 function closeModal(id) { var m=document.getElementById(id); if(m){ m.classList.remove('show'); m.style.display=''; } }
 
@@ -4677,23 +4691,23 @@ function renderSnCraftList() {
 }
 
 function renderRulesBooksInCraft() {
-  var pane = document.getElementById('craft-rules');
-  if(!pane) return;
-  pane.innerHTML = '';
-  var panel = document.createElement('div');
-  panel.className = 'panel';
-  panel.innerHTML = '<div class="panel-label">D&D 5e 2024 Rules Search</div>'
-    + '<p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Ask any rules question — Claude answers from its built-in 2024 PHB knowledge.</p>'
-    + '<div style="display:flex;gap:8px;margin-bottom:10px">'
-    + '<input type="text" id="rules-question-craft" placeholder="e.g. How does grappling work? What changed in 2024?" style="flex:1">'
-    + '<button class="btn-gold" style="white-space:nowrap;padding:9px 16px" id="rules-ask-craft-btn">Ask</button>'
-    + '</div>'
-    + '<div id="rules-answer-craft" class="hidden" style="margin-top:10px;padding:13px;background:rgba(5,3,1,0.8);border:1px solid var(--border-lit);border-radius:4px;font-size:14px;line-height:1.8;color:var(--text)"></div>';
-  pane.appendChild(panel);
+  // craft-rules already has static HTML with input - just wire up the button
   var askBtn = document.getElementById('rules-ask-craft-btn');
-  if(askBtn) askBtn.addEventListener('click', function(){ askRulesQuestionCraft(); });
-  var qInput = document.getElementById('rules-question-craft');
-  if(qInput) qInput.addEventListener('keydown', function(e){ if(e.key==='Enter') askRulesQuestionCraft(); });
+  if(askBtn) {
+    askBtn.onclick = function(){ askRulesQuestionCraft(); };
+  } else {
+    // Button doesn't exist in static HTML - wire the existing btn-gold button
+    var qInput = document.getElementById('rules-question');
+    var existingBtn = qInput ? qInput.parentElement.querySelector('button') : null;
+    if(existingBtn && !existingBtn.hasAttribute('data-wired')) {
+      existingBtn.setAttribute('data-wired','1');
+      existingBtn.onclick = function(){ askRules(); };
+    }
+    if(qInput && !qInput.hasAttribute('data-wired')) {
+      qInput.setAttribute('data-wired','1');
+      qInput.addEventListener('keydown', function(e){ if(e.key==='Enter') askRules(); });
+    }
+  }
 }
 
 
@@ -5308,17 +5322,23 @@ function enterTab(name) {
   if(name==='pcs') renderPcs();
   if(name==='settlement'){ renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); loadGoldToPanel(); }
   if(name==='timeline'){ if(!webCanvas){initWeb();}else{renderTimeline();} }
-  if(name==='crafting'){ renderCrafting(); var _ctBtn=document.getElementById('craft-tab-'+(craftSubTab||'professions')); if(_ctBtn) switchCraftTab(craftSubTab||'professions', _ctBtn); }
+  if(name==='crafting'){
+    var _stab = craftSubTab||'rules';
+    var _btnMap = {'professions':'craft-tab-prof','buildings':'craft-tab-bld'};
+    var _btnId = _btnMap[_stab] || ('craft-tab-'+_stab);
+    var _ctBtn = document.getElementById(_btnId) || document.getElementById('craft-tab-rules');
+    if(_ctBtn) switchCraftTab(_stab, _ctBtn);
+  }
   if(name==='combat') renderCombatTab();
   if(name==='homebrew') renderHomebrew();
   if(name==='music') renderMusic();
   if(name==='naval') renderNaval();
-  if(name==='store') setTimeout(renderStore,0);
-  if(name==='rules') renderForgedItems();
-  if(name==='inventory') setTimeout(renderInventory,0);
-  if(name==='sessions-main') setTimeout(renderSessionsStandalone,0);
-  if(name==='rumours-main') setTimeout(renderRumoursStandalone,0);
-  if(name==='factions') renderFactions();
+  if(name==='store') setTimeout(function(){ try{renderStore();}catch(e){console.error('renderStore:',e);} },0);
+  if(name==='rules') try{renderForgedItems();}catch(e){console.error('renderForgedItems:',e);}
+  if(name==='inventory') setTimeout(function(){ try{renderInventory();}catch(e){console.error('renderInventory:',e);} },0);
+  if(name==='sessions-main') setTimeout(function(){ try{renderSessionsStandalone();}catch(e){console.error('renderSessionsStandalone:',e);} },0);
+  if(name==='rumours-main') setTimeout(function(){ try{renderRumoursStandalone();}catch(e){console.error('renderRumoursStandalone:',e);} },0);
+  if(name==='factions') try{renderFactions();}catch(e){console.error('renderFactions:',e);}
   if(name==='welcome') { if(typeof renderDashboard!=='undefined') renderDashboard(); }
 
   // Tab memory + page title
