@@ -5292,7 +5292,7 @@ function enterTab(name) {
   if(name==='homebrew') renderHomebrew();
   if(name==='music') renderMusic();
   if(name==='naval') renderNaval();
-  if(name==='store') setTimeout(function(){ try{renderStore();}catch(e){console.error('renderStore:',e);} },0);
+  if(name==='store') { setTimeout(function(){ try{renderStore(); console.log('renderStore called, STORE_ITEMS:', typeof STORE_ITEMS, typeof STORE_ITEMS !== 'undefined' ? STORE_ITEMS.length : 'N/A');}catch(e){console.error('renderStore crash:',e); var l=document.getElementById('store-list'); if(l) l.innerHTML='<div style="color:red;padding:10px">Error: '+e.message+'</div>';} },100); }
   if(name==='rules') try{renderForgedItems();}catch(e){console.error('renderForgedItems:',e);}
   if(name==='inventory') setTimeout(function(){ try{renderInventory();}catch(e){console.error('renderInventory:',e);} },0);
   if(name==='sessions-main') setTimeout(function(){ try{renderSessionsStandalone();}catch(e){console.error('renderSessionsStandalone:',e);} },0);
@@ -7201,6 +7201,14 @@ function renderStore(){
     return true;
   });
   var ce=document.getElementById("store-count"); if(ce) ce.textContent=filtered.length+" items shown";
+  if(!filtered.length && typeof STORE_ITEMS !== 'undefined') {
+    var diag = document.getElementById("store-list");
+    if(diag) diag.innerHTML = '<div style="padding:20px;color:var(--gold);font-family:Cinzel,serif;font-size:13px">'
+      + 'STORE_ITEMS loaded: ' + STORE_ITEMS.length + ' items<br>'
+      + 'TIER_RARITY: ' + (typeof TIER_RARITY) + '<br>'
+      + 'tier=' + tier + ', ar=' + ar.length + ', at=' + at.length + ', ashop=' + ashop.length
+      + '</div>';
+  }
   var SHOP_ORDER=["General Store","Blacksmith","Fletcher / Armoury","Alchemist","Tavern","Clothier","Stables","Cartwright","Scholar / Scribe","Trade Market","Jeweller","Temple","Magic Shop"];
   var SHOP_ICONS={"General Store":"&#128722;","Blacksmith":"&#9874;","Fletcher / Armoury":"&#127993;","Alchemist":"&#9879;","Tavern":"&#127866;","Clothier":"&#129525;","Stables":"&#128014;","Cartwright":"&#128696;","Scholar / Scribe":"&#128220;","Trade Market":"&#128176;","Jeweller":"&#128142;","Temple":"&#10024;","Magic Shop":"&#10024;"};
   var groups={};
