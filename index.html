@@ -2238,6 +2238,10 @@ select option{background:#1a1208}
 
 
 
+
+
+
+</div><!-- /app -->
 <script>
 
 
@@ -5292,26 +5296,7 @@ function enterTab(name) {
   if(name==='homebrew') renderHomebrew();
   if(name==='music') renderMusic();
   if(name==='naval') renderNaval();
-  if(name==='store') {
-    setTimeout(function(){
-      try{
-        var storeList = document.getElementById('store-list');
-        if(storeList && !storeList._observed) {
-          storeList._observed = true;
-          var obs = new MutationObserver(function(muts){
-            muts.forEach(function(m){
-              console.log('store-list mutation:', m.type, 'childList length after:', storeList.children.length, 'innerHTML length:', storeList.innerHTML.length);
-            });
-          });
-          obs.observe(storeList, {childList:true, subtree:false});
-        }
-        renderStore();
-        console.log('renderStore done. store-list children:', storeList ? storeList.children.length : 'no element', 'innerHTML:', storeList ? storeList.innerHTML.length : 0);
-      }catch(e){
-        console.error('renderStore crash:',e);
-      }
-    },100);
-  }
+  if(name==='store') setTimeout(function(){ try{renderStore();}catch(e){console.error('renderStore:',e);} },0);
   if(name==='rules') try{renderForgedItems();}catch(e){console.error('renderForgedItems:',e);}
   if(name==='inventory') setTimeout(function(){ try{renderInventory();}catch(e){console.error('renderInventory:',e);} },0);
   if(name==='sessions-main') setTimeout(function(){ try{renderSessionsStandalone();}catch(e){console.error('renderSessionsStandalone:',e);} },0);
@@ -11303,13 +11288,14 @@ function handleUpcomingSessionUpload(event) {
 }
 
 function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
+  var apiKey=getApiKey(); if(!apiKey){showToast('No API key set','error');return;}
   if(statusEl) statusEl.textContent = 'Analysing session prep...';
   
   var prompt = 'You are an expert DM assistant. Analyse this session prep.\n\nParty: ' + pcContext + '\n\nPrep:\n' + prepText.slice(0,5000) + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills), considerations (array of 3-5 tips). No markdown.';;
 
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 2000,
@@ -12222,6 +12208,5 @@ function deleteForgedItem(id) {
   }
 }
 </script>
-</div><!-- /app -->
 </body>
 </html>
