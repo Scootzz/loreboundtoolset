@@ -3334,7 +3334,7 @@ function handlePcPdfUpload(event) {
   Promise.all(promises).then(function(results){
     status.textContent = 'Asking Claude to extract character details...';
     var sheetDesc = isPdf ? 'a PDF' : (results.length > 1 ? results.length+' images' : 'an image');
-    var prompt = 'This is a D&D character sheet shown as '+sheetDesc+'. Extract the player character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name (e.g. Fighter, Rogue)","level":"level as number string e.g. 5","player":"player name if shown, else empty","hp":"current max HP as a number","ac":"armour class as a number","pp":"passive perception as a number (10 + Perception modifier, or read directly from sheet)","notes":"brief summary of race, background, subclass and key traits in 1-2 sentences"}';
+    var prompt = 'This is a D&D character sheet shown as '+sheetDesc+'. Extract the player character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name (e.g. Fighter, Rogue)","level":"level as number string e.g. 5","player":"player name if shown, else empty","hp":"MAXIMUM hit points only (not current HP) - the highest number in the HP box","ac":"armour class as a number","pp":"passive perception as a number (10 + Perception modifier, or read directly from sheet)","notes":"brief summary of race, background, subclass and key traits in 1-2 sentences"}';
     var contentBlocks = [];
     if(isPdf){
       contentBlocks.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:results[0].base64}});
@@ -7173,68 +7173,75 @@ function initStoreChips(){
   var t=document.getElementById("store-tier"); if(t) t.addEventListener("change",renderStore);
   var s=document.getElementById("store-search"); if(s) s.addEventListener("input",renderStore);
 }
-function renderStore(){
-  var list=document.getElementById("store-list"); if(!list) return;
-  var tier=parseInt((document.getElementById("store-tier")||{value:"0"}).value);
-  var search=((document.getElementById("store-search")||{value:""}).value||"").toLowerCase();
-  var ar=[]; document.querySelectorAll('[data-group="rarity"].active').forEach(function(c){ar.push(c.dataset.val);});
-  var at=[]; document.querySelectorAll('[data-group="type"].active').forEach(function(c){at.push(c.dataset.val);});
-  var ashop=[]; document.querySelectorAll('[data-group="shop"].active').forEach(function(c){ashop.push(c.dataset.val);});
-  var allowR=TIER_RARITY[tier]; var allowMR=TIER_MAGIC_RARITY[tier];
-  var filtered=STORE_ITEMS.filter(function(item){
-    var isMagic=item.t.indexOf("magic")!==-1;
-    var isPotion=item.t.indexOf("potion")!==-1;
-    var isScroll=item.t.indexOf("scroll")!==-1;
-    if(tier>0){var rar=isMagic?allowMR:allowR; if(rar.indexOf(item.r)===-1) return false;}
-    if(ar.length>0 && ar.indexOf(item.r)===-1) return false;
-    if(ashop.length>0 && ashop.indexOf(item.s)===-1) return false;
-    if(at.length>0){
-      var ok=at.some(function(t){
-        if(t==="potion") return isPotion;
-        if(t==="scroll") return isScroll;
-        if(t==="magic") return isMagic&&!isPotion&&!isScroll;
-        if(t==="armor") return item.t.indexOf("armor")!==-1;
-        if(t==="weapon") return item.t.indexOf("weapon")!==-1;
-        if(t==="tools") return item.t.indexOf("tools")!==-1;
-        if(t==="mount") return item.t.indexOf("mount")!==-1||item.t.indexOf("vehicle")!==-1;
-        if(t==="trade") return item.t.indexOf("trade")!==-1;
-        return !isMagic&&item.t.indexOf("weapon")===-1&&item.t.indexOf("armor")===-1&&item.t.indexOf("tools")===-1&&item.t.indexOf("mount")===-1&&item.t.indexOf("vehicle")===-1&&item.t.indexOf("trade")===-1;
-      }); if(!ok) return false;
-    }
-    if(search&&item.n.toLowerCase().indexOf(search)===-1) return false;
+function renderStore() {
+  var list = document.getElementById('store-list');
+  if(!list) { console.error('store-list not found'); return; }
+  if(typeof STORE_ITEMS === 'undefined') { list.innerHTML = '<div style="padding:20px;color:var(--muted)">Store data not loaded. Please refresh.</div>'; return; }
+
+  var tier = parseInt((document.getElementById('store-tier')||{value:'0'}).value) || 0;
+  var search = ((document.getElementById('store-search')||{value:''}).value||'').toLowerCase();
+  var countEl = document.getElementById('store-count');
+
+  // Active filter buttons
+  var ar = []; document.querySelectorAll('[data-group="rarity"].active').forEach(function(c){ar.push(c.dataset.val);});
+  var at = []; document.querySelectorAll('[data-group="type"].active').forEach(function(c){at.push(c.dataset.val);});
+  var ashop = []; document.querySelectorAll('[data-group="shop"].active').forEach(function(c){ashop.push(c.dataset.val);});
+
+  var allowR = TIER_RARITY ? TIER_RARITY[tier] : null;
+
+  var filtered = STORE_ITEMS.filter(function(x) {
+    if(allowR && tier > 0 && allowR.indexOf(x.r) === -1) return false;
+    if(ar.length && ar.indexOf(x.r) === -1) return false;
+    if(at.length && at.indexOf(x.cat) === -1) return false;
+    if(ashop.length && ashop.indexOf(x.s) === -1) return false;
+    if(search && x.n.toLowerCase().indexOf(search) === -1) return false;
     return true;
   });
-  var ce=document.getElementById("store-count"); if(ce) ce.textContent=filtered.length+" items shown";
-  if(!filtered.length && typeof STORE_ITEMS !== 'undefined') {
-    var diag = document.getElementById("store-list");
-    if(diag) diag.innerHTML = '<div style="padding:20px;color:var(--gold);font-family:Cinzel,serif;font-size:13px">'
-      + 'STORE_ITEMS loaded: ' + STORE_ITEMS.length + ' items<br>'
-      + 'TIER_RARITY: ' + (typeof TIER_RARITY) + '<br>'
-      + 'tier=' + tier + ', ar=' + ar.length + ', at=' + at.length + ', ashop=' + ashop.length
-      + '</div>';
+
+  if(countEl) countEl.textContent = filtered.length + ' items';
+
+  if(!filtered.length) {
+    list.innerHTML = '<div style="padding:20px;color:var(--muted);font-style:italic;text-align:center">No items match the current filters.</div>';
+    return;
   }
-  var SHOP_ORDER=["General Store","Blacksmith","Fletcher / Armoury","Alchemist","Tavern","Clothier","Stables","Cartwright","Scholar / Scribe","Trade Market","Jeweller","Temple","Magic Shop"];
-  var SHOP_ICONS={"General Store":"&#128722;","Blacksmith":"&#9874;","Fletcher / Armoury":"&#127993;","Alchemist":"&#9879;","Tavern":"&#127866;","Clothier":"&#129525;","Stables":"&#128014;","Cartwright":"&#128696;","Scholar / Scribe":"&#128220;","Trade Market":"&#128176;","Jeweller":"&#128142;","Temple":"&#10024;","Magic Shop":"&#10024;"};
-  var groups={};
-  filtered.forEach(function(item){var g=item.s||"General Store"; if(!groups[g])groups[g]=[]; groups[g].push(item);});
-  var rcMap={"Common":"Common","Uncommon":"Uncommon","Rare":"Rare","Very Rare":"VeryRare","Legendary":"Legendary"};
-  list.innerHTML="";
-  if(!filtered.length){list.innerHTML='<div class="empty-state">No items match your filters.</div>';return;}
-  SHOP_ORDER.forEach(function(shop){
-    if(!groups[shop]||!groups[shop].length) return;
-    var icon=SHOP_ICONS[shop]||"&#128250;";
-    var header=document.createElement("div");
-    header.style.cssText="font-family:Cinzel,serif;font-size:12px;letter-spacing:.1em;color:var(--gold);padding:14px 0 6px;border-bottom:2px solid var(--gold-dim);margin-bottom:6px;display:flex;align-items:center;gap:8px;margin-top:8px";
-    var countSpan='<span style="font-size:11px;color:var(--muted);font-family:inherit;letter-spacing:.05em">('+groups[shop].length+' items)</span>';
-    header.innerHTML=icon+' <span>'+shop.toUpperCase()+'</span> '+countSpan;
+
+  // Group by shop
+  var groups = {}; var shopOrder = [];
+  filtered.forEach(function(x) {
+    if(!groups[x.s]) { groups[x.s] = []; shopOrder.push(x.s); }
+    groups[x.s].push(x);
+  });
+
+  list.innerHTML = '';
+  var rarityColours = {Common:'#aaa',Uncommon:'#4a8a4a',Rare:'#4a6acd',
+    'Very Rare':'#8a4acd',Legendary:'#cd8a2a',Artifact:'#cd4a4a'};
+
+  shopOrder.forEach(function(shop) {
+    var header = document.createElement('div');
+    header.style.cssText = 'font-family:Cinzel,serif;font-size:11px;letter-spacing:.1em;color:var(--gold);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:6px;margin-top:12px';
+    header.textContent = shop.toUpperCase() + ' (' + groups[shop].length + ')';
     list.appendChild(header);
-    groups[shop].forEach(function(item){
-      var rc=rcMap[item.r]||"Common";
-      var cs=item.c===0?"—":item.c>=1000?(item.c/1000).toFixed(item.c%1000===0?0:1)+"k gp":item.c+" gp";
-      var row=document.createElement("div"); row.className="store-item-row";
-      row.innerHTML='<div><div class="store-item-name">'+item.n+'</div>'+(0>0?'<div class="store-item-sub">'+0+' lb</div>':'')+'</div>'
-        +(item.r!=="Common"?'<span class="store-rarity-chip sr-'+rc+'">'+item.r+'</span>':'<span></span>')
-        +'<div class="store-cost">'+cs+'</div>';
+
+    groups[shop].forEach(function(item) {
+      var row = document.createElement('div');
+      row.className = 'store-item-row';
+      row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)';
+
+      var nameDiv = document.createElement('div');
+      nameDiv.style.cssText = 'font-size:13px;color:var(--text)';
+      nameDiv.textContent = item.n;
+
+      var raritySpan = document.createElement('span');
+      raritySpan.style.cssText = 'font-size:11px;color:' + (rarityColours[item.r]||'#aaa') + ';font-family:Cinzel,serif;letter-spacing:.05em;white-space:nowrap';
+      raritySpan.textContent = item.r;
+
+      var costSpan = document.createElement('span');
+      costSpan.style.cssText = 'font-size:12px;color:var(--gold);white-space:nowrap';
+      costSpan.textContent = item.c >= 1000 ? (item.c/100).toFixed(0) + ' gp' : item.c + ' gp';
+
+      row.appendChild(nameDiv);
+      row.appendChild(raritySpan);
+      row.appendChild(costSpan);
       list.appendChild(row);
     });
   });
