@@ -5292,7 +5292,26 @@ function enterTab(name) {
   if(name==='homebrew') renderHomebrew();
   if(name==='music') renderMusic();
   if(name==='naval') renderNaval();
-  if(name==='store') { setTimeout(function(){ try{renderStore(); console.log('renderStore called, STORE_ITEMS:', typeof STORE_ITEMS, typeof STORE_ITEMS !== 'undefined' ? STORE_ITEMS.length : 'N/A');}catch(e){console.error('renderStore crash:',e); var l=document.getElementById('store-list'); if(l) l.innerHTML='<div style="color:red;padding:10px">Error: '+e.message+'</div>';} },100); }
+  if(name==='store') {
+    setTimeout(function(){
+      try{
+        var storeList = document.getElementById('store-list');
+        if(storeList && !storeList._observed) {
+          storeList._observed = true;
+          var obs = new MutationObserver(function(muts){
+            muts.forEach(function(m){
+              console.log('store-list mutation:', m.type, 'childList length after:', storeList.children.length, 'innerHTML length:', storeList.innerHTML.length);
+            });
+          });
+          obs.observe(storeList, {childList:true, subtree:false});
+        }
+        renderStore();
+        console.log('renderStore done. store-list children:', storeList ? storeList.children.length : 'no element', 'innerHTML:', storeList ? storeList.innerHTML.length : 0);
+      }catch(e){
+        console.error('renderStore crash:',e);
+      }
+    },100);
+  }
   if(name==='rules') try{renderForgedItems();}catch(e){console.error('renderForgedItems:',e);}
   if(name==='inventory') setTimeout(function(){ try{renderInventory();}catch(e){console.error('renderInventory:',e);} },0);
   if(name==='sessions-main') setTimeout(function(){ try{renderSessionsStandalone();}catch(e){console.error('renderSessionsStandalone:',e);} },0);
