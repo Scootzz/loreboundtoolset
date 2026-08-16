@@ -1576,7 +1576,7 @@ select option{background:#1a1208}
   </div>
 </div>
 
-<!-- ═══ STORE TAB
+<!-- ═══ STORE TAB ═══ -->
 <div id="tab-store" class="tab-pane">
   <div class="panel" style="margin-bottom:10px">
     <div class="panel-label">Item Store &mdash; 2024 PHB &amp; DMG</div>
@@ -3402,7 +3402,7 @@ function handlePcUpdateUpload(event) {
   var reader = new FileReader();
   reader.onload = function(e) {
     var base64 = e.target.result.split(',')[1];
-    var prompt = 'This is an updated D&D character sheet PDF. Extract the current character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name","level":"level as number string","player":"player name if shown, else empty","notes":"1-2 sentences covering race, background, subclass if visible, and any notable new abilities or features from their current level"}';
+    var prompt = 'This is an updated D&D character sheet PDF. Extract the current character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name","level":"level as number string","player":"player name if shown, else empty","hp":"MAXIMUM hit points only (not current HP) - the highest number in the HP box","ac":"armour class as a number","pp":"passive perception as a number (10 + Perception modifier, or read directly from sheet)","notes":"1-2 sentences covering race, background, subclass if visible, and any notable new abilities or features from their current level"}';
     fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},{type:'text',text:prompt}]}]})})
     .then(function(res){return res.json();})
     .then(function(data){
@@ -3417,11 +3417,14 @@ function handlePcUpdateUpload(event) {
         if(updated.level) pcs[i].level = updated.level;
         if(updated.player) pcs[i].player = updated.player;
         if(updated.notes) pcs[i].notes = updated.notes;
+        if(updated.hp) pcs[i].hp = parseInt(updated.hp)||pcs[i].hp;
+        if(updated.ac) pcs[i].ac = parseInt(updated.ac)||pcs[i].ac;
+        if(updated.pp) pcs[i].pp = parseInt(updated.pp)||pcs[i].pp;
         // Store full PDF base64 for combat analysis
         pcs[i].pdfData = base64;
       }
       savePcs(pcs);
-      status.textContent = 'Updated: ' + (updated.name||'character') + ' is now Level ' + (updated.level||'?');
+      status.textContent = 'Updated: ' + (updated.name||'character') + ' is now Level ' + (updated.level||'?') + (updated.hp?' | HP '+updated.hp:'');
       renderPcs();
       event.target.value = '';
       setTimeout(function(){status.classList.add('hidden');}, 4000);
