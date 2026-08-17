@@ -849,6 +849,14 @@ select option{background:#1a1208}
     <input type="text" id="pc-search" placeholder="Search characters..." oninput="renderPcs()" style="margin-bottom:12px">
     <div id="pc-list"></div>
   </div>
+  <div class="panel" style="margin-top:12px">
+    <div class="panel-label">Current Vehicle</div>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Track the party's current mode of transport.</p>
+    <span class="field-label">Vehicle Name</span>
+    <input type="text" id="party-vehicle-name" placeholder="e.g. The Gilded Carriage, a rented river barge..." oninput="savePartyVehicle()" style="margin-bottom:9px">
+    <span class="field-label">Notes (capacity, speed, condition...)</span>
+    <textarea id="party-vehicle-notes" placeholder="e.g. Seats 6, drawn by two horses, wheel needs repair..." oninput="savePartyVehicle()" style="height:60px;resize:vertical"></textarea>
+  </div>
 </div>
 
 <!-- ═══ NPCS TAB ═══ -->
@@ -860,10 +868,11 @@ select option{background:#1a1208}
       <button class="btn-gold btn-sm" onclick="openNpcModal(null)">+ Add NPC</button>
       <button class="btn-ghost btn-sm" onclick="document.getElementById('pdf-upload-input').click()">&#128196; Import PDF / Word / Image</button>
       <button class="btn-ghost btn-sm" onclick="printView('npcs')" title="Print NPC Roster" style="font-size:11px">&#128438; Print</button>
-      <button class="btn-ghost btn-sm" id="npc-select-mode-btn" onclick="toggleNpcSelectMode()">&#9745; Select</button>
+      <button class="btn-ghost btn-sm" id="npc-select-mode-btn" onclick="toggleNpcSelectMode()" title="Turn on checkboxes to select multiple NPCs for bulk deletion">&#9745; Select</button>
       <button class="btn-danger btn-sm hidden" id="npc-delete-selected-btn" onclick="deleteSelectedNpcs()">&#10005; Delete Selected (<span id="npc-select-count">0</span>)</button>
       <input type="file" id="pdf-upload-input" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="display:none">
       <button class="btn-ghost btn-sm" onclick="openGenerateNpcModal()" style="border-color:var(--gold-dim);color:var(--gold)">&#10024; Generate NPC</button>
+      <button class="btn-ghost btn-sm" onclick="openManageLocationsModal()" style="font-size:11px;white-space:nowrap" title="Create locations and organise them into regions">&#127968; Create Location</button>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
       <input type="text" id="npc-search" placeholder="Search NPCs..." oninput="renderNpcs()" style="flex:1;min-width:120px">
@@ -872,12 +881,11 @@ select option{background:#1a1208}
       <select id="npc-region-filter" onchange="onRegionFilterChange()" style="font-size:13px;min-width:110px">
         <option value="">All Regions</option>
       </select>
-      <button class="btn-ghost btn-sm" onclick="openManageLocationsModal()" style="font-size:11px;white-space:nowrap" title="Manage locations and assign them to regions">&#127968; Locations &amp; Regions</button>
       <select id="npc-location-filter" onchange="renderNpcs()" style="font-size:13px;min-width:120px">
         <option value="">All Locations</option>
       </select>
-      <button class="btn-ghost btn-sm" onclick="openWorldMapDirect()" title="World Map" style="white-space:nowrap">&#127760; World</button>
-      <button class="btn-ghost btn-sm" id="npc-map-btn" onclick="openLocationMapModal()" title="View map for selected region/location" style="white-space:nowrap">&#128506; Map</button>
+      <button class="btn-ghost btn-sm" onclick="openWorldMapDirect()" title="World Map" style="white-space:nowrap;font-size:15px;padding:7px 12px">&#127760; World</button>
+      <button class="btn-ghost btn-sm" id="npc-map-btn" onclick="openLocationMapModal()" title="View map for selected region/location" style="white-space:nowrap;font-size:15px;padding:7px 12px">&#128506; Map</button>
     </div>
     <div id="pdf-import-status" class="hidden" style="padding:10px;background:rgba(212,168,67,0.08);border:1px solid var(--border);border-radius:4px;margin-bottom:10px;font-size:13px;color:var(--muted);font-style:italic"></div>
     <div id="npc-list"></div>
@@ -1410,6 +1418,10 @@ select option{background:#1a1208}
     </div>
     <span class="field-label">Player Name</span>
     <input type="text" id="pc-player" placeholder="e.g. Sarah" style="margin-bottom:9px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
+      <div><span class="field-label">Companion</span><input type="text" id="pc-companion" placeholder="e.g. Familiar, animal companion..."></div>
+      <div><span class="field-label">Mount</span><input type="text" id="pc-mount" placeholder="e.g. Warhorse, riding pony..."></div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:9px">
       <div><span class="field-label">Max HP</span><input type="number" id="pc-hp" min="1" placeholder="e.g. 44" style="text-align:center"></div>
       <div><span class="field-label">Armour Class</span><input type="number" id="pc-ac" min="1" max="30" placeholder="e.g. 16" style="text-align:center"></div>
@@ -3540,7 +3552,7 @@ function renderPcs() {
       });
       plotHtml += '</div>';
     }
-    card.innerHTML='<div class="char-card-inner"><div class="char-info"><div class="pc-card-header"><span class="char-name">'+pc.name+'</span>'+(pc.pcClass?'<span class="pc-class-badge">'+pc.pcClass+'</span>':'')+(pc.level?'<span class="pc-level-badge">Lvl '+pc.level+'</span>':'')+(pc.hp?'<span style="font-size:10px;color:#4a9a4a;border:1px solid #2a5a2a;border-radius:3px;padding:1px 5px">HP '+pc.hp+'</span>':'')+(pc.ac?'<span style="font-size:10px;color:#4a8acd;border:1px solid #2a4a8a;border-radius:3px;padding:1px 5px">AC '+pc.ac+'</span>':'')+(pc.pp?'<span style="font-size:10px;color:#9a6acd;border:1px solid #5a3a8a;border-radius:3px;padding:1px 5px" title="Passive Perception">PP '+pc.pp+'</span>':'')+'</div>'+(pc.player?'<div class="char-role">Player: '+pc.player+'</div>':'')+(pc.notes?'<div class="char-notes">'+pc.notes.split(String.fromCharCode(10)).join('<br>')+'</div>':'')+'</div><button class="btn-ghost btn-sm" id="edit-pc-'+pc.id+'">Edit</button><button class="btn-ghost btn-sm" id="update-pc-'+pc.id+'">&#128196; Update Sheet</button></div>'+plotHtml+'<div style="margin-top:8px"><button class="btn-ghost btn-sm" id="add-plot-'+pc.id+'">+ Plot Point</button></div>';
+    card.innerHTML='<div class="char-card-inner"><div class="char-info"><div class="pc-card-header"><span class="char-name">'+pc.name+'</span>'+(pc.pcClass?'<span class="pc-class-badge">'+pc.pcClass+'</span>':'')+(pc.level?'<span class="pc-level-badge">Lvl '+pc.level+'</span>':'')+(pc.hp?'<span style="font-size:10px;color:#4a9a4a;border:1px solid #2a5a2a;border-radius:3px;padding:1px 5px">HP '+pc.hp+'</span>':'')+(pc.ac?'<span style="font-size:10px;color:#4a8acd;border:1px solid #2a4a8a;border-radius:3px;padding:1px 5px">AC '+pc.ac+'</span>':'')+(pc.pp?'<span style="font-size:10px;color:#9a6acd;border:1px solid #5a3a8a;border-radius:3px;padding:1px 5px" title="Passive Perception">PP '+pc.pp+'</span>':'')+'</div>'+(pc.player?'<div class="char-role">Player: '+pc.player+'</div>':'')+((pc.companion||pc.mount)?'<div class="char-role">'+(pc.companion?'&#128062; '+pc.companion:'')+(pc.companion&&pc.mount?'&emsp;':'')+(pc.mount?'&#127943; '+pc.mount:'')+'</div>':'')+(pc.notes?'<div class="char-notes">'+pc.notes.split(String.fromCharCode(10)).join('<br>')+'</div>':'')+'</div><button class="btn-ghost btn-sm" id="edit-pc-'+pc.id+'">Edit</button><button class="btn-ghost btn-sm" id="update-pc-'+pc.id+'">&#128196; Update Sheet</button></div>'+plotHtml+'<div style="margin-top:8px"><button class="btn-ghost btn-sm" id="add-plot-'+pc.id+'">+ Plot Point</button></div>';
     card.querySelector('#edit-pc-'+pc.id).onclick=(function(id){return function(){openPcModal(id);};})(pc.id);
     card.querySelector('#update-pc-'+pc.id).onclick=(function(id){return function(){triggerUpdateSheet(id);};})(pc.id);
     card.querySelector('#add-plot-'+pc.id).onclick=(function(id){return function(){openPlotModal(id,null);};})(pc.id);
@@ -3556,13 +3568,23 @@ function renderPcs() {
     list.appendChild(card);
   });
 }
+function loadPartyVehicle() { try{return JSON.parse(localStorage.getItem('fg_party_vehicle')||'{}');}catch(e){return {};} }
+function savePartyVehicle() {
+  var n=document.getElementById('party-vehicle-name'); var no=document.getElementById('party-vehicle-notes');
+  localStorage.setItem('fg_party_vehicle', JSON.stringify({name:n?n.value:'',notes:no?no.value:''}));
+}
+function loadPartyVehicleToPanel() {
+  var v=loadPartyVehicle();
+  var n=document.getElementById('party-vehicle-name'); if(n) n.value=v.name||'';
+  var no=document.getElementById('party-vehicle-notes'); if(no) no.value=v.notes||'';
+}
 function openPcModal(id) {
   editingPcId=id;
   document.getElementById('pc-modal-title').textContent=id?'EDIT CHARACTER':'ADD CHARACTER';
   $cl('pc-delete-btn').toggle('hidden',!id);
-  if(id){var pc=loadPcs().find(function(p){return p.id===id;});if(pc){document.getElementById('pc-name').value=pc.name||'';document.getElementById('pc-class').value=pc.pcClass||'';document.getElementById('pc-level').value=pc.level||'';document.getElementById('pc-player').value=pc.player||'';document.getElementById('pc-notes').value=pc.notes||'';document.getElementById('pc-hp').value=pc.hp||'';document.getElementById('pc-ac').value=pc.ac||'';document.getElementById('pc-pp').value=pc.pp||'';
+  if(id){var pc=loadPcs().find(function(p){return p.id===id;});if(pc){document.getElementById('pc-name').value=pc.name||'';document.getElementById('pc-class').value=pc.pcClass||'';document.getElementById('pc-level').value=pc.level||'';document.getElementById('pc-player').value=pc.player||'';document.getElementById('pc-notes').value=pc.notes||'';document.getElementById('pc-hp').value=pc.hp||'';document.getElementById('pc-ac').value=pc.ac||'';document.getElementById('pc-pp').value=pc.pp||'';document.getElementById('pc-companion').value=pc.companion||'';document.getElementById('pc-mount').value=pc.mount||'';
   document.getElementById('pc-pp').value=pc.pp||'';}}
-  else{document.getElementById('pc-name').value='';document.getElementById('pc-class').value='';document.getElementById('pc-level').value='';document.getElementById('pc-player').value='';document.getElementById('pc-notes').value='';document.getElementById('pc-hp').value='';document.getElementById('pc-ac').value='';document.getElementById('pc-pp').value='';
+  else{document.getElementById('pc-name').value='';document.getElementById('pc-class').value='';document.getElementById('pc-level').value='';document.getElementById('pc-player').value='';document.getElementById('pc-notes').value='';document.getElementById('pc-hp').value='';document.getElementById('pc-ac').value='';document.getElementById('pc-pp').value='';document.getElementById('pc-companion').value='';document.getElementById('pc-mount').value='';
   document.getElementById('pc-pp').value='';}
   $cl('pc-modal').add('show');
   document.getElementById('pc-name').focus();
@@ -3573,11 +3595,13 @@ function savePc() {
   var hp=parseInt(document.getElementById('pc-hp').value)||null;
   var ac=parseInt(document.getElementById('pc-ac').value)||null;
   var pp=parseInt(document.getElementById('pc-pp').value)||null;
+  var companion=document.getElementById('pc-companion').value.trim();
+  var mount=document.getElementById('pc-mount').value.trim();
   if(editingPcId){
     var i=pcs.findIndex(function(p){return p.id===editingPcId;});
-    if(i!==-1){pcs[i].name=name;pcs[i].pcClass=document.getElementById('pc-class').value;pcs[i].level=document.getElementById('pc-level').value;pcs[i].player=document.getElementById('pc-player').value.trim();pcs[i].notes=document.getElementById('pc-notes').value.trim();pcs[i].hp=hp;pcs[i].ac=ac;pcs[i].pp=pp;pcs[i].pp=parseInt(document.getElementById('pc-pp').value)||null;}
+    if(i!==-1){pcs[i].name=name;pcs[i].pcClass=document.getElementById('pc-class').value;pcs[i].level=document.getElementById('pc-level').value;pcs[i].player=document.getElementById('pc-player').value.trim();pcs[i].notes=document.getElementById('pc-notes').value.trim();pcs[i].hp=hp;pcs[i].ac=ac;pcs[i].pp=pp;pcs[i].companion=companion;pcs[i].mount=mount;pcs[i].pp=parseInt(document.getElementById('pc-pp').value)||null;}
   } else {
-    pcs.push({id:'pc_'+Date.now(),name:name,pcClass:document.getElementById('pc-class').value,level:document.getElementById('pc-level').value,player:document.getElementById('pc-player').value.trim(),notes:document.getElementById('pc-notes').value.trim(),plots:[],hp:hp,ac:ac,pp:parseInt(document.getElementById('pc-pp').value)||null,pp:pp});
+    pcs.push({id:'pc_'+Date.now(),name:name,pcClass:document.getElementById('pc-class').value,level:document.getElementById('pc-level').value,player:document.getElementById('pc-player').value.trim(),notes:document.getElementById('pc-notes').value.trim(),plots:[],hp:hp,ac:ac,pp:parseInt(document.getElementById('pc-pp').value)||null,companion:companion,mount:mount});
   }
   savePcs(pcs); closeModal('pc-modal'); renderPcs();
 }
@@ -5363,7 +5387,7 @@ function enterTab(name) {
 
   // Per-tab render calls
   if(name==='npcs'){ populateRegionFilter(); populateLocationFilterForRegion(''); renderNpcs(); }
-  if(name==='pcs') renderPcs();
+  if(name==='pcs'){ renderPcs(); loadPartyVehicleToPanel(); }
   if(name==='settlement'){ renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); loadGoldToPanel(); }
   if(name==='timeline'){ if(!webCanvas){initWeb();}else{renderTimeline();} }
   if(name==='crafting'){
@@ -7033,7 +7057,24 @@ function openNpcLocationAssignModal(npcIds) {
 }
 
 function assignNpcLocations() {
+  var newNameInp = document.getElementById('nla-new-location');
+  var newName = newNameInp ? newNameInp.value.trim() : '';
   var locId = document.getElementById('nla-location-select').value;
+  // If the user typed a new location name but never clicked "+ Create", create it now
+  // instead of silently discarding it — this was previously losing locations.
+  if(!locId && newName) {
+    var locs = loadLocations();
+    var existing = locs.find(function(l){return l.name.toLowerCase()===newName.toLowerCase();});
+    if(existing) {
+      locId = existing.id;
+    } else {
+      var newId = 'loc_'+Date.now();
+      locs.push({id:newId, name:newName, notes:''});
+      saveLocations(locs);
+      locId = newId;
+    }
+    populateLocationFilter();
+  }
   if(!locId) { closeNpcLocationModal(); return; }
   var npcs = loadNpcs();
   _pendingImportedNpcIds.forEach(function(id) {
@@ -9152,18 +9193,6 @@ function switchTabByName(name) {
 
 var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanner) // api-banner shown only when user explicitly triggers AI features;
 
-// ── Wire NPC location modal buttons ──
-(function(){
-  var assignBtn = document.getElementById('nla-assign-btn');
-  var skipBtn = document.getElementById('nla-skip-btn');
-  var createBtn = document.getElementById('nla-create-location-btn');
-  var overlay = document.getElementById('npc-location-assign-modal');
-  if(assignBtn) assignBtn.addEventListener('click', assignNpcLocations);
-  if(skipBtn) skipBtn.addEventListener('click', closeNpcLocationModal);
-  if(createBtn) createBtn.addEventListener('click', createAndAssignLocation);
-  if(overlay) overlay.addEventListener('click', function(e){if(e.target===this)closeNpcLocationModal();});
-})();
-
 // ── Wire timeline delete node button ──
 (function(){
   var cmpWnBtn = document.getElementById('complete-web-node-btn');
@@ -9240,23 +9269,16 @@ var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanne
   var assignBtn = document.getElementById('nla-assign-btn');
   var skipBtn = document.getElementById('nla-skip-btn');
   var createBtn = document.getElementById('nla-create-location-btn');
+  var newLocInp = document.getElementById('nla-new-location');
   var overlay = document.getElementById('npc-location-assign-modal');
   if(assignBtn) assignBtn.addEventListener('click', assignNpcLocations);
   if(skipBtn) skipBtn.addEventListener('click', closeNpcLocationModal);
   if(createBtn) createBtn.addEventListener('click', createAndAssignLocation);
+  if(newLocInp) newLocInp.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); createAndAssignLocation(); } });
   if(overlay) overlay.addEventListener('click', function(e){if(e.target===this)closeNpcLocationModal();});
 })();
 
 // ── Wire timeline delete node button ──
-
-
-// ── Wire analysis reset button ──
-
-
-// ── Wire scenario buttons ──
-
-
-// ── Wire NPC select mode buttons ──
 
 
 // Rules ask buttons use inline onclick - works from localhost
