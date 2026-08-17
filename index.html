@@ -46,7 +46,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .tab-pane{display:none}
 .tab-pane.active{display:block;position:relative;z-index:2}
 /* Panels */
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:16px;margin-bottom:12px}
+.panel{background:var(--panel);border:1px solid var(--border);border-top-color:var(--border-lit);border-left-color:var(--border-lit);border-radius:5px;padding:16px;margin-bottom:12px;box-shadow:0 3px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.35)}
 .panel-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .panel-label::after{content:'';flex:1;height:1px;background:var(--border)}
 /* Inputs */
@@ -226,7 +226,7 @@ select option{background:#1a1208}
 .welcome-btn span{display:block;font-family:Cinzel,serif;font-size:13px;color:var(--gold);letter-spacing:.1em;margin:4px 0 2px}
 .welcome-btn small{display:block;font-size:11px;color:var(--muted);font-style:italic}
 /* Landing page */
-.landing-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px 8px;cursor:pointer;transition:all .2s;text-align:center;width:100%}
+.landing-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--panel);border:1px solid var(--border);border-top-color:var(--border-lit);border-left-color:var(--border-lit);border-radius:6px;padding:10px 8px;cursor:pointer;transition:all .2s;text-align:center;width:100%;box-shadow:0 3px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.35)}
 .landing-tile:hover{border-color:var(--gold);background:rgba(212,168,67,0.08);transform:translateY(-2px);box-shadow:0 0 20px rgba(212,168,67,.35),0 4px 16px rgba(0,0,0,0.3)}
 .landing-icon{font-size:20px;line-height:1;color:var(--gold);-webkit-text-fill-color:var(--gold);font-style:normal}
 .landing-name{font-family:'Cinzel',serif;font-size:13px;letter-spacing:.12em;color:var(--gold);text-transform:uppercase}
@@ -434,6 +434,18 @@ select option{background:#1a1208}
     /* Give the content column room to breathe next to the sidebar */
     #app{margin:0 0 0 250px;max-width:1040px;padding:0 32px 60px}
 
+    /* "Relief" etched edge along the content column — silvered rule that glows with the active tab's theme */
+    #app{
+      border-left:1px solid var(--border-lit);
+      border-right:1px solid var(--border-lit);
+      box-shadow:
+        inset 1px 0 0 rgba(255,255,255,.06),
+        inset -1px 0 0 rgba(0,0,0,.5),
+        -3px 0 16px rgba(0,0,0,.25),
+        3px 0 16px rgba(0,0,0,.25);
+    }
+    #main-nav-bar{border-bottom:1px solid var(--gold-dim) !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,168,67,.3)}
+
     /* Dashboard polish */
     #dash-campaign-name{font-size:30px}
     #dashboard-header{padding-bottom:18px}
@@ -460,6 +472,16 @@ select option{background:#1a1208}
   body[data-tab="combat"] .nav-drawer .main-tab.active{color:#cd6a5a;border-left-color:#cd4a4a;background:rgba(205,74,74,0.08)}
   body[data-tab="naval"] .nav-drawer .main-tab.active{color:#5a9adf;border-left-color:#4a8acd;background:rgba(74,138,205,0.08)}
   body[data-tab="forge"] .nav-drawer .main-tab.active{color:#d4903a;border-left-color:#d4763a;background:rgba(212,118,58,0.08)}
+
+  /* The page's etched relief edge (added above for desktop) glows with the same theme */
+  @media(min-width:1000px){
+    body[data-tab="combat"] #app{border-left-color:#cd4a4a;border-right-color:#cd4a4a;box-shadow:inset 1px 0 0 rgba(255,255,255,.06),inset -1px 0 0 rgba(0,0,0,.5),0 0 26px rgba(205,74,74,.18)}
+    body[data-tab="naval"] #app{border-left-color:#4a8acd;border-right-color:#4a8acd;box-shadow:inset 1px 0 0 rgba(255,255,255,.06),inset -1px 0 0 rgba(0,0,0,.5),0 0 26px rgba(74,138,205,.18)}
+    body[data-tab="forge"] #app{border-left-color:#d4763a;border-right-color:#d4763a;box-shadow:inset 1px 0 0 rgba(255,255,255,.06),inset -1px 0 0 rgba(0,0,0,.5),0 0 26px rgba(212,118,58,.18)}
+    body[data-tab="combat"] #main-nav-bar{border-bottom-color:#cd4a4a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(205,74,74,.35)}
+    body[data-tab="naval"] #main-nav-bar{border-bottom-color:#4a8acd !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(74,138,205,.35)}
+    body[data-tab="forge"] #main-nav-bar{border-bottom-color:#d4763a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,118,58,.35)}
+  }
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
