@@ -732,24 +732,32 @@ select option{background:#1a1208}
       <div class="tier-badge" id="sett-tier-badge">Outpost</div>
     </div>
     <div id="sett-tier-desc" style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px"></div>
-    <div style="display:flex;align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--border)">
-      <label style="font-size:13px;color:var(--muted);font-style:italic;flex:1">Override tier manually:</label>
-      <div style="display:flex;align-items:center;gap:8px">
-        <select id="tier-override" onchange="setTierOverride(this.value)" style="width:auto;font-size:13px;padding:5px 10px">
-          <option value="">Auto (from scores)</option>
-          <option value="0">Camp</option>
-          <option value="1">Outpost</option>
-          <option value="2">Hamlet</option>
-          <option value="3">Village</option>
-          <option value="4">Town</option>
+    <div style="padding-top:12px;border-top:1px solid var(--border)">
+      <div class="panel-label" style="margin-bottom:8px;font-size:10px">Buildings Constructed</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <select id="building-select" style="flex:1;font-size:13px;min-width:160px">
+          <option value="">Select building...</option>
         </select>
+        <button class="btn-gold btn-sm" onclick="addConstructedBuilding()">+ Add</button>
       </div>
+      <div id="constructed-buildings-list"></div>
     </div>
   </div>
   <div class="panel">
     <div class="panel-label">Settlement Scores</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Tap a value to set. -2 = Crisis &rarr; +5 = Renowned</p>
     <div id="score-blocks"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <label style="font-size:13px;color:var(--muted);font-style:italic;flex:1">Override tier manually:</label>
+      <select id="tier-override" onchange="setTierOverride(this.value)" style="width:auto;font-size:13px;padding:5px 10px">
+        <option value="">Auto (from scores)</option>
+        <option value="0">Camp</option>
+        <option value="1">Outpost</option>
+        <option value="2">Hamlet</option>
+        <option value="3">Village</option>
+        <option value="4">Town</option>
+      </select>
+    </div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
       <button class="btn-ghost btn-sm" id="biome-toggle-btn" onclick="toggleBiomePanel()">&#127760; <span id="biome-toggle-label">Starting Biome</span></button>
       <div id="biome-panel-wrap" class="hidden" style="margin-top:12px">
@@ -823,17 +831,6 @@ select option{background:#1a1208}
     <button class="roll-btn" onclick="rollEvent()">&#127922;&ensp;Roll a Settlement Event</button>
     <div id="event-result" class="hidden"></div>
     <div id="event-table"></div>
-  </div>
-
-  <div class="panel" id="buildings-constructed-panel" style="margin-top:12px">
-    <div class="panel-label">Buildings Constructed</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-      <select id="building-select" style="flex:1;font-size:13px;min-width:160px">
-        <option value="">Select building...</option>
-      </select>
-      <button class="btn-gold btn-sm" onclick="addConstructedBuilding()">+ Add</button>
-    </div>
-    <div id="constructed-buildings-list"></div>
   </div>
 </div>
 
