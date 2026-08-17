@@ -436,14 +436,12 @@ select option{background:#1a1208}
     /* Give the content column room to breathe next to the sidebar */
     #app{margin:0 0 0 250px;max-width:1040px;padding:0 32px 60px}
 
-    /* "Relief" etched edge along the content column — silvered rule that glows with the active tab's theme */
+    /* Soft relief on the content column — shadow only, no hard line (the sidebar already owns that boundary) */
     #app{
-      border-left:1px solid var(--border-lit);
+      border-left:none;
       border-right:1px solid var(--border-lit);
       box-shadow:
-        inset 1px 0 0 rgba(255,255,255,.06),
-        inset -1px 0 0 rgba(0,0,0,.5),
-        -3px 0 16px rgba(0,0,0,.25),
+        -10px 0 24px -12px rgba(0,0,0,.4),
         3px 0 16px rgba(0,0,0,.25);
     }
     #main-nav-bar{border-bottom:1px solid var(--gold-dim) !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,168,67,.3)}
@@ -477,12 +475,44 @@ select option{background:#1a1208}
 
   /* The page's etched relief edge (added above for desktop) glows with the same theme */
   @media(min-width:1000px){
-    body[data-tab="combat"] #app{border-left-color:#cd4a4a;border-right-color:#cd4a4a;box-shadow:inset 1px 0 0 rgba(255,255,255,.06),inset -1px 0 0 rgba(0,0,0,.5),0 0 26px rgba(205,74,74,.18)}
-    body[data-tab="naval"] #app{border-left-color:#4a8acd;border-right-color:#4a8acd;box-shadow:inset 1px 0 0 rgba(255,255,255,.06),inset -1px 0 0 rgba(0,0,0,.5),0 0 26px rgba(74,138,205,.18)}
-    body[data-tab="forge"] #app{border-left-color:#d4763a;border-right-color:#d4763a;box-shadow:inset 1px 0 0 rgba(255,255,255,.06),inset -1px 0 0 rgba(0,0,0,.5),0 0 26px rgba(212,118,58,.18)}
+    body[data-tab="combat"] #app{border-right-color:#cd4a4a;box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(205,74,74,.18)}
+    body[data-tab="naval"] #app{border-right-color:#4a8acd;box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(74,138,205,.18)}
+    body[data-tab="forge"] #app{border-right-color:#d4763a;box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(212,118,58,.18)}
     body[data-tab="combat"] #main-nav-bar{border-bottom-color:#cd4a4a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(205,74,74,.35)}
     body[data-tab="naval"] #main-nav-bar{border-bottom-color:#4a8acd !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(74,138,205,.35)}
     body[data-tab="forge"] #main-nav-bar{border-bottom-color:#d4763a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,118,58,.35)}
+  }
+
+  /* ═══ PER-TAB WATERMARK EMBLEM — subtle corner motif, safe to delete this block to revert ═══ */
+  /* A faint themed glyph anchored bottom-right of the viewport, behind content, purely decorative */
+  @media(min-width:1000px){
+    .tab-pane.active{position:relative}
+    .tab-pane.active::after{
+      content:'';
+      position:fixed;
+      bottom:-30px;right:8px;
+      font-size:240px;
+      line-height:1;
+      font-family:'Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji',sans-serif;
+      color:var(--tab-glow);
+      opacity:.05;
+      pointer-events:none;
+      user-select:none;
+      z-index:0;
+    }
+    #tab-forge.active::after{content:'\2692\FE0E'}
+    #tab-settlement.active::after{content:'\1F3DB\FE0E'}
+    #tab-pcs.active::after{content:'\2694\FE0E'}
+    #tab-npcs.active::after{content:'\1F465\FE0E'}
+    #tab-timeline.active::after{content:'\23F1\FE0E'}
+    #tab-combat.active::after{content:'\2620\FE0E'}
+    #tab-crafting.active::after{content:'\1F4DC\FE0E'}
+    #tab-store.active::after{content:'\2696\FE0E'}
+    #tab-sessions-main.active::after{content:'\1F4DD\FE0E'}
+    #tab-rumours-main.active::after{content:'\1F441\FE0E'}
+    #tab-factions.active::after{content:'\2666\FE0E'}
+    #tab-music.active::after{content:'\266A\FE0E'}
+    #tab-naval.active::after{content:'\2693\FE0E'}
   }
 
 </style>
