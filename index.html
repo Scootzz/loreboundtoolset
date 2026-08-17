@@ -18,6 +18,8 @@
   --input-bg:#0c0906;--accent:#d4a843;--danger:#cd4a4a;
   --common:#aaa;--uncommon:#5aaa5a;--rare:#5a8adf;--very-rare:#aa5adf;--legendary:#d4a843;--artifact:#df5a5a;
   --pc-color:#5a9adf;--npc-color:#7ab86a;--event-color:#df8a50;--plot-color:#b060e0;
+  /* Active/selected glow — overridden per-tab further down for thematic accents */
+  --tab-glow:var(--gold);--tab-glow-soft:rgba(212,168,67,0.35);--tab-glow-bg:rgba(212,168,67,0.08);
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'EB Garamond',Georgia,serif;font-size:16px;font-style:normal}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 0%,rgba(120,70,10,0.12) 0%,transparent 65%)}
@@ -69,11 +71,11 @@ select option{background:#1a1208}
 .creature-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:5px;max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) var(--input-bg)}
 .creature-btn{background:var(--input-bg);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:'EB Garamond',serif;font-size:13px;padding:6px 10px;text-align:left;cursor:pointer;transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .creature-btn:hover{border-color:var(--border-lit);color:var(--text)}
-.creature-btn.selected{border-color:var(--gold-dim);background:#140e04;color:var(--gold)}
+.creature-btn.selected{border-color:var(--tab-glow);background:#140e04;color:var(--gold);box-shadow:0 0 12px var(--tab-glow-soft)}
 /* Comp buttons */
 .comp-btn{background:var(--input-bg);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:'EB Garamond',serif;font-size:14px;padding:10px 13px;width:100%;text-align:left;cursor:pointer;transition:all .15s;display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:10px}
 .comp-btn:hover{border-color:var(--border-lit);color:var(--text)}
-.comp-btn.selected{border-color:var(--gold-dim);background:#140e04;color:var(--gold)}
+.comp-btn.selected{border-color:var(--tab-glow);background:#140e04;color:var(--gold);box-shadow:0 0 12px var(--tab-glow-soft)}
 .comp-name{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .comp-meta{font-size:12px;color:var(--muted);font-style:italic;margin-top:2px;display:block}
 /* Rarity */
@@ -113,7 +115,7 @@ select option{background:#1a1208}
 .score-pip.active{color:#000;font-weight:bold}
 .biome-card{margin-bottom:7px;cursor:pointer;transition:border-color .15s}
 .biome-card:hover{border-color:var(--border-lit)}
-.biome-card.selected{border-color:var(--gold-dim)}
+.biome-card.selected{border-color:var(--tab-glow);background:var(--tab-glow-bg);box-shadow:0 0 14px var(--tab-glow-soft)}
 .biome-name{font-family:'Cinzel',serif;font-size:14px;color:var(--text);margin-bottom:4px}
 .biome-mods{display:flex;gap:12px;margin-bottom:4px;font-size:12px}
 .biome-detail{font-size:11px;color:var(--muted);font-style:italic}
@@ -216,7 +218,7 @@ select option{background:#1a1208}
 /* Web filter */
 .web-filter-btn{background:var(--input-bg);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:Cinzel,serif;font-size:9px;letter-spacing:.12em;padding:4px 10px;cursor:pointer;transition:all .15s}
 .web-filter-btn:hover{border-color:var(--border-lit);color:var(--text)}
-.web-filter-btn.active{border-color:var(--gold-dim);color:var(--gold);background:rgba(212,168,67,0.08)}
+.web-filter-btn.active{border-color:var(--tab-glow);color:var(--gold);background:var(--tab-glow-bg);box-shadow:0 0 10px var(--tab-glow-soft)}
 /* Welcome screen */
 
 .welcome-btn:hover{border-color:var(--gold-dim);background:rgba(212,168,67,0.06)}
@@ -225,7 +227,7 @@ select option{background:#1a1208}
 .welcome-btn small{display:block;font-size:11px;color:var(--muted);font-style:italic}
 /* Landing page */
 .landing-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px 8px;cursor:pointer;transition:all .2s;text-align:center;width:100%}
-.landing-tile:hover{border-color:var(--gold-dim);background:rgba(212,168,67,0.06);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.3)}
+.landing-tile:hover{border-color:var(--gold);background:rgba(212,168,67,0.08);transform:translateY(-2px);box-shadow:0 0 20px rgba(212,168,67,.35),0 4px 16px rgba(0,0,0,0.3)}
 .landing-icon{font-size:20px;line-height:1;color:var(--gold);-webkit-text-fill-color:var(--gold);font-style:normal}
 .landing-name{font-family:'Cinzel',serif;font-size:13px;letter-spacing:.12em;color:var(--gold);text-transform:uppercase}
 .landing-desc{font-size:11px;color:var(--muted);line-height:1.4;display:none}
@@ -241,8 +243,8 @@ select option{background:#1a1208}
 /* Combat tracker */
 .tracker-card{width:96px;background:var(--panel);border:2px solid var(--border);border-radius:6px;padding:10px 8px;cursor:pointer;transition:all .2s;position:relative;text-align:center}
 .tracker-card:hover{border-color:var(--border-lit);transform:translateY(-2px)}
-.tracker-card.active-turn{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,168,67,0.4),0 0 20px rgba(212,168,67,0.3);background:rgba(212,168,67,0.07);transform:translateY(-3px)}
-.tracker-card.active-turn .tracker-init{color:var(--gold);font-size:26px}
+.tracker-card.active-turn{border-color:var(--tab-glow);box-shadow:0 0 0 3px var(--tab-glow-soft),0 0 20px var(--tab-glow-soft);background:var(--tab-glow-bg);transform:translateY(-3px)}
+.tracker-card.active-turn .tracker-init{color:var(--tab-glow);font-size:26px}
 .tracker-card.active-turn .tracker-name{color:var(--gold)}
 .tracker-card.pc-card-tracker{border-color:rgba(74,138,205,0.5)}
 .tracker-card.enemy-card-tracker{border-color:rgba(205,74,74,0.4)}
@@ -339,7 +341,7 @@ select option{background:#1a1208}
 .rarity-guide-name{font-family:'Cinzel',serif;font-size:13px;margin-bottom:2px}
 .rarity-guide-desc{font-size:12px;color:var(--muted)}
 .store-chip{display:inline-flex;align-items:center;padding:4px 10px;border:1px solid var(--border);border-radius:12px;font-size:11px;font-family:Cinzel,serif;letter-spacing:.05em;cursor:pointer;color:var(--muted);user-select:none;transition:all .15s;}
-.store-chip.active{background:rgba(212,168,67,0.15);border-color:var(--gold-dim);color:var(--gold);}
+.store-chip.active{background:var(--tab-glow-bg);border-color:var(--tab-glow);color:var(--gold);box-shadow:0 0 10px var(--tab-glow-soft)}
 .store-item-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13px;}
 .store-item-row:hover{background:rgba(212,168,67,0.05);}
 .store-item-name{color:var(--text);}
@@ -448,6 +450,16 @@ select option{background:#1a1208}
     .btn-gold:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 14px rgba(212,168,67,.15)}
     .btn-ghost:hover{transform:translateY(-1px)}
   }
+
+  /* ═══ PER-TAB ACCENT THEMES — trial run, safe to delete this block to revert ═══ */
+  /* Only the accent hue shifts (panel-label colour + active/selected glow). Layout, fonts, and gold buttons stay identical everywhere. */
+  #tab-combat{--accent:#cd6a5a;--tab-glow:#cd4a4a;--tab-glow-soft:rgba(205,74,74,0.4);--tab-glow-bg:rgba(205,74,74,0.08)}
+  #tab-naval{--accent:#5a9adf;--tab-glow:#4a8acd;--tab-glow-soft:rgba(74,138,205,0.4);--tab-glow-bg:rgba(74,138,205,0.08)}
+  #tab-forge{--accent:#d4903a;--tab-glow:#d4763a;--tab-glow-soft:rgba(212,118,58,0.4);--tab-glow-bg:rgba(212,118,58,0.08)}
+  /* Sidebar's "you are here" marker follows the open tab's theme too */
+  body[data-tab="combat"] .nav-drawer .main-tab.active{color:#cd6a5a;border-left-color:#cd4a4a;background:rgba(205,74,74,0.08)}
+  body[data-tab="naval"] .nav-drawer .main-tab.active{color:#5a9adf;border-left-color:#4a8acd;background:rgba(74,138,205,0.08)}
+  body[data-tab="forge"] .nav-drawer .main-tab.active{color:#d4903a;border-left-color:#d4763a;background:rgba(212,118,58,0.08)}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -2907,7 +2919,7 @@ function renderSettlement() {
     [-2,-1,0,1,2,3,4,5].forEach(function(v){
       var a=v===val; var c=SCORE_COLORS[String(v)]||'#888';
       var pip=document.createElement('button'); pip.className='score-pip'+(a?' active':'');
-      if(a){pip.style.background=c;pip.style.borderColor=c;pip.style.color='#000';}
+      if(a){pip.style.background=c;pip.style.borderColor=c;pip.style.color='#000';pip.style.boxShadow='0 0 10px '+c+'99';}
       pip.textContent=(v>=0?'+':'')+v;
       pip.onclick=(function(key,num){return function(){setScore(key,num);};})(def.key,v);
       pipRow.appendChild(pip);
@@ -5306,6 +5318,8 @@ var TAB_DESCS = {
 
 // Update patchSwitchTab to also set description
 function enterTab(name) {
+  // Track current tab on <body> for per-tab accent theming (sidebar active-item colour etc)
+  try { document.body.setAttribute('data-tab', name); } catch(e){}
   // Prevent ghost clicks on Home button when nav bar appears
   var homeBtn = document.querySelector('#main-nav-bar button[onclick*="welcome"]');
   if(homeBtn) { homeBtn.style.pointerEvents = 'none'; setTimeout(function(){ homeBtn.style.pointerEvents = ''; }, 400); }
