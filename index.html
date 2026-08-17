@@ -396,6 +396,59 @@ select option{background:#1a1208}
     .sub-tab{font-size:9px;padding:5px 8px}
   }
 
+  /* ═══ DESKTOP ENHANCEMENTS — safe to delete this block to revert ═══ */
+  @media(min-width:1000px){
+    /* Persistent sidebar nav instead of hamburger drawer */
+    .hamburger-btn{display:none}
+    .nav-drawer{
+      display:flex !important;
+      position:fixed;top:0;left:0;bottom:0;
+      width:230px;
+      flex-direction:column;
+      gap:2px;
+      background:linear-gradient(180deg,#130e07,#0a0704);
+      border:none;border-right:1px solid var(--border);
+      border-radius:0;
+      padding:22px 12px 20px;
+      margin:0;
+      animation:none;
+      overflow-y:auto;
+      z-index:600;
+    }
+    .nav-drawer::before{
+      content:'\2654  LOREBOUND';
+      display:block;
+      font-family:'Cinzel',serif;
+      font-size:13px;
+      letter-spacing:.16em;
+      color:var(--gold);
+      text-align:center;
+      padding-bottom:16px;
+      margin-bottom:10px;
+      border-bottom:1px solid var(--border);
+    }
+    .nav-drawer .main-tab{padding:11px 14px;font-size:10.5px}
+
+    /* Give the content column room to breathe next to the sidebar */
+    #app{margin:0 0 0 250px;max-width:1040px;padding:0 32px 60px}
+
+    /* Dashboard polish */
+    #dash-campaign-name{font-size:30px}
+    #dashboard-header{padding-bottom:18px}
+    #tab-welcome .panel{box-shadow:0 6px 28px rgba(0,0,0,.28)}
+
+    /* Turn the stacked Campaign Status list into a control-room grid */
+    #dash-status-body{display:grid !important;grid-template-columns:repeat(3,1fr);gap:18px 22px;align-items:start}
+    #dash-status-body>div{margin-bottom:0 !important;padding-bottom:0 !important;border-bottom:none !important;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:5px;padding:14px !important}
+    #dash-status-body>div:last-child{grid-column:1/-1;background:none;border:none;padding:14px 0 0 !important;border-top:1px solid var(--border)}
+
+    /* Tactile hover affordance for a mouse-driven interface */
+    .panel-label.collapsible{transition:color .15s}
+    .panel-label.collapsible:hover{color:var(--gold)}
+    .btn-gold:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 14px rgba(212,168,67,.15)}
+    .btn-ghost:hover{transform:translateY(-1px)}
+  }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
@@ -639,7 +692,8 @@ select option{background:#1a1208}
 <div id="tab-settlement" class="tab-pane">
   <!-- Party Coffer -->
   <div class="panel" style="margin-bottom:12px;background:rgba(212,168,67,0.05);border-color:var(--gold-dim)">
-    <div class="panel-label">&#9775; Party Coffer</div>
+    <div class="panel-label collapsed" id="coffer-label">&#9775; Party Coffer <span id="coffer-summary" style="font-family:'EB Garamond',Georgia,serif;font-weight:normal;font-size:12px;color:var(--gold);letter-spacing:0;text-transform:none;margin-left:8px">0 gp</span></div>
+    <div class="panel-body collapsed">
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <span class="field-label" style="display:block;margin-bottom:3px">Gold Pieces (gp)</span>
@@ -655,7 +709,9 @@ select option{background:#1a1208}
       </div>
     </div>
     <div id="gold-log" style="font-size:11px;color:var(--muted);margin-top:6px;max-height:56px;overflow-y:auto"></div>
+    </div>
   </div>
+
 
   <div class="panel">
     <div class="panel-label">Settlement Identity</div>
@@ -682,11 +738,13 @@ select option{background:#1a1208}
     <div class="panel-label">Settlement Scores</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Tap a value to set. -2 = Crisis &rarr; +5 = Renowned</p>
     <div id="score-blocks"></div>
-  </div>
-  <div class="panel">
-    <div class="panel-label">Starting Biome</div>
-    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Applying a biome resets scores to its modifiers.</p>
-    <div id="biome-list"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <button class="btn-ghost btn-sm" id="biome-toggle-btn" onclick="toggleBiomePanel()">&#127760; <span id="biome-toggle-label">Starting Biome</span></button>
+      <div id="biome-panel-wrap" class="hidden" style="margin-top:12px">
+        <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Applying a biome resets scores to its modifiers.</p>
+        <div id="biome-list"></div>
+      </div>
+    </div>
   </div>
   <div class="panel">
     <div class="panel-label">World Time &amp; Weather</div>
@@ -2857,6 +2915,8 @@ function renderSettlement() {
     block.appendChild(header); block.appendChild(pipRow); sb.appendChild(block);
   });
   var bl=document.getElementById('biome-list'); bl.innerHTML='';
+  var btl=document.getElementById('biome-toggle-label');
+  if(btl) btl.textContent = selectedBiome ? 'Starting Biome: '+selectedBiome.name : 'Starting Biome';
   BIOMES.forEach(function(biome){
     var sel=selectedBiome&&selectedBiome.name===biome.name;
     var mods=Object.entries(biome.modifiers).map(function(e){
@@ -2871,6 +2931,13 @@ function renderSettlement() {
   ($id('event-table')).innerHTML='<div class="panel"><div class="panel-label">Event Table</div>'+EVENTS.map(function(e){return '<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #1a1208"><span style="font-size:13px;color:var(--muted);width:38px">'+e.roll+'</span><span style="font-size:14px;color:'+e.color+'">'+e.label+'</span></div>';}).join('')+'</div>';
 }
 function setScore(key,val){scores[key]=val;saveSett();renderSettlement();}
+function toggleBiomePanel(){
+  var w=document.getElementById('biome-panel-wrap');
+  if(!w) return;
+  w.classList.toggle('hidden');
+  var btn=document.getElementById('biome-toggle-btn');
+  if(btn) btn.classList.toggle('active');
+}
 function selectBiome(name){
   var b=BIOMES.find(function(x){return x.name===name;}); if(!b)return;
   selectedBiome=b;
@@ -7195,7 +7262,7 @@ function renderStore() {
   var filtered = STORE_ITEMS.filter(function(x) {
     if(allowR && tier > 0 && allowR.indexOf(x.r) === -1) return false;
     if(ar.length && ar.indexOf(x.r) === -1) return false;
-    if(at.length && at.indexOf(x.cat) === -1) return false;
+    if(at.length && !at.some(function(v){ return x.t && x.t.indexOf(v) !== -1; })) return false;
     if(ashop.length && ashop.indexOf(x.s) === -1) return false;
     if(search && x.n.toLowerCase().indexOf(search) === -1) return false;
     return true;
@@ -9602,7 +9669,7 @@ document.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){
     document.querySelectorAll('.panel-label').forEach(function(el){
       var text = el.textContent.trim();
-      var collapsible = ['Settlement Scores','Starting Biome','World Time','Encounter Builder','Random Encounter Generator','Encounter History','Combat Scenarios','Statblock Generator','Loot Generator'];
+      var collapsible = ['Party Coffer','Settlement Scores','World Time','Encounter Builder','Random Encounter Generator','Encounter History','Combat Scenarios','Statblock Generator','Loot Generator'];
       if(collapsible.some(function(t){ return el.textContent.includes(t); })) {
         makeCollapsible(el);
       }
@@ -9685,6 +9752,11 @@ function savePartyGold() {
   var v = parseInt(el.value)||0;
   localStorage.setItem('fg_party_gold', v);
   renderGoldLog();
+  updateCofferSummary(v);
+}
+function updateCofferSummary(v) {
+  var s = document.getElementById('coffer-summary');
+  if(s) s.textContent = v.toLocaleString() + ' gp';
 }
 function adjustGold(amount) {
   var cur = loadPartyGold();
@@ -9696,6 +9768,7 @@ function adjustGold(amount) {
   log.unshift({ amount:amount, total:newVal, at: new Date().toLocaleTimeString() });
   localStorage.setItem('fg_gold_log', JSON.stringify(log.slice(0,10)));
   renderGoldLog();
+  updateCofferSummary(newVal);
   if(typeof showToast !== 'undefined') showToast((amount>0?'+':'')+amount+' gp (total: '+newVal+' gp)', amount>0?'success':'');
   var _dg=document.getElementById('dash-gold'); if(_dg) _dg.textContent=newVal.toLocaleString()+' gp';
   var _ig=document.getElementById('inv-gold'); if(_ig) _ig.textContent=newVal.toLocaleString()+' gp';
@@ -9708,7 +9781,7 @@ function renderGoldLog() {
 }
 function loadGoldToPanel() {
   var el = document.getElementById('party-gold');
-  if(el) { el.value = loadPartyGold(); renderGoldLog(); }
+  if(el) { el.value = loadPartyGold(); renderGoldLog(); updateCofferSummary(loadPartyGold()); }
 }
 // Store buy button
 function buyItem(itemName, itemCost) {
