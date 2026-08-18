@@ -484,6 +484,14 @@ select option{background:#1a1208}
     body[data-tab="forge"] #main-nav-bar{border-bottom-color:#d4763a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,118,58,.35)}
   }
 
+  /* ═══ TOKEN LIBRARY — file cards for 3D print files and PNG token sheets ═══ */
+  .token-card{background:var(--panel);border:1px solid var(--border);border-top-color:var(--border-lit);border-left-color:var(--border-lit);border-radius:6px;padding:10px;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03)}
+  .token-card-thumb{width:100%;height:90px;border-radius:4px;background:#0c0906;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px}
+  .token-card-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+  .token-card-name{font-size:12px;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .token-card-meta{font-size:10px;color:var(--muted);margin-bottom:8px}
+  .token-card-btns{display:flex;gap:6px;justify-content:center}
+
   /* ═══ MAP PINS — interactive NPC markers on location/region/world maps ═══ */
   .map-pin{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--gold);border:2px solid #1a1208;box-shadow:0 0 8px rgba(212,168,67,.7),0 2px 4px rgba(0,0,0,.5);cursor:pointer;pointer-events:auto;transition:transform .15s;z-index:10}
   .map-pin:hover{transform:scale(1.35);box-shadow:0 0 14px rgba(212,168,67,.9),0 2px 4px rgba(0,0,0,.5)}
@@ -491,7 +499,7 @@ select option{background:#1a1208}
   .map-pin:hover .map-pin-tooltip{opacity:1}
   #map-pin-mode-btn.active{background:var(--gold);color:#1a1208}
   .map-npc-picker{position:fixed;background:#0e0b07;border:1px solid var(--gold-dim);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.6);z-index:9500;width:220px;max-height:280px;display:flex;flex-direction:column;overflow:hidden}
-  .map-npc-picker input{margin:8px auto 4px;display:block;width:calc(100% - 16px)}
+  .map-npc-picker #map-npc-picker-search{margin:8px auto 4px;display:block;width:calc(100% - 16px)}
   .map-npc-picker-list{overflow-y:auto;flex:1}
   .map-npc-picker-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)}
   .map-npc-picker-item:hover{background:rgba(212,168,67,.1);color:var(--gold)}
@@ -574,12 +582,17 @@ select option{background:#1a1208}
 <!-- API Key Modal -->
 <div class="modal-overlay" id="api-key-modal">
   <div class="modal-box" style="max-width:400px">
-    <div class="modal-title">API KEY</div>
+    <div class="modal-title">API KEYS</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Required for AI features (statblock generation, item forging, session recaps, etc.). Get yours free at <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">console.anthropic.com</a></p>
     <span class="field-label">Anthropic API Key</span>
-    <input type="password" id="api-key-input" placeholder="sk-ant-..." style="margin-bottom:12px;font-family:monospace">
-    <div class="modal-btns">
-      <button class="btn-gold" style="flex:1" onclick="saveApiKey()">Save Key</button>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." style="margin-bottom:16px;font-family:monospace">
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Optional — for illustrated (not vector) statblock artwork, using OpenAI's image API instead of Claude-drawn SVG. Costs roughly 1&ndash;15&cent; per image, billed to your own OpenAI account. Get one at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--gold)">platform.openai.com</a></p>
+      <span class="field-label">OpenAI API Key <span style="text-transform:none;font-style:italic;color:var(--muted)">(optional)</span></span>
+      <input type="password" id="image-api-key-input" placeholder="sk-..." style="margin-bottom:4px;font-family:monospace">
+    </div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="btn-gold" style="flex:1" onclick="saveApiKey()">Save Keys</button>
       <button class="btn-ghost" onclick="closeModal('api-key-modal')">Cancel</button>
     </div>
   </div>
@@ -646,6 +659,7 @@ select option{background:#1a1208}
   <button class="main-tab" data-tab="factions" onclick="enterTab('factions')">&#9830;&#xFE0E; Factions</button>
   <button class="main-tab" data-tab="music" onclick="enterTab('music')">&#9836;&#xFE0E; Music</button>
   <button class="main-tab" data-tab="naval" onclick="enterTab('naval')">&#9875;&#xFE0E; Naval</button>
+  <button class="main-tab" data-tab="tokens" onclick="enterTab('tokens')">&#127922;&#xFE0E; Tokens</button>
 </div>
 
 <div id="tab-welcome" class="tab-pane active">
@@ -1245,6 +1259,11 @@ select option{background:#1a1208}
     <div class="panel-label">Statblock Generator</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Describe a creature and Claude generates a full 5e statblock. Download as PNG with a token for printing.</p>
     <input type="text" id="statblock-desc" placeholder="e.g. A corrupted forest guardian, CR 5, uses nature magic and vine attacks..." style="margin-bottom:8px">
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+      <span class="field-label" style="margin-bottom:0">Artwork:</span>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="radio" name="statblock-art-mode" value="svg" checked style="width:auto"> Vector (free, Claude-drawn)</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="radio" name="statblock-art-mode" value="illustrated" style="width:auto"> Illustrated (OpenAI, ~1&ndash;15&cent;/image)</label>
+    </div>
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       
       <select id="statblock-size" style="font-size:13px;padding:7px 10px;width:auto">
@@ -2047,8 +2066,50 @@ select option{background:#1a1208}
   </div>
 </div>
 
+<!-- ═══ TOKENS TAB ═══ -->
+<div id="tab-tokens" class="tab-pane">
+  <div class="panel">
+    <div class="panel-label">Token &amp; Print Library</div>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Store 3D-printable miniature files and PNG token sheets. Statblock-generated token sheets are saved here automatically.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn-gold btn-sm" onclick="document.getElementById('token-file-upload').click()">&#11014; Upload File</button>
+      <input type="file" id="token-file-upload" accept=".stl,.obj,.3mf,.png,.jpg,.jpeg" multiple style="display:none" onchange="handleTokenFileUpload(event)">
+      <input type="text" id="token-search" placeholder="Search files..." oninput="renderTokenLibrary()" style="flex:1;min-width:140px">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="store-chip active" data-tf="all" onclick="setTokenFilter('all',this)">All</button>
+      <button class="store-chip" data-tf="3d" onclick="setTokenFilter('3d',this)">&#127922; 3D Print Files</button>
+      <button class="store-chip" data-tf="png" onclick="setTokenFilter('png',this)">&#128444; PNG Token Sheets</button>
+    </div>
+    <div id="token-library-empty" class="hidden" style="color:var(--muted);font-style:italic;font-size:13px;text-align:center;padding:30px 0">No files yet. Upload a 3D print file, or generate a token sheet from the Statblock Generator in Reference.</div>
+    <div id="token-library-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="token-sheet-modal">
+  <div class="modal-box">
+    <div class="modal-title">Generate Token Sheet</div>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px" id="token-sheet-creature-label"></p>
+    <span class="field-label">How many tokens?</span>
+    <input type="number" id="token-sheet-count" min="1" max="40" value="6" style="margin-bottom:12px">
+    <span class="field-label">Token print size</span>
+    <select id="token-sheet-size" style="margin-bottom:12px">
+      <option value="1">Small &mdash; 1 in / 25mm (standard creature)</option>
+      <option value="1.5">Medium &mdash; 1.5 in / 38mm</option>
+      <option value="2">Large &mdash; 2 in / 50mm</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="token-sheet-label" checked style="width:auto"> Print creature name under each token</label>
+    <div id="token-sheet-status" class="hidden" style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Generating sheet...</div>
+    <div class="modal-btns">
+      <button class="btn-gold" style="flex:1" onclick="generateTokenSheet()">Generate &amp; Save to Tokens Tab</button>
+      <button class="btn-ghost" onclick="closeModal('token-sheet-modal')">Skip</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MUSIC TAB ═══ -->
 <div id="tab-music" class="tab-pane">
+
 
   <!-- Saved Playlists -->
   <div class="panel">
@@ -5489,6 +5550,7 @@ function enterTab(name) {
   // Per-tab render calls
   if(name==='npcs'){ populateRegionFilter(); populateLocationFilterForRegion(''); renderNpcs(); }
   if(name==='pcs'){ renderPcs(); loadPartyVehicleToPanel(); }
+  if(name==='tokens') renderTokenLibrary();
   if(name==='settlement'){ renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); loadGoldToPanel(); }
   if(name==='timeline'){ if(!webCanvas){initWeb();}else{renderTimeline();} }
   if(name==='crafting'){
@@ -6770,21 +6832,42 @@ function generateStatblock() {
     var sb=JSON.parse(text.slice(s,e+1));
     currentStatblock = sb;
     var rendered = renderStatblockCard(sb, null);
+    var artModeEl = document.querySelector('input[name="statblock-art-mode"]:checked');
+    var artMode = artModeEl ? artModeEl.value : 'svg';
     status.textContent='Generating artwork for '+sb.name+'...';
-    generateStatblockArt(sb, desc, function(svgArt) {
-      // Update token in card
+    var onArt = function(art) {
+      // art is {type:'svg', data:'<svg...'} or {type:'raster', data:'data:image/png;base64,...'} or null
       var tokenEl = document.getElementById(rendered.sbId+'_token');
       var artStatus = document.getElementById(rendered.sbId+'_artstatus');
-      if(tokenEl && svgArt) {
-        tokenEl.innerHTML = svgArt;
-        tokenEl.style.background = 'transparent';
-        var svgEl = tokenEl.querySelector('svg');
-        if(svgEl){svgEl.setAttribute('width','110');svgEl.setAttribute('height','110');svgEl.style.cssText='border-radius:50%;display:block';}
+      if(tokenEl && art) {
+        if(art.type==='svg') {
+          tokenEl.innerHTML = art.data;
+          tokenEl.style.background = 'transparent';
+          var svgEl = tokenEl.querySelector('svg');
+          if(svgEl){svgEl.setAttribute('width','110');svgEl.setAttribute('height','110');svgEl.style.cssText='border-radius:50%;display:block';}
+        } else {
+          tokenEl.innerHTML = '<img src="'+art.data+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">';
+          tokenEl.style.background = 'transparent';
+        }
       }
       if(artStatus) artStatus.style.display='none';
       status.classList.add('hidden');
       if(typeof window._sbOnComplete==='function') window._sbOnComplete();
-    });
+      if(art) openTokenSheetPrompt(sb, art);
+    };
+    if(artMode==='illustrated') {
+      if(!getImageApiKey()) {
+        status.textContent = 'No OpenAI key set — add one via the settings gear, or switch to Vector art. Falling back to vector art for now.';
+        generateStatblockArt(sb, desc, function(svg){ onArt(svg?{type:'svg',data:svg}:null); });
+      } else {
+        generateStatblockArtIllustrated(sb, desc, function(dataUrl){
+          if(dataUrl) onArt({type:'raster',data:dataUrl});
+          else generateStatblockArt(sb, desc, function(svg){ onArt(svg?{type:'svg',data:svg}:null); });
+        });
+      }
+    } else {
+      generateStatblockArt(sb, desc, function(svg){ onArt(svg?{type:'svg',data:svg}:null); });
+    }
   })
   .catch(function(e){status.textContent='Failed: '+e.message;});
 }
@@ -6799,6 +6882,20 @@ function generateStatblockArt(sb,desc,callback){
     var si=svg.indexOf('<svg'); if(si===-1){if(callback)callback(null);return;}
     svg=svg.slice(si);
     if(callback)callback(svg);
+  })
+  .catch(function(){if(callback)callback(null);});
+}
+
+function generateStatblockArtIllustrated(sb,desc,callback){
+  var imgKey=getImageApiKey(); if(!imgKey){if(callback)callback(null);return;}
+  var prompt='Fantasy tabletop RPG character portrait, digital painting style, dramatic lighting, detailed illustration. Subject: '+sb.name+', a '+sb.size+' '+sb.type+'. '+desc+'. Centered composition, plain dark background suitable for cropping into a circular token, no text or watermarks.';
+  fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+imgKey},body:JSON.stringify({model:'gpt-image-1-mini',prompt:prompt,n:1,size:'1024x1024',quality:'low'})})
+  .then(function(res){return res.json();})
+  .then(function(data){
+    if(data.error || !data.data || !data.data[0]) { if(callback)callback(null); return; }
+    var b64 = data.data[0].b64_json;
+    if(!b64){ if(callback)callback(null); return; }
+    if(callback)callback('data:image/png;base64,'+b64);
   })
   .catch(function(){if(callback)callback(null);});
 }
@@ -8423,17 +8520,38 @@ function openMapNpcPicker(screenX, screenY, mapX, mapY) {
   pop.id = 'map-npc-picker';
   pop.style.left = Math.min(screenX, window.innerWidth-232)+'px';
   pop.style.top = Math.min(screenY, window.innerHeight-292)+'px';
-  pop.innerHTML = '<input type="text" placeholder="Search NPCs..." id="map-npc-picker-search"><div class="map-npc-picker-list" id="map-npc-picker-list"></div>';
+
+  // Figure out the current map's location/region context so we can offer a "this place only" filter
+  var locSel = document.getElementById('npc-location-filter');
+  var regSel = document.getElementById('npc-region-filter');
+  var locId = locSel ? locSel.value : '';
+  var regId = regSel ? regSel.value : '';
+  var scopeLabel = '', scopeLocIds = null;
+  if(locId) {
+    var loc = loadLocations().find(function(l){return l.id===locId;});
+    if(loc) { scopeLabel = loc.name; scopeLocIds = [locId]; }
+  } else if(regId) {
+    var reg = loadRegions().find(function(r){return r.id===regId;});
+    if(reg) { scopeLabel = reg.name; scopeLocIds = loadLocations().filter(function(l){return l.regionId===regId;}).map(function(l){return l.id;}); }
+  }
+
+  var filterRowHTML = scopeLabel
+    ? '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding:0 8px 6px;cursor:pointer"><input type="checkbox" id="map-npc-picker-scope" checked style="margin:0"> Only NPCs in '+scopeLabel.replace(/</g,'&lt;')+'</label>'
+    : '';
+  pop.innerHTML = '<input type="text" placeholder="Search NPCs..." id="map-npc-picker-search">' + filterRowHTML + '<div class="map-npc-picker-list" id="map-npc-picker-list"></div>';
   document.body.appendChild(pop);
-  var npcs = loadNpcs().slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  var allNpcs = loadNpcs().slice().sort(function(a,b){return a.name.localeCompare(b.name);});
   function renderList(filter) {
     var list = document.getElementById('map-npc-picker-list');
     if(!list) return;
     var f = (filter||'').toLowerCase();
+    var scopeBox = document.getElementById('map-npc-picker-scope');
+    var scoped = scopeBox && scopeBox.checked && scopeLocIds;
+    var npcs = scoped ? allNpcs.filter(function(n){return scopeLocIds.indexOf(n.locationId)!==-1;}) : allNpcs;
     var filtered = npcs.filter(function(n){return n.name.toLowerCase().indexOf(f)!==-1;});
     list.innerHTML = filtered.map(function(n){
       return '<div class="map-npc-picker-item" data-id="'+n.id+'">'+n.name.replace(/</g,'&lt;')+(n.role?' <span style="color:var(--muted);font-size:11px">&mdash; '+n.role.replace(/</g,'&lt;')+'</span>':'')+'</div>';
-    }).join('') || '<div style="padding:10px;color:var(--muted);font-size:12px;font-style:italic">No NPCs found</div>';
+    }).join('') || '<div style="padding:10px;color:var(--muted);font-size:12px;font-style:italic">No NPCs found'+(scoped?' here':'')+'</div>';
     list.querySelectorAll('.map-npc-picker-item').forEach(function(el) {
       el.addEventListener('click', function() {
         var pins = loadMapPins();
@@ -8446,17 +8564,30 @@ function openMapNpcPicker(screenX, screenY, mapX, mapY) {
   }
   renderList('');
   var search = document.getElementById('map-npc-picker-search');
-  if(search) { search.addEventListener('input', function(){ renderList(this.value); }); search.focus(); }
-  setTimeout(function(){ document.addEventListener('click', _mapPickerOutsideClick); }, 10);
+  if(search) {
+    search.addEventListener('input', function(){ renderList(this.value); });
+    search.addEventListener('keydown', function(e){ if(e.key==='Escape'){ e.stopPropagation(); closeMapNpcPicker(); } });
+    search.focus();
+  }
+  var scopeBox = document.getElementById('map-npc-picker-scope');
+  if(scopeBox) scopeBox.addEventListener('change', function(){ renderList(search?search.value:''); });
+  setTimeout(function(){
+    document.addEventListener('click', _mapPickerOutsideClick);
+    document.addEventListener('keydown', _mapPickerEscClose);
+  }, 10);
 }
 function _mapPickerOutsideClick(e) {
   var pop = document.getElementById('map-npc-picker');
   if(pop && !pop.contains(e.target)) closeMapNpcPicker();
 }
+function _mapPickerEscClose(e) {
+  if(e.key === 'Escape') closeMapNpcPicker();
+}
 function closeMapNpcPicker() {
   var pop = document.getElementById('map-npc-picker');
   if(pop) pop.remove();
   document.removeEventListener('click', _mapPickerOutsideClick);
+  document.removeEventListener('keydown', _mapPickerEscClose);
 }
 
 
@@ -9132,6 +9263,198 @@ function mapIDBGetAllKeys(cb) {
     req.onsuccess = function(){ cb(req.result||[]); };
     req.onerror   = function(){ cb([]); };
   });
+}
+
+// ── Token Library: IndexedDB storage for 3D print files + PNG token sheets ──
+var _tokenDB = null, _tokenDBReady = false, _tokenDBQueue = [];
+function getTokenDB(cb) {
+  if(_tokenDBReady && _tokenDB) { cb(_tokenDB); return; }
+  _tokenDBQueue.push(cb);
+  if(_tokenDBQueue.length > 1) return;
+  var req = indexedDB.open('LoreboundTokens', 1);
+  req.onupgradeneeded = function(e){ e.target.result.createObjectStore('files'); };
+  req.onsuccess = function(e){ _tokenDB=e.target.result; _tokenDBReady=true; var q=_tokenDBQueue.splice(0); q.forEach(function(fn){fn(_tokenDB);}); };
+  req.onerror = function(){ console.error('LoreboundTokens IDB failed'); _tokenDBQueue=[]; };
+}
+function tokenIDBSet(key, value, cb) {
+  getTokenDB(function(db){ var tx=db.transaction('files','readwrite'); var req=tx.objectStore('files').put(value,key); req.onsuccess=function(){if(cb)cb(true);}; req.onerror=function(){if(cb)cb(false);}; });
+}
+function tokenIDBGet(key, cb) {
+  getTokenDB(function(db){ var tx=db.transaction('files','readonly'); var req=tx.objectStore('files').get(key); req.onsuccess=function(){cb(req.result||null);}; req.onerror=function(){cb(null);}; });
+}
+function tokenIDBDelete(key, cb) {
+  getTokenDB(function(db){ var tx=db.transaction('files','readwrite'); var req=tx.objectStore('files').delete(key); req.onsuccess=function(){if(cb)cb();}; req.onerror=function(){if(cb)cb();}; });
+}
+
+function loadTokenFilesMeta() { try{return JSON.parse(localStorage.getItem('fg_token_files')||'[]');}catch(e){return [];} }
+function saveTokenFilesMeta(list) { localStorage.setItem('fg_token_files', JSON.stringify(list)); }
+
+var _tokenFilter = 'all';
+function setTokenFilter(f, btn) {
+  _tokenFilter = f;
+  document.querySelectorAll('#tab-tokens .store-chip').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderTokenLibrary();
+}
+
+function handleTokenFileUpload(event) {
+  var files = Array.prototype.slice.call(event.target.files||[]);
+  if(!files.length) return;
+  var meta = loadTokenFilesMeta();
+  var remaining = files.length;
+  files.forEach(function(file) {
+    var ext = (file.name.split('.').pop()||'').toLowerCase();
+    var kind = (ext==='png'||ext==='jpg'||ext==='jpeg') ? 'png' : '3d';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var id = 'tok_'+Date.now()+'_'+Math.floor(Math.random()*10000);
+      tokenIDBSet(id, e.target.result, function(ok) {
+        if(ok) {
+          meta.push({id:id, name:file.name, kind:kind, size:file.size, createdAt:Date.now()});
+          saveTokenFilesMeta(meta);
+        }
+        remaining--;
+        if(remaining===0) renderTokenLibrary();
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderTokenLibrary() {
+  var list = document.getElementById('token-library-list');
+  var empty = document.getElementById('token-library-empty');
+  if(!list) return;
+  var meta = loadTokenFilesMeta().slice().sort(function(a,b){return b.createdAt-a.createdAt;});
+  var search = (document.getElementById('token-search')||{}).value || '';
+  var f = search.toLowerCase();
+  var filtered = meta.filter(function(m){
+    if(_tokenFilter!=='all' && m.kind!==_tokenFilter) return false;
+    if(f && m.name.toLowerCase().indexOf(f)===-1) return false;
+    return true;
+  });
+  if(!filtered.length) { list.innerHTML=''; if(empty) empty.classList.remove('hidden'); return; }
+  if(empty) empty.classList.add('hidden');
+  list.innerHTML = filtered.map(function(m) {
+    var sizeStr = m.size > 1048576 ? (m.size/1048576).toFixed(1)+' MB' : Math.round(m.size/1024)+' KB';
+    var thumbHTML = m.kind==='png' ? '<img id="thumb_'+m.id+'" alt="">' : '&#127922;';
+    return '<div class="token-card"><div class="token-card-thumb" id="thumbwrap_'+m.id+'">'+thumbHTML+'</div>'
+      + '<div class="token-card-name" title="'+m.name.replace(/"/g,'&quot;')+'">'+m.name.replace(/</g,'&lt;')+'</div>'
+      + '<div class="token-card-meta">'+m.kind.toUpperCase()+' &middot; '+sizeStr+'</div>'
+      + '<div class="token-card-btns"><button class="btn-ghost btn-sm" onclick="downloadTokenFile(\''+m.id+'\')">&#11015;</button><button class="btn-ghost btn-sm" onclick="deleteTokenFile(\''+m.id+'\')" style="color:var(--danger);border-color:var(--danger)">&#10005;</button></div></div>';
+  }).join('');
+  filtered.forEach(function(m) {
+    if(m.kind==='png') {
+      tokenIDBGet(m.id, function(data) {
+        var img = document.getElementById('thumb_'+m.id);
+        if(img && data) img.src = data;
+      });
+    }
+  });
+}
+
+function downloadTokenFile(id) {
+  var meta = loadTokenFilesMeta().find(function(m){return m.id===id;});
+  if(!meta) return;
+  tokenIDBGet(id, function(data) {
+    if(!data) { alert('File data not found.'); return; }
+    var a = document.createElement('a');
+    a.href = data; a.download = meta.name;
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+}
+
+function deleteTokenFile(id) {
+  if(!confirm('Delete this file? This cannot be undone.')) return;
+  tokenIDBDelete(id, function() {
+    saveTokenFilesMeta(loadTokenFilesMeta().filter(function(m){return m.id!==id;}));
+    renderTokenLibrary();
+  });
+}
+
+// ── Statblock → Token Sheet: prompts for token count/size, tiles the SVG art into a printable PNG ──
+var _pendingTokenSb = null, _pendingTokenArt = null;
+function openTokenSheetPrompt(sb, art) {
+  if(!art || !art.data) return; // nothing to tile without art
+  _pendingTokenSb = sb; _pendingTokenArt = art;
+  var label = document.getElementById('token-sheet-creature-label');
+  if(label) label.textContent = 'Create a printable sheet of "'+sb.name+'" tokens.';
+  var status = document.getElementById('token-sheet-status');
+  if(status) status.classList.add('hidden');
+  var modal = document.getElementById('token-sheet-modal');
+  if(modal) modal.classList.add('show');
+}
+
+function generateTokenSheet() {
+  if(!_pendingTokenSb || !_pendingTokenArt) { closeModal('token-sheet-modal'); return; }
+  var count = Math.max(1, Math.min(40, parseInt(document.getElementById('token-sheet-count').value)||1));
+  var sizeIn = parseFloat(document.getElementById('token-sheet-size').value)||1;
+  var showLabel = document.getElementById('token-sheet-label').checked;
+  var sb = _pendingTokenSb, art = _pendingTokenArt;
+  var status = document.getElementById('token-sheet-status');
+  if(status) { status.classList.remove('hidden'); status.textContent = 'Rendering sheet...'; }
+
+  var DPI = 150;
+  var tokenPx = Math.round(sizeIn * DPI);
+  var labelH = showLabel ? 22 : 0;
+  var cellW = tokenPx + 16, cellH = tokenPx + labelH + 16;
+  var pageW = 8.5 * DPI, pageH = 11 * DPI;
+  var cols = Math.max(1, Math.floor(pageW / cellW));
+  var rows = Math.max(1, Math.ceil(count / cols));
+  var canvas = document.createElement('canvas');
+  canvas.width = pageW;
+  canvas.height = Math.max(pageH, rows*cellH + 20);
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // SVG art needs wrapping in a Blob URL to render via Image(); raster art (data URL) can be used directly.
+  var isSvg = art.type === 'svg';
+  var svgBlob = isSvg ? new Blob([art.data], {type:'image/svg+xml'}) : null;
+  var imgUrl = isSvg ? URL.createObjectURL(svgBlob) : art.data;
+  var img = new Image();
+  img.onload = function() {
+    for(var i=0;i<count;i++) {
+      var col = i % cols, row = Math.floor(i / cols);
+      var cx = col*cellW + cellW/2, cy = row*cellH + tokenPx/2 + 8;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, tokenPx/2, 0, Math.PI*2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, cx-tokenPx/2, cy-tokenPx/2, tokenPx, tokenPx);
+      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(cx, cy, tokenPx/2, 0, Math.PI*2);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#2c1810';
+      ctx.stroke();
+      if(showLabel) {
+        ctx.fillStyle = '#2c1810';
+        ctx.font = 'bold 12px Georgia, serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(sb.name, cx, row*cellH + tokenPx + 18);
+      }
+    }
+    if(isSvg) URL.revokeObjectURL(imgUrl);
+    var pngData = canvas.toDataURL('image/png');
+    var id = 'tok_'+Date.now()+'_'+Math.floor(Math.random()*10000);
+    tokenIDBSet(id, pngData, function(ok) {
+      if(ok) {
+        var meta = loadTokenFilesMeta();
+        meta.push({id:id, name:sb.name+' Token Sheet ('+count+'x).png', kind:'png', size:Math.round(pngData.length*0.75), createdAt:Date.now()});
+        saveTokenFilesMeta(meta);
+      }
+      if(status) status.textContent = 'Saved to Tokens tab.';
+      setTimeout(function(){ closeModal('token-sheet-modal'); _pendingTokenSb=null; _pendingTokenArt=null; }, 700);
+    });
+  };
+  img.onerror = function() {
+    if(isSvg) URL.revokeObjectURL(imgUrl);
+    if(status) status.textContent = 'Failed to render sheet.';
+  };
+  img.src = imgUrl;
 }
 
 // One-time migration: move any map images from localStorage → IndexedDB
@@ -11846,16 +12169,24 @@ function exportAnnotatedPrep() {
 
 
 // -- API Key management ----------------------------------------
+function getImageApiKey() { return localStorage.getItem('fg_image_api_key')||''; }
 function openApiKeyModal() {
   var modal = document.getElementById('api-key-modal');
   var input = document.getElementById('api-key-input');
+  var imgInput = document.getElementById('image-api-key-input');
   if(modal) modal.classList.add('show');
   if(input) { input.value = getApiKey(); input.focus(); }
+  if(imgInput) imgInput.value = getImageApiKey();
 }
 function saveApiKey() {
   var input = document.getElementById('api-key-input');
+  var imgInput = document.getElementById('image-api-key-input');
   if(!input || !input.value.trim()) return;
   localStorage.setItem('fg_api_key', input.value.trim());
+  if(imgInput) {
+    if(imgInput.value.trim()) localStorage.setItem('fg_image_api_key', imgInput.value.trim());
+    else localStorage.removeItem('fg_image_api_key');
+  }
   closeModal('api-key-modal');
   var banner = document.getElementById('api-banner');
   if(banner) { banner.style.display='none'; banner.style.pointerEvents='none'; banner.classList.remove('show'); }
