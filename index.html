@@ -6860,9 +6860,13 @@ function generateStatblock() {
         status.textContent = 'No OpenAI key set — add one via the settings gear, or switch to Vector art. Falling back to vector art for now.';
         generateStatblockArt(sb, desc, function(svg){ onArt(svg?{type:'svg',data:svg}:null); });
       } else {
+        status.textContent='Requesting illustrated artwork for '+sb.name+' from OpenAI (this can take up to 45s)...';
         generateStatblockArtIllustrated(sb, desc, function(dataUrl){
           if(dataUrl) onArt({type:'raster',data:dataUrl});
-          else generateStatblockArt(sb, desc, function(svg){ onArt(svg?{type:'svg',data:svg}:null); });
+          else {
+            status.textContent='Illustrated art failed or timed out — falling back to vector art...';
+            generateStatblockArt(sb, desc, function(svg){ onArt(svg?{type:'svg',data:svg}:null); });
+          }
         });
       }
     } else {
@@ -6889,15 +6893,26 @@ function generateStatblockArt(sb,desc,callback){
 function generateStatblockArtIllustrated(sb,desc,callback){
   var imgKey=getImageApiKey(); if(!imgKey){if(callback)callback(null);return;}
   var prompt='Fantasy tabletop RPG character portrait, digital painting style, dramatic lighting, detailed illustration. Subject: '+sb.name+', a '+sb.size+' '+sb.type+'. '+desc+'. Centered composition, plain dark background suitable for cropping into a circular token, no text or watermarks.';
-  fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+imgKey},body:JSON.stringify({model:'gpt-image-1-mini',prompt:prompt,n:1,size:'1024x1024',quality:'low'})})
+  var done=false;
+  var controller = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  var timer = setTimeout(function(){
+    if(done) return; done=true;
+    if(controller) controller.abort();
+    if(callback) callback(null);
+  }, 45000);
+  fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+imgKey},body:JSON.stringify({model:'gpt-image-1-mini',prompt:prompt,n:1,size:'1024x1024',quality:'low'}),signal:controller?controller.signal:undefined})
   .then(function(res){return res.json();})
   .then(function(data){
+    clearTimeout(timer); if(done) return; done=true;
     if(data.error || !data.data || !data.data[0]) { if(callback)callback(null); return; }
     var b64 = data.data[0].b64_json;
     if(!b64){ if(callback)callback(null); return; }
     if(callback)callback('data:image/png;base64,'+b64);
   })
-  .catch(function(){if(callback)callback(null);});
+  .catch(function(){
+    clearTimeout(timer); if(done) return; done=true;
+    if(callback)callback(null);
+  });
 }
 
 function renderStatblockCard(sb, art) {
