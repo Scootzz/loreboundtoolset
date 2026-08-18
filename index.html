@@ -484,6 +484,18 @@ select option{background:#1a1208}
     body[data-tab="forge"] #main-nav-bar{border-bottom-color:#d4763a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,118,58,.35)}
   }
 
+  /* ═══ MAP PINS — interactive NPC markers on location/region/world maps ═══ */
+  .map-pin{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--gold);border:2px solid #1a1208;box-shadow:0 0 8px rgba(212,168,67,.7),0 2px 4px rgba(0,0,0,.5);cursor:pointer;pointer-events:auto;transition:transform .15s;z-index:10}
+  .map-pin:hover{transform:scale(1.35);box-shadow:0 0 14px rgba(212,168,67,.9),0 2px 4px rgba(0,0,0,.5)}
+  .map-pin-tooltip{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(10,7,4,.96);border:1px solid var(--gold-dim);border-radius:4px;padding:4px 10px;font-family:Cinzel,serif;font-size:11px;color:var(--gold);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:11}
+  .map-pin:hover .map-pin-tooltip{opacity:1}
+  #map-pin-mode-btn.active{background:var(--gold);color:#1a1208}
+  .map-npc-picker{position:fixed;background:#0e0b07;border:1px solid var(--gold-dim);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.6);z-index:9500;width:220px;max-height:280px;display:flex;flex-direction:column;overflow:hidden}
+  .map-npc-picker input{margin:8px auto 4px;display:block;width:calc(100% - 16px)}
+  .map-npc-picker-list{overflow-y:auto;flex:1}
+  .map-npc-picker-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)}
+  .map-npc-picker-item:hover{background:rgba(212,168,67,.1);color:var(--gold)}
+
   /* ═══ PER-TAB MOTIF MARGINALIA — fills the empty gutter beside the content column, safe to delete this block to revert ═══ */
   /* Each tab defines its own icon (as an SVG mask, so it's fully colourable) and colour via CSS variables on <body>. */
   body{--motif-icon:none;--motif-color:var(--gold)}
@@ -1392,12 +1404,18 @@ select option{background:#1a1208}
   <div style="position:fixed;inset:0;background:rgba(0,0,0,0.95);display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;gap:10px;padding:10px 100px 10px 16px;background:rgba(0,0,0,0.6);border-bottom:1px solid var(--border);flex-shrink:0">
       <span id="location-map-title" style="font-family:Cinzel,serif;font-size:13px;color:var(--gold);letter-spacing:.1em;flex:1">WORLD MAP</span>
+      <button id="map-pin-mode-btn" onclick="toggleMapPinMode()" title="Click the map to drop a pin and link it to an NPC" style="background:none;border:1px solid var(--gold-dim);color:var(--gold);border-radius:4px;padding:6px 14px;font-family:Cinzel,serif;font-size:11px;cursor:pointer;letter-spacing:.06em">&#128205; Place Pins</button>
       <button onclick="document.getElementById('npc-map-upload').click()" style="background:var(--gold-dim);border:none;color:#1a1208;border-radius:4px;padding:6px 14px;font-family:Cinzel,serif;font-size:11px;cursor:pointer;letter-spacing:.06em">&#128196; Import PNG</button>
       <button id="location-map-delete-btn" onclick="deleteCurrentMap()" style="background:none;border:1px solid var(--danger);color:var(--danger);border-radius:4px;padding:6px 10px;font-size:11px;cursor:pointer;display:none">&#10005; Remove Map</button>
       <button onclick="closeModal('location-map-modal')" style="background:none;border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 14px;font-family:Cinzel,serif;font-size:11px;cursor:pointer">Close</button>
     </div>
     <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px">
-      <div id="map-pan-container" style="overflow:hidden;width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:grab"><img id="location-map-img" style="max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--border);border-radius:4px;display:none;transform-origin:center;transition:transform 0.1s;user-select:none" draggable="false"></div>
+      <div id="map-pan-container" style="overflow:hidden;width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:grab">
+        <div id="map-img-wrap" style="position:relative;transform-origin:center;transition:transform 0.1s">
+          <img id="location-map-img" style="width:100%;height:100%;display:none;border:1px solid var(--border);border-radius:4px;user-select:none;pointer-events:none" draggable="false">
+          <div id="map-pins-layer" style="position:absolute;inset:0;pointer-events:none"></div>
+        </div>
+      </div>
       <div id="location-map-empty" style="color:var(--muted);font-family:Cinzel,serif;font-size:14px;letter-spacing:.1em;text-align:center">
         NO MAP UPLOADED
         <br><span style="font-size:12px;font-family:Georgia,serif;font-style:italic;letter-spacing:0;color:var(--muted)">Click Import PNG above to add a map for this location</span>
@@ -8327,6 +8345,120 @@ function getMapContextLabel() {
   return 'WORLD MAP';
 }
 
+// ── Map Pins: interactive NPC markers on the World/Region/Location map ──
+function getMapPinsKey() { return 'fg_pins_' + getMapKey(); }
+function loadMapPins() { try{return JSON.parse(localStorage.getItem(getMapPinsKey())||'[]');}catch(e){return [];} }
+function saveMapPins(pins) { localStorage.setItem(getMapPinsKey(), JSON.stringify(pins)); }
+
+var _mapPinMode = false;
+function toggleMapPinMode() {
+  _mapPinMode = !_mapPinMode;
+  var btn = document.getElementById('map-pin-mode-btn');
+  if(btn) btn.classList.toggle('active', _mapPinMode);
+  var wrap = document.getElementById('map-img-wrap');
+  if(wrap) wrap.style.cursor = _mapPinMode ? 'crosshair' : '';
+  closeMapNpcPicker();
+}
+
+function syncMapImgWrap() {
+  var img = document.getElementById('location-map-img');
+  var wrap = document.getElementById('map-img-wrap');
+  var container = document.getElementById('map-pan-container');
+  if(!img || !wrap || !container || !img.naturalWidth) return;
+  var cw = container.clientWidth, ch = container.clientHeight;
+  var iw = img.naturalWidth, ih = img.naturalHeight;
+  var scale = Math.min(cw/iw, ch/ih);
+  wrap.style.width = (iw*scale)+'px';
+  wrap.style.height = (ih*scale)+'px';
+  renderMapPins();
+}
+
+function renderMapPins() {
+  var layer = document.getElementById('map-pins-layer');
+  if(!layer) return;
+  var pins = loadMapPins();
+  var npcs = loadNpcs();
+  layer.innerHTML = '';
+  pins.forEach(function(pin) {
+    var npc = npcs.find(function(n){return n.id===pin.npcId;});
+    var dot = document.createElement('div');
+    dot.className = 'map-pin';
+    dot.style.left = pin.x+'%';
+    dot.style.top = pin.y+'%';
+    dot.innerHTML = '<div class="map-pin-tooltip">'+(npc?npc.name.replace(/</g,'&lt;'):'(deleted NPC)')+'</div>';
+    dot.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if(_mapPinMode) {
+        if(confirm('Remove this pin'+(npc?' ('+npc.name+')':'')+'?')) {
+          saveMapPins(loadMapPins().filter(function(p){return p.id!==pin.id;}));
+          renderMapPins();
+        }
+      } else if(npc) {
+        closeModal('location-map-modal');
+        openNpcModal(npc.id);
+      }
+    });
+    layer.appendChild(dot);
+  });
+  var btn = document.getElementById('map-pin-mode-btn');
+  if(btn) btn.innerHTML = '&#128205; Place Pins' + (pins.length ? ' ('+pins.length+')' : '');
+}
+
+function handleMapWrapClick(e) {
+  if(!_mapPinMode) return;
+  if(e.target.closest('.map-pin')) return;
+  var wrap = document.getElementById('map-img-wrap');
+  if(!wrap) return;
+  var rect = wrap.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / rect.width * 100;
+  var y = (e.clientY - rect.top) / rect.height * 100;
+  if(x<0||x>100||y<0||y>100) return;
+  openMapNpcPicker(e.clientX, e.clientY, x, y);
+}
+
+function openMapNpcPicker(screenX, screenY, mapX, mapY) {
+  closeMapNpcPicker();
+  var pop = document.createElement('div');
+  pop.className = 'map-npc-picker';
+  pop.id = 'map-npc-picker';
+  pop.style.left = Math.min(screenX, window.innerWidth-232)+'px';
+  pop.style.top = Math.min(screenY, window.innerHeight-292)+'px';
+  pop.innerHTML = '<input type="text" placeholder="Search NPCs..." id="map-npc-picker-search"><div class="map-npc-picker-list" id="map-npc-picker-list"></div>';
+  document.body.appendChild(pop);
+  var npcs = loadNpcs().slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  function renderList(filter) {
+    var list = document.getElementById('map-npc-picker-list');
+    if(!list) return;
+    var f = (filter||'').toLowerCase();
+    var filtered = npcs.filter(function(n){return n.name.toLowerCase().indexOf(f)!==-1;});
+    list.innerHTML = filtered.map(function(n){
+      return '<div class="map-npc-picker-item" data-id="'+n.id+'">'+n.name.replace(/</g,'&lt;')+(n.role?' <span style="color:var(--muted);font-size:11px">&mdash; '+n.role.replace(/</g,'&lt;')+'</span>':'')+'</div>';
+    }).join('') || '<div style="padding:10px;color:var(--muted);font-size:12px;font-style:italic">No NPCs found</div>';
+    list.querySelectorAll('.map-npc-picker-item').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var pins = loadMapPins();
+        pins.push({id:'pin_'+Date.now(), x:Math.round(mapX*100)/100, y:Math.round(mapY*100)/100, npcId:el.getAttribute('data-id')});
+        saveMapPins(pins);
+        renderMapPins();
+        closeMapNpcPicker();
+      });
+    });
+  }
+  renderList('');
+  var search = document.getElementById('map-npc-picker-search');
+  if(search) { search.addEventListener('input', function(){ renderList(this.value); }); search.focus(); }
+  setTimeout(function(){ document.addEventListener('click', _mapPickerOutsideClick); }, 10);
+}
+function _mapPickerOutsideClick(e) {
+  var pop = document.getElementById('map-npc-picker');
+  if(pop && !pop.contains(e.target)) closeMapNpcPicker();
+}
+function closeMapNpcPicker() {
+  var pop = document.getElementById('map-npc-picker');
+  if(pop) pop.remove();
+  document.removeEventListener('click', _mapPickerOutsideClick);
+}
+
 
 
 
@@ -10041,16 +10173,21 @@ function rollDice(sides) {
 
 // -- Map Zoom & Pan --------------------------------------------
 var _mapScale = 1, _mapPanX = 0, _mapPanY = 0, _mapDragging = false, _mapDragStartX = 0, _mapDragStartY = 0;
+var _mapPointerDownX = 0, _mapPointerDownY = 0;
 
 function updateMapTransform() {
-  var img = document.getElementById('location-map-img');
-  if(img) img.style.transform = 'scale('+_mapScale+') translate('+(_mapPanX/_mapScale)+'px,'+(_mapPanY/_mapScale)+'px)';
+  var wrap = document.getElementById('map-img-wrap');
+  if(wrap) wrap.style.transform = 'scale('+_mapScale+') translate('+(_mapPanX/_mapScale)+'px,'+(_mapPanY/_mapScale)+'px)';
 }
 
 document.addEventListener('DOMContentLoaded', function(){
   var container = document.getElementById('map-pan-container');
   var img = document.getElementById('location-map-img');
-  if(!container || !img) return;
+  var wrap = document.getElementById('map-img-wrap');
+  if(!container || !img || !wrap) return;
+
+  img.addEventListener('load', syncMapImgWrap);
+  window.addEventListener('resize', function(){ if(document.getElementById('location-map-modal').classList.contains('show')) syncMapImgWrap(); });
 
   container.addEventListener('wheel', function(e){
     e.preventDefault();
@@ -10060,6 +10197,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   container.addEventListener('pointerdown', function(e){
     _mapDragging=true; _mapDragStartX=e.clientX-_mapPanX; _mapDragStartY=e.clientY-_mapPanY;
+    _mapPointerDownX=e.clientX; _mapPointerDownY=e.clientY;
     container.style.cursor='grabbing'; container.setPointerCapture(e.pointerId);
   });
   container.addEventListener('pointermove', function(e){
@@ -10067,17 +10205,25 @@ document.addEventListener('DOMContentLoaded', function(){
     _mapPanX=e.clientX-_mapDragStartX; _mapPanY=e.clientY-_mapDragStartY;
     updateMapTransform();
   });
-  container.addEventListener('pointerup', function(){ _mapDragging=false; container.style.cursor='grab'; });
+  container.addEventListener('pointerup', function(e){
+    _mapDragging=false; container.style.cursor=_mapPinMode?'crosshair':'grab';
+    // A "click" (minimal movement) either places a pin or is ignored, vs a drag which just pans
+    var moved = Math.abs(e.clientX-_mapPointerDownX) + Math.abs(e.clientY-_mapPointerDownY);
+    if(moved < 6) handleMapWrapClick(e);
+  });
 
   // Double-click to reset
   container.addEventListener('dblclick', function(){
     _mapScale=1; _mapPanX=0; _mapPanY=0; updateMapTransform();
   });
 
-  // Reset zoom when modal opens
+  // Reset zoom + pin mode when modal opens
   var origOpen = window.openLocationMapModal;
   if(origOpen) window.openLocationMapModal = function(){
     origOpen(); _mapScale=1; _mapPanX=0; _mapPanY=0; updateMapTransform();
+    _mapPinMode=false; var btn=document.getElementById('map-pin-mode-btn'); if(btn) btn.classList.remove('active');
+    wrap.style.cursor='';
+    setTimeout(syncMapImgWrap, 50);
   };
 });
 
