@@ -407,17 +407,18 @@ select option{background:#1a1208}
     .nav-drawer{
       display:flex !important;
       position:fixed;top:0;left:0;bottom:0;
-      width:230px;
+      width:190px;
       flex-direction:column;
       gap:2px;
       background:linear-gradient(180deg,#130e07,#0a0704);
-      border:none;border-right:1px solid var(--border);
+      border:none;
       border-radius:0;
-      padding:22px 12px 20px;
+      padding:22px 10px 20px;
       margin:0;
       animation:none;
       overflow-y:auto;
       z-index:600;
+      box-shadow:6px 0 20px rgba(0,0,0,.35),inset -1px 0 0 rgba(255,255,255,.03);
     }
     .nav-drawer::before{
       content:'\2654  LOREBOUND';
@@ -431,10 +432,10 @@ select option{background:#1a1208}
       margin-bottom:10px;
       border-bottom:1px solid var(--border);
     }
-    .nav-drawer .main-tab{padding:11px 14px;font-size:10.5px}
+    .nav-drawer .main-tab{padding:10px 12px;font-size:10px}
 
-    /* Give the content column room to breathe next to the sidebar */
-    #app{margin:0 0 0 250px;max-width:1040px;padding:0 32px 60px}
+    /* Give the content column room to breathe next to the (now narrower) sidebar */
+    #app{margin:0 0 0 210px;max-width:1040px;padding:0 32px 60px}
 
     /* Soft relief on the content column — a faint shadow, not a hard rule; the motif rail now marks this edge */
     #app{
@@ -503,10 +504,12 @@ select option{background:#1a1208}
 
   .motif-rail{display:none}
   @media(min-width:1450px){
+    /* Push content further right so a left gutter opens up between the sidebar and the content column */
+    #app{margin-left:360px !important}
     .motif-rail{
       display:block;
       position:fixed;
-      top:0;right:0;bottom:0;
+      top:0;bottom:0;
       width:170px;
       pointer-events:none;
       z-index:0;
@@ -518,6 +521,8 @@ select option{background:#1a1208}
       opacity:.07;
       transition:opacity .3s;
     }
+    .motif-rail-left{left:190px}
+    .motif-rail-right{right:0}
   }
   @media(min-width:1000px){
     .nav-drawer{position:fixed}
@@ -542,7 +547,8 @@ select option{background:#1a1208}
 
 </head>
 <body>
-<div class="motif-rail" aria-hidden="true"></div>
+<div class="motif-rail motif-rail-left" aria-hidden="true"></div>
+<div class="motif-rail motif-rail-right" aria-hidden="true"></div>
 <div id="toast-container"></div>
 
 <!-- API Key Banner -->
