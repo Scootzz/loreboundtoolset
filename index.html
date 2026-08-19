@@ -6811,6 +6811,7 @@ function generateStatblock() {
   if(!apiKey){ (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
   var status = document.getElementById('statblock-status');
   var result = document.getElementById('statblock-result');
+  var isLegendary = (document.getElementById('statblock-legendary')||{}).checked || false;
   status.classList.remove('hidden'); status.textContent = 'Generating '+desc+'...';
   result.classList.remove('hidden');
   var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'. Choose an appropriate CR based on the description.'+(isLegendary?' THIS IS A LEGENDARY CREATURE: give it 3 Legendary Actions, 3 Legendary Resistances per day as a trait, and at least 1 Lair Action if it has a lair. Make it significantly more powerful than a normal creature of its type.':'')
