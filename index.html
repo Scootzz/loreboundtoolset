@@ -6886,6 +6886,11 @@ function generateStatblockArt(sb,desc,callback){
     var svg=data.content.map(function(i){return i.text||'';}).join('').trim();
     var si=svg.indexOf('<svg'); if(si===-1){if(callback)callback(null);return;}
     svg=svg.slice(si);
+    // Ensure the closing tag exists (can be truncated if generation hit the token limit) and that
+    // the xmlns attribute is present — SVG without it renders fine inline (lenient HTML parser)
+    // but silently fails to load via <img src="blob:..."> (strict XML parser), breaking token sheets.
+    if(svg.indexOf('</svg>')===-1) svg += '</svg>';
+    if(svg.indexOf('xmlns=')===-1) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
     if(callback)callback(svg);
   })
   .catch(function(){if(callback)callback(null);});
