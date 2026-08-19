@@ -480,6 +480,7 @@ select option{background:#1a1208}
   #tab-factions{--accent:#a34363;--tab-glow:#8a2a4a;--tab-glow-soft:rgba(138,42,74,0.4);--tab-glow-bg:rgba(138,42,74,0.08)}
   #tab-music{--accent:#ed83b3;--tab-glow:#d46a9a;--tab-glow-soft:rgba(212,106,154,0.4);--tab-glow-bg:rgba(212,106,154,0.08)}
   #tab-tokens{--accent:#a3aec9;--tab-glow:#8a95b0;--tab-glow-soft:rgba(138,149,176,0.4);--tab-glow-bg:rgba(138,149,176,0.08)}
+  #tab-statblocks{--accent:#e0b563;--tab-glow:#c9963a;--tab-glow-soft:rgba(201,150,58,0.4);--tab-glow-bg:rgba(201,150,58,0.08)}
   /* Sidebar's "you are here" marker follows the open tab's theme too */
   body[data-tab="combat"] .nav-drawer .main-tab.active{color:#cd6a5a;border-left-color:#cd4a4a;background:rgba(205,74,74,0.08)}
   body[data-tab="naval"] .nav-drawer .main-tab.active{color:#5a9adf;border-left-color:#4a8acd;background:rgba(74,138,205,0.08)}
@@ -495,6 +496,7 @@ select option{background:#1a1208}
   body[data-tab="factions"] .nav-drawer .main-tab.active{color:#a34363;border-left-color:#8a2a4a;background:rgba(138,42,74,0.08)}
   body[data-tab="music"] .nav-drawer .main-tab.active{color:#ed83b3;border-left-color:#d46a9a;background:rgba(212,106,154,0.08)}
   body[data-tab="tokens"] .nav-drawer .main-tab.active{color:#a3aec9;border-left-color:#8a95b0;background:rgba(138,149,176,0.08)}
+  body[data-tab="statblocks"] .nav-drawer .main-tab.active{color:#e0b563;border-left-color:#c9963a;background:rgba(201,150,58,0.08)}
 
   /* The page's etched relief edge (added above for desktop) glows with the same theme */
   @media(min-width:1000px){
@@ -512,6 +514,7 @@ select option{background:#1a1208}
     body[data-tab="factions"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(138,42,74,0.18)}
     body[data-tab="music"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(212,106,154,0.18)}
     body[data-tab="tokens"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(138,149,176,0.18)}
+    body[data-tab="statblocks"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(201,150,58,0.18)}
     body[data-tab="combat"] #main-nav-bar{border-bottom-color:#cd4a4a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(205,74,74,.35)}
     body[data-tab="naval"] #main-nav-bar{border-bottom-color:#4a8acd !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(74,138,205,.35)}
     body[data-tab="forge"] #main-nav-bar{border-bottom-color:#d4763a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,118,58,.35)}
@@ -526,6 +529,7 @@ select option{background:#1a1208}
     body[data-tab="factions"] #main-nav-bar{border-bottom-color:#8a2a4a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(138,42,74,0.35)}
     body[data-tab="music"] #main-nav-bar{border-bottom-color:#d46a9a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,106,154,0.35)}
     body[data-tab="tokens"] #main-nav-bar{border-bottom-color:#8a95b0 !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(138,149,176,0.35)}
+    body[data-tab="statblocks"] #main-nav-bar{border-bottom-color:#c9963a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(201,150,58,0.35)}
   }
 
   /* ═══ TOKEN LIBRARY — file cards for 3D print files and PNG token sheets ═══ */
@@ -554,18 +558,19 @@ select option{background:#1a1208}
   body[data-tab="welcome"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M15 72 L15 34 L30 50 L50 18 L70 50 L85 34 L85 72 Z'/></svg>")}
   body[data-tab="forge"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='46' y='18' width='8' height='68' rx='3'/><path d='M50 14 L82 24 Q88 40 70 49 L50 40 Z'/><path d='M50 14 L18 24 Q12 40 30 49 L50 40 Z'/></svg>");--motif-color:#d4763a}
   body[data-tab="settlement"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='18' y='42' width='64' height='46'/><rect x='18' y='24' width='13' height='18'/><rect x='43' y='24' width='14' height='18'/><rect x='69' y='24' width='13' height='18'/></svg>");--motif-color:#4a8a5a}
-  body[data-tab="pcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g stroke='black' stroke-width='7' stroke-linecap='round' fill='none'><path d='M14 14 L86 86 M14 22 L14 14 L22 14'/><path d='M86 14 L14 86 M86 22 L86 14 L78 14'/></g></svg>");--motif-color:#7a5ac9}
+  body[data-tab="pcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 4 L92 27 V73 L50 96 L8 73 V27 Z' fill='none' stroke='black' stroke-width='7'/><path d='M50 40 L58 46 L55 56 L45 56 L42 46 Z'/></svg>");--motif-color:#7a5ac9}
   body[data-tab="npcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='17'/><path d='M18 90 Q18 54 50 54 Q82 54 82 90 Z'/></svg>");--motif-color:#3aa8a8}
   body[data-tab="timeline"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M24 12 H76 L54 50 L76 88 H24 L46 50 Z' fill='none' stroke='black' stroke-width='7'/></svg>");--motif-color:#a08a5a}
-  body[data-tab="combat"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='38' r='28'/><rect x='34' y='58' width='32' height='22' rx='4'/></svg>");--motif-color:#cd4a4a}
+  body[data-tab="combat"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g stroke='black' stroke-width='7' stroke-linecap='round' fill='none'><path d='M14 14 L86 86 M14 22 L14 14 L22 14'/><path d='M86 14 L14 86 M86 22 L86 14 L78 14'/></g></svg>");--motif-color:#cd4a4a}
   body[data-tab="crafting"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 22 Q30 12 12 20 V80 Q30 72 50 80 Q70 72 88 80 V20 Q70 12 50 22 Z' fill='none' stroke='black' stroke-width='6'/></svg>");--motif-color:#8a6a3a}
   body[data-tab="store"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='47' y='10' width='6' height='72'/><rect x='28' y='86' width='44' height='6'/><path d='M18 30 H82' stroke='black' stroke-width='5'/><circle cx='18' cy='44' r='13' fill='none' stroke='black' stroke-width='5'/><circle cx='82' cy='44' r='13' fill='none' stroke='black' stroke-width='5'/></svg>");--motif-color:#b8863a}
   body[data-tab="sessions-main"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M88 8 Q42 18 20 70 L14 92 L36 86 Q72 58 88 8 Z'/></svg>");--motif-color:#b06a8a}
   body[data-tab="rumours-main"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M8 50 Q50 8 92 50 Q50 92 8 50 Z' fill='none' stroke='black' stroke-width='6'/><circle cx='50' cy='50' r='15'/></svg>");--motif-color:#9a4a7a}
-  body[data-tab="factions"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 8 L88 50 L50 92 L12 50 Z'/></svg>");--motif-color:#8a2a4a}
+  body[data-tab="factions"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='12' y='10' width='76' height='7' rx='2'/><rect x='24' y='10' width='6' height='84'/><rect x='70' y='10' width='6' height='84'/><path d='M24 20 H76 V80 L50 66 L24 80 Z'/></svg>");--motif-color:#8a2a4a}
   body[data-tab="music"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='28' cy='76' r='14'/><rect x='40' y='12' width='7' height='64'/><path d='M47 12 Q78 24 78 46 L69 46 Q69 30 47 21 Z'/></svg>");--motif-color:#d46a9a}
   body[data-tab="naval"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='18' r='10' fill='none' stroke='black' stroke-width='6'/><rect x='47' y='26' width='6' height='56'/><path d='M18 55 Q18 88 50 92 Q82 88 82 55' fill='none' stroke='black' stroke-width='6'/><path d='M28 44 H72' stroke='black' stroke-width='6'/></svg>");--motif-color:#4a8acd}
-  body[data-tab="tokens"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill-rule='evenodd' d='M18 18 H82 V82 H18 Z M34 34 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M66 34 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M50 50 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M34 66 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M66 66 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0'/></svg>");--motif-color:#8a95b0}
+  body[data-tab="tokens"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='22' r='13'/><path d='M37 40 Q50 33 63 40 L70 78 Q50 88 30 78 Z'/><ellipse cx='50' cy='86' rx='28' ry='9'/></svg>");--motif-color:#8a95b0}
+  body[data-tab="statblocks"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill-rule='evenodd' d='M14 10 H86 V90 H14 Z M50 22 m-11,0 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0'/><rect x='24' y='52' width='52' height='6'/><rect x='24' y='66' width='52' height='6'/><rect x='24' y='80' width='34' height='6'/></svg>");--motif-color:#c9963a}
 
   .motif-rail{display:none}
   @media(min-width:1450px){
@@ -593,32 +598,17 @@ select option{background:#1a1208}
     .nav-drawer{position:fixed}
     .nav-emblem{
       position:absolute;
-      bottom:14px;left:50%;
+      bottom:16px;left:50%;
       transform:translateX(-50%);
-      width:120px;height:120px;
-      border-radius:50%;
-      border:2px solid var(--motif-color);
-      background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--motif-color) 55%, white 8%), rgba(0,0,0,.5) 78%);
-      box-shadow:0 0 22px -2px var(--motif-color), inset 0 0 18px -4px rgba(0,0,0,.6);
-      display:flex;align-items:center;justify-content:center;
-      pointer-events:none;
-      transition:box-shadow .3s, border-color .3s;
-    }
-    .nav-emblem::before{
-      content:'';
-      position:absolute;inset:-5px;
-      border-radius:50%;
-      border:1px solid var(--motif-color);
-      opacity:.4;
-    }
-    .nav-emblem-icon{
-      width:58%;height:58%;
+      width:60px;height:60px;
       background:var(--motif-color);
+      opacity:.32;
       -webkit-mask-image:var(--motif-icon);mask-image:var(--motif-icon);
       -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
       -webkit-mask-position:center;mask-position:center;
       -webkit-mask-size:contain;mask-size:contain;
-      filter:drop-shadow(0 0 5px rgba(0,0,0,.7)) brightness(1.3);
+      pointer-events:none;
+      transition:opacity .3s, background .3s;
     }
   }
 
@@ -707,20 +697,21 @@ select option{background:#1a1208}
 <div class="nav-drawer hidden" id="nav-drawer">
   <button class="main-tab" data-tab="forge" onclick="enterTab('forge')">&#9874;&#xFE0E; Forge</button>
   <button class="main-tab" data-tab="settlement" onclick="enterTab('settlement')">&#127963;&#xFE0E; Settlement</button>
-  <button class="main-tab" data-tab="pcs" onclick="enterTab('pcs')">&#9876;&#xFE0E; Characters</button>
+  <button class="main-tab" data-tab="pcs" onclick="enterTab('pcs')">&#11041;&#xFE0E; Characters</button>
   <button class="main-tab" data-tab="npcs" onclick="enterTab('npcs')">&#128101;&#xFE0E; NPCs</button>
   <button class="main-tab" data-tab="timeline" onclick="enterTab('timeline')">&#128337;&#xFE0E; Timeline</button>
-  <button class="main-tab" data-tab="combat" onclick="enterTab('combat')">&#9760;&#xFE0E; Combat</button>
+  <button class="main-tab" data-tab="combat" onclick="enterTab('combat')">&#9876;&#xFE0E; Combat</button>
   <button class="main-tab" data-tab="crafting" onclick="enterTab('crafting');setTimeout(function(){switchCraftTab('rules',document.getElementById('craft-tab-rules'));},50)">&#128220;&#xFE0E; Reference</button>
   <button class="main-tab" data-tab="store" onclick="enterTab('store')">&#9878;&#xFE0E; Store</button>
   
   <button class="main-tab" data-tab="sessions-main" onclick="enterTab('sessions-main')">&#128221;&#xFE0E; Sessions</button>
   <button class="main-tab" data-tab="rumours-main" onclick="enterTab('rumours-main')">&#128065;&#xFE0E; Rumours</button>
-  <button class="main-tab" data-tab="factions" onclick="enterTab('factions')">&#9830;&#xFE0E; Factions</button>
+  <button class="main-tab" data-tab="factions" onclick="enterTab('factions')">&#9873;&#xFE0E; Factions</button>
   <button class="main-tab" data-tab="music" onclick="enterTab('music')">&#9836;&#xFE0E; Music</button>
   <button class="main-tab" data-tab="naval" onclick="enterTab('naval')">&#9875;&#xFE0E; Naval</button>
-  <button class="main-tab" data-tab="tokens" onclick="enterTab('tokens')">&#127922;&#xFE0E; Tokens</button>
-  <div class="nav-emblem" aria-hidden="true"><div class="nav-emblem-icon"></div></div>
+  <button class="main-tab" data-tab="tokens" onclick="enterTab('tokens')">&#9823;&#xFE0E; Tokens</button>
+  <button class="main-tab" data-tab="statblocks" onclick="enterTab('statblocks')">&#128009;&#xFE0E; Statblocks</button>
+  <div class="nav-emblem" aria-hidden="true"></div>
 </div>
 
 <div id="tab-welcome" class="tab-pane active">
@@ -807,19 +798,20 @@ select option{background:#1a1208}
     <div id="landing-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
       <button class="landing-tile" onclick="enterTab('forge')"><span class="landing-icon">&#9874;</span><span class="landing-name">Forge</span></button>
       <button class="landing-tile" onclick="enterTab('settlement')"><span class="landing-icon">&#127963;</span><span class="landing-name">Settlement</span></button>
-      <button class="landing-tile" onclick="enterTab('pcs')"><span class="landing-icon">&#9876;</span><span class="landing-name">Characters</span></button>
+      <button class="landing-tile" onclick="enterTab('pcs')"><span class="landing-icon">&#11041;&#xFE0E;</span><span class="landing-name">Characters</span></button>
       <button class="landing-tile" onclick="enterTab('npcs')"><span class="landing-icon">&#128101;&#xFE0E;</span><span class="landing-name">NPCs</span></button>
       <button class="landing-tile" onclick="enterTab('timeline')"><span class="landing-icon">&#128337;&#xFE0E;</span><span class="landing-name">Timeline</span></button>
-      <button class="landing-tile" onclick="enterTab('combat')"><span class="landing-icon">&#9760;&#xFE0E;</span><span class="landing-name">Combat</span></button>
+      <button class="landing-tile" onclick="enterTab('combat')"><span class="landing-icon">&#9876;&#xFE0E;</span><span class="landing-name">Combat</span></button>
       <button class="landing-tile" onclick="enterTab('store')"><span class="landing-icon">&#9878;&#xFE0E;</span><span class="landing-name">Store</span></button>
-      <button class="landing-tile" onclick="enterTab('factions')"><span class="landing-icon">&#9830;&#xFE0E;</span><span class="landing-name">Factions</span></button>
+      <button class="landing-tile" onclick="enterTab('factions')"><span class="landing-icon">&#9873;&#xFE0E;</span><span class="landing-name">Factions</span></button>
       <button class="landing-tile" onclick="enterTab('naval')"><span class="landing-icon">&#9875;&#xFE0E;</span><span class="landing-name">Naval</span></button>
       <button class="landing-tile" onclick="enterTab('music')"><span class="landing-icon">&#9836;&#xFE0E;</span><span class="landing-name">Music</span></button>
       <button class="landing-tile" onclick="enterTab('crafting');setTimeout(function(){switchCraftTab('rules',document.getElementById('craft-tab-rules'));},50)"><span class="landing-icon">&#128220;&#xFE0E;</span><span class="landing-name">Reference</span></button>
 
       <button class="landing-tile" onclick="enterTab('sessions-main')"><span class="landing-icon">&#128221;&#xFE0E;</span><span class="landing-name">Sessions</span></button>
       <button class="landing-tile" onclick="enterTab('rumours-main')"><span class="landing-icon">&#128065;&#xFE0E;</span><span class="landing-name">Rumours</span></button>
-      <button class="landing-tile" onclick="enterTab('tokens')"><span class="landing-icon">&#127922;&#xFE0E;</span><span class="landing-name">Tokens</span></button>
+      <button class="landing-tile" onclick="enterTab('tokens')"><span class="landing-icon">&#9823;&#xFE0E;</span><span class="landing-name">Tokens</span></button>
+      <button class="landing-tile" onclick="enterTab('statblocks')"><span class="landing-icon">&#128009;&#xFE0E;</span><span class="landing-name">Statblocks</span></button>
     </div>
   </div>
 </div><!-- /tab-welcome -->
@@ -2146,6 +2138,18 @@ select option{background:#1a1208}
     </div>
     <div id="token-library-empty" class="hidden" style="color:var(--muted);font-style:italic;font-size:13px;text-align:center;padding:30px 0">No files yet. Upload a 3D print file, or generate a token sheet from the Statblock Generator in Reference.</div>
     <div id="token-library-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
+  </div>
+</div>
+
+<div id="tab-statblocks" class="tab-pane">
+  <div class="panel">
+    <div class="panel-label">Statblock Library</div>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">A printable PNG copy of every creature you generate in the Statblock Generator is saved here automatically &mdash; no prompts, no setup.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <input type="text" id="statblock-search" placeholder="Search statblocks..." oninput="renderStatblockLibrary()" style="flex:1;min-width:140px">
+    </div>
+    <div id="statblock-library-empty" class="hidden" style="color:var(--muted);font-style:italic;font-size:13px;text-align:center;padding:30px 0">No statblocks yet. Generate one from the Statblock Generator in Reference &mdash; it'll show up here automatically.</div>
+    <div id="statblock-library-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
   </div>
 </div>
 
@@ -5614,6 +5618,7 @@ function enterTab(name) {
   if(name==='npcs'){ populateRegionFilter(); populateLocationFilterForRegion(''); renderNpcs(); updateNpcMapButtons(); }
   if(name==='pcs'){ renderPcs(); loadPartyVehicleToPanel(); }
   if(name==='tokens') renderTokenLibrary();
+  if(name==='statblocks') renderStatblockLibrary();
   if(name==='settlement'){ renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); loadGoldToPanel(); }
   if(name==='timeline'){ if(!webCanvas){initWeb();}else{renderTimeline();} }
   if(name==='crafting'){
@@ -6917,6 +6922,7 @@ function generateStatblock() {
       if(artStatus) artStatus.style.display='none';
       status.classList.add('hidden');
       if(typeof window._sbOnComplete==='function') window._sbOnComplete();
+      autoSaveStatblockPng(sb, art);
       if(art) openTokenSheetPrompt(sb, art);
     };
     if(artMode==='illustrated') {
@@ -7039,7 +7045,17 @@ function renderStatblockCard(sb, art) {
   return {sbId:sbId, card:card};
 }
 
-function downloadStatblockById(sb, cardId, tokenId) {
+function getArtFromTokenElement(tokenId) {
+  var el = document.getElementById(tokenId);
+  if(!el) return null;
+  var img = el.querySelector('img');
+  if(img && img.src) return {type:'raster', data:img.src};
+  var svg = el.querySelector('svg');
+  if(svg) return {type:'svg', data: svg.outerHTML};
+  return null;
+}
+
+function renderStatblockToCanvas(sb, art, callback) {
   var W = 600, PAD = 24, INNER = 552;
   var canvas = document.createElement('canvas');
   var ctx = canvas.getContext('2d');
@@ -7119,17 +7135,46 @@ function downloadStatblockById(sb, cardId, tokenId) {
 
   // Token circle
   var tcx = W/2;
-  ctx.save();
-  ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2); ctx.clip();
-  ctx.fillStyle = GOLD; ctx.fillRect(tcx-TOKEN_R, TOKEN_CY-TOKEN_R, TOKEN_R*2, TOKEN_R*2);
-  ctx.restore();
-  // Initial letter fallback
-  ctx.fillStyle = '#fdf6e3'; ctx.font = 'bold 48px Georgia';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText((sb.name||'?').charAt(0).toUpperCase(), tcx, TOKEN_CY);
-  ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2);
-  ctx.strokeStyle = RED; ctx.lineWidth = 3; ctx.stroke();
+  function drawTokenBorderAndFinish() {
+    ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2);
+    ctx.strokeStyle = RED; ctx.lineWidth = 3; ctx.stroke();
+    drawRest();
+  }
+  if(art && art.data) {
+    var isSvg = art.type === 'svg';
+    var svgBlob = isSvg ? new Blob([art.data], {type:'image/svg+xml'}) : null;
+    var artUrl = isSvg ? URL.createObjectURL(svgBlob) : art.data;
+    var artImg = new Image();
+    artImg.onload = function() {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2); ctx.clip();
+      ctx.drawImage(artImg, tcx-TOKEN_R, TOKEN_CY-TOKEN_R, TOKEN_R*2, TOKEN_R*2);
+      ctx.restore();
+      if(isSvg) URL.revokeObjectURL(artUrl);
+      drawTokenBorderAndFinish();
+    };
+    artImg.onerror = function() {
+      if(isSvg) URL.revokeObjectURL(artUrl);
+      drawFallbackToken();
+      drawTokenBorderAndFinish();
+    };
+    artImg.src = artUrl;
+  } else {
+    drawFallbackToken();
+    drawTokenBorderAndFinish();
+  }
 
+  function drawFallbackToken() {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(tcx, TOKEN_CY, TOKEN_R, 0, Math.PI*2); ctx.clip();
+    ctx.fillStyle = GOLD; ctx.fillRect(tcx-TOKEN_R, TOKEN_CY-TOKEN_R, TOKEN_R*2, TOKEN_R*2);
+    ctx.restore();
+    ctx.fillStyle = '#fdf6e3'; ctx.font = 'bold 48px Georgia';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText((sb.name||'?').charAt(0).toUpperCase(), tcx, TOKEN_CY);
+  }
+
+  function drawRest() {
   ctx.textBaseline = 'top';
 
   // Name
@@ -7201,11 +7246,18 @@ function downloadStatblockById(sb, cardId, tokenId) {
     });
   });
 
-  // Trigger download
-  var link = document.createElement('a');
-  link.download = (sb.name||'statblock').replace(/\s+/g,'_') + '.png';
-  link.href = canvas.toDataURL('image/png');
-  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  if(callback) callback(canvas);
+  } // end drawRest
+}
+
+function downloadStatblockById(sb, cardId, tokenId) {
+  var art = getArtFromTokenElement(tokenId);
+  renderStatblockToCanvas(sb, art, function(canvas) {
+    var link = document.createElement('a');
+    link.download = (sb.name||'statblock').replace(/\s+/g,'_') + '.png';
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  });
 }
 
 function downloadStatblock() {
@@ -9359,14 +9411,18 @@ function mapIDBGetAllKeys(cb) {
   });
 }
 
-// ── Token Library: IndexedDB storage for 3D print files + PNG token sheets ──
+// ── Token/Statblock Library: IndexedDB storage for 3D print files + PNG sheets ──
 var _tokenDB = null, _tokenDBReady = false, _tokenDBQueue = [];
 function getTokenDB(cb) {
   if(_tokenDBReady && _tokenDB) { cb(_tokenDB); return; }
   _tokenDBQueue.push(cb);
   if(_tokenDBQueue.length > 1) return;
-  var req = indexedDB.open('LoreboundTokens', 1);
-  req.onupgradeneeded = function(e){ e.target.result.createObjectStore('files'); };
+  var req = indexedDB.open('LoreboundTokens', 2);
+  req.onupgradeneeded = function(e){
+    var db = e.target.result;
+    if(!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+    if(!db.objectStoreNames.contains('statblocks')) db.createObjectStore('statblocks');
+  };
   req.onsuccess = function(e){ _tokenDB=e.target.result; _tokenDBReady=true; var q=_tokenDBQueue.splice(0); q.forEach(function(fn){fn(_tokenDB);}); };
   req.onerror = function(){ console.error('LoreboundTokens IDB failed'); _tokenDBQueue=[]; };
 }
@@ -9379,9 +9435,82 @@ function tokenIDBGet(key, cb) {
 function tokenIDBDelete(key, cb) {
   getTokenDB(function(db){ var tx=db.transaction('files','readwrite'); var req=tx.objectStore('files').delete(key); req.onsuccess=function(){if(cb)cb();}; req.onerror=function(){if(cb)cb();}; });
 }
+function statblockIDBSet(key, value, cb) {
+  getTokenDB(function(db){ var tx=db.transaction('statblocks','readwrite'); var req=tx.objectStore('statblocks').put(value,key); req.onsuccess=function(){if(cb)cb(true);}; req.onerror=function(){if(cb)cb(false);}; });
+}
+function statblockIDBGet(key, cb) {
+  getTokenDB(function(db){ var tx=db.transaction('statblocks','readonly'); var req=tx.objectStore('statblocks').get(key); req.onsuccess=function(){cb(req.result||null);}; req.onerror=function(){cb(null);}; });
+}
+function statblockIDBDelete(key, cb) {
+  getTokenDB(function(db){ var tx=db.transaction('statblocks','readwrite'); var req=tx.objectStore('statblocks').delete(key); req.onsuccess=function(){if(cb)cb();}; req.onerror=function(){if(cb)cb();}; });
+}
 
 function loadTokenFilesMeta() { try{return JSON.parse(localStorage.getItem('fg_token_files')||'[]');}catch(e){return [];} }
 function saveTokenFilesMeta(list) { localStorage.setItem('fg_token_files', JSON.stringify(list)); }
+function loadStatblockFilesMeta() { try{return JSON.parse(localStorage.getItem('fg_statblock_files')||'[]');}catch(e){return [];} }
+function saveStatblockFilesMeta(list) { localStorage.setItem('fg_statblock_files', JSON.stringify(list)); }
+
+// Called automatically whenever a statblock finishes generating (with or without art) — no prompts, just saves.
+function autoSaveStatblockPng(sb, art) {
+  renderStatblockToCanvas(sb, art, function(canvas) {
+    var pngData = canvas.toDataURL('image/png');
+    var id = 'stat_'+Date.now()+'_'+Math.floor(Math.random()*10000);
+    statblockIDBSet(id, pngData, function(ok) {
+      if(ok) {
+        var meta = loadStatblockFilesMeta();
+        meta.push({id:id, name:(sb.name||'Statblock')+'.png', size:Math.round(pngData.length*0.75), createdAt:Date.now()});
+        saveStatblockFilesMeta(meta);
+        if(document.getElementById('tab-statblocks') && document.getElementById('tab-statblocks').classList.contains('active')) renderStatblockLibrary();
+      }
+    });
+  });
+}
+
+function renderStatblockLibrary() {
+  var list = document.getElementById('statblock-library-list');
+  var empty = document.getElementById('statblock-library-empty');
+  if(!list) return;
+  var meta = loadStatblockFilesMeta().slice().sort(function(a,b){return b.createdAt-a.createdAt;});
+  var search = (document.getElementById('statblock-search')||{}).value || '';
+  var f = search.toLowerCase();
+  var filtered = f ? meta.filter(function(m){return m.name.toLowerCase().indexOf(f)!==-1;}) : meta;
+  if(!filtered.length) { list.innerHTML=''; if(empty) empty.classList.remove('hidden'); return; }
+  if(empty) empty.classList.add('hidden');
+  list.innerHTML = filtered.map(function(m) {
+    var sizeStr = m.size > 1048576 ? (m.size/1048576).toFixed(1)+' MB' : Math.round(m.size/1024)+' KB';
+    return '<div class="token-card"><div class="token-card-thumb" id="sbthumbwrap_'+m.id+'"><img id="sbthumb_'+m.id+'" alt=""></div>'
+      + '<div class="token-card-name" title="'+m.name.replace(/"/g,'&quot;')+'">'+m.name.replace(/</g,'&lt;')+'</div>'
+      + '<div class="token-card-meta">PNG &middot; '+sizeStr+'</div>'
+      + '<div class="token-card-btns"><button class="btn-ghost btn-sm" onclick="downloadStatblockFile(\''+m.id+'\')">&#11015;</button><button class="btn-ghost btn-sm" onclick="deleteStatblockFile(\''+m.id+'\')" style="color:var(--danger);border-color:var(--danger)">&#10005;</button></div></div>';
+  }).join('');
+  filtered.forEach(function(m) {
+    statblockIDBGet(m.id, function(data) {
+      var img = document.getElementById('sbthumb_'+m.id);
+      if(img && data) img.src = data;
+    });
+  });
+}
+
+function downloadStatblockFile(id) {
+  var meta = loadStatblockFilesMeta().find(function(m){return m.id===id;});
+  if(!meta) return;
+  statblockIDBGet(id, function(data) {
+    if(!data) { alert('File data not found.'); return; }
+    var a = document.createElement('a');
+    a.href = data; a.download = meta.name;
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+}
+
+function deleteStatblockFile(id) {
+  if(!confirm('Delete this statblock image? This cannot be undone.')) return;
+  statblockIDBDelete(id, function() {
+    saveStatblockFilesMeta(loadStatblockFilesMeta().filter(function(m){return m.id!==id;}));
+    renderStatblockLibrary();
+  });
+}
+
+
 
 var _tokenFilter = 'all';
 function setTokenFilter(f, btn) {
