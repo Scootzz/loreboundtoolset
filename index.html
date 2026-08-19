@@ -6906,16 +6906,20 @@ function generateStatblockArtIllustrated(sb,desc,callback){
     if(controller) controller.abort();
     if(callback) callback(null);
   }, 45000);
-  fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+imgKey},body:JSON.stringify({model:'gpt-image-1-mini',prompt:prompt,n:1,size:'1024x1024',quality:'low'}),signal:controller?controller.signal:undefined})
+  fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+imgKey},body:JSON.stringify({model:'gpt-image-1-mini',prompt:prompt,n:1,size:'1024x1024'}),signal:controller?controller.signal:undefined})
   .then(function(res){return res.json();})
   .then(function(data){
     clearTimeout(timer); if(done) return; done=true;
-    if(data.error || !data.data || !data.data[0]) { if(callback)callback(null); return; }
+    if(data.error || !data.data || !data.data[0]) {
+      console.error('OpenAI image generation error:', data.error || data);
+      if(callback)callback(null); return;
+    }
     var b64 = data.data[0].b64_json;
-    if(!b64){ if(callback)callback(null); return; }
+    if(!b64){ console.error('OpenAI response had no b64_json:', data); if(callback)callback(null); return; }
     if(callback)callback('data:image/png;base64,'+b64);
   })
-  .catch(function(){
+  .catch(function(err){
+    console.error('OpenAI image generation fetch failed:', err);
     clearTimeout(timer); if(done) return; done=true;
     if(callback)callback(null);
   });
