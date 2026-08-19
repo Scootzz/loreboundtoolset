@@ -469,19 +469,63 @@ select option{background:#1a1208}
   #tab-combat{--accent:#cd6a5a;--tab-glow:#cd4a4a;--tab-glow-soft:rgba(205,74,74,0.4);--tab-glow-bg:rgba(205,74,74,0.08)}
   #tab-naval{--accent:#5a9adf;--tab-glow:#4a8acd;--tab-glow-soft:rgba(74,138,205,0.4);--tab-glow-bg:rgba(74,138,205,0.08)}
   #tab-forge{--accent:#d4903a;--tab-glow:#d4763a;--tab-glow-soft:rgba(212,118,58,0.4);--tab-glow-bg:rgba(212,118,58,0.08)}
+  #tab-settlement{--accent:#63a373;--tab-glow:#4a8a5a;--tab-glow-soft:rgba(74,138,90,0.4);--tab-glow-bg:rgba(74,138,90,0.08)}
+  #tab-pcs{--accent:#9373e2;--tab-glow:#7a5ac9;--tab-glow-soft:rgba(122,90,201,0.4);--tab-glow-bg:rgba(122,90,201,0.08)}
+  #tab-npcs{--accent:#53c1c1;--tab-glow:#3aa8a8;--tab-glow-soft:rgba(58,168,168,0.4);--tab-glow-bg:rgba(58,168,168,0.08)}
+  #tab-timeline{--accent:#b9a373;--tab-glow:#a08a5a;--tab-glow-soft:rgba(160,138,90,0.4);--tab-glow-bg:rgba(160,138,90,0.08)}
+  #tab-crafting{--accent:#a38353;--tab-glow:#8a6a3a;--tab-glow-soft:rgba(138,106,58,0.4);--tab-glow-bg:rgba(138,106,58,0.08)}
+  #tab-store{--accent:#d19f53;--tab-glow:#b8863a;--tab-glow-soft:rgba(184,134,58,0.4);--tab-glow-bg:rgba(184,134,58,0.08)}
+  #tab-sessions-main{--accent:#c983a3;--tab-glow:#b06a8a;--tab-glow-soft:rgba(176,106,138,0.4);--tab-glow-bg:rgba(176,106,138,0.08)}
+  #tab-rumours-main{--accent:#b36393;--tab-glow:#9a4a7a;--tab-glow-soft:rgba(154,74,122,0.4);--tab-glow-bg:rgba(154,74,122,0.08)}
+  #tab-factions{--accent:#a34363;--tab-glow:#8a2a4a;--tab-glow-soft:rgba(138,42,74,0.4);--tab-glow-bg:rgba(138,42,74,0.08)}
+  #tab-music{--accent:#ed83b3;--tab-glow:#d46a9a;--tab-glow-soft:rgba(212,106,154,0.4);--tab-glow-bg:rgba(212,106,154,0.08)}
+  #tab-tokens{--accent:#a3aec9;--tab-glow:#8a95b0;--tab-glow-soft:rgba(138,149,176,0.4);--tab-glow-bg:rgba(138,149,176,0.08)}
   /* Sidebar's "you are here" marker follows the open tab's theme too */
   body[data-tab="combat"] .nav-drawer .main-tab.active{color:#cd6a5a;border-left-color:#cd4a4a;background:rgba(205,74,74,0.08)}
   body[data-tab="naval"] .nav-drawer .main-tab.active{color:#5a9adf;border-left-color:#4a8acd;background:rgba(74,138,205,0.08)}
   body[data-tab="forge"] .nav-drawer .main-tab.active{color:#d4903a;border-left-color:#d4763a;background:rgba(212,118,58,0.08)}
+  body[data-tab="settlement"] .nav-drawer .main-tab.active{color:#63a373;border-left-color:#4a8a5a;background:rgba(74,138,90,0.08)}
+  body[data-tab="pcs"] .nav-drawer .main-tab.active{color:#9373e2;border-left-color:#7a5ac9;background:rgba(122,90,201,0.08)}
+  body[data-tab="npcs"] .nav-drawer .main-tab.active{color:#53c1c1;border-left-color:#3aa8a8;background:rgba(58,168,168,0.08)}
+  body[data-tab="timeline"] .nav-drawer .main-tab.active{color:#b9a373;border-left-color:#a08a5a;background:rgba(160,138,90,0.08)}
+  body[data-tab="crafting"] .nav-drawer .main-tab.active{color:#a38353;border-left-color:#8a6a3a;background:rgba(138,106,58,0.08)}
+  body[data-tab="store"] .nav-drawer .main-tab.active{color:#d19f53;border-left-color:#b8863a;background:rgba(184,134,58,0.08)}
+  body[data-tab="sessions-main"] .nav-drawer .main-tab.active{color:#c983a3;border-left-color:#b06a8a;background:rgba(176,106,138,0.08)}
+  body[data-tab="rumours-main"] .nav-drawer .main-tab.active{color:#b36393;border-left-color:#9a4a7a;background:rgba(154,74,122,0.08)}
+  body[data-tab="factions"] .nav-drawer .main-tab.active{color:#a34363;border-left-color:#8a2a4a;background:rgba(138,42,74,0.08)}
+  body[data-tab="music"] .nav-drawer .main-tab.active{color:#ed83b3;border-left-color:#d46a9a;background:rgba(212,106,154,0.08)}
+  body[data-tab="tokens"] .nav-drawer .main-tab.active{color:#a3aec9;border-left-color:#8a95b0;background:rgba(138,149,176,0.08)}
 
   /* The page's etched relief edge (added above for desktop) glows with the same theme */
   @media(min-width:1000px){
     body[data-tab="combat"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(205,74,74,.18)}
     body[data-tab="naval"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(74,138,205,.18)}
     body[data-tab="forge"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(212,118,58,.18)}
+    body[data-tab="settlement"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(74,138,90,0.18)}
+    body[data-tab="pcs"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(122,90,201,0.18)}
+    body[data-tab="npcs"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(58,168,168,0.18)}
+    body[data-tab="timeline"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(160,138,90,0.18)}
+    body[data-tab="crafting"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(138,106,58,0.18)}
+    body[data-tab="store"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(184,134,58,0.18)}
+    body[data-tab="sessions-main"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(176,106,138,0.18)}
+    body[data-tab="rumours-main"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(154,74,122,0.18)}
+    body[data-tab="factions"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(138,42,74,0.18)}
+    body[data-tab="music"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(212,106,154,0.18)}
+    body[data-tab="tokens"] #app{box-shadow:-10px 0 24px -12px rgba(0,0,0,.4),0 0 26px rgba(138,149,176,0.18)}
     body[data-tab="combat"] #main-nav-bar{border-bottom-color:#cd4a4a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(205,74,74,.35)}
     body[data-tab="naval"] #main-nav-bar{border-bottom-color:#4a8acd !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(74,138,205,.35)}
     body[data-tab="forge"] #main-nav-bar{border-bottom-color:#d4763a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,118,58,.35)}
+    body[data-tab="settlement"] #main-nav-bar{border-bottom-color:#4a8a5a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(74,138,90,0.35)}
+    body[data-tab="pcs"] #main-nav-bar{border-bottom-color:#7a5ac9 !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(122,90,201,0.35)}
+    body[data-tab="npcs"] #main-nav-bar{border-bottom-color:#3aa8a8 !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(58,168,168,0.35)}
+    body[data-tab="timeline"] #main-nav-bar{border-bottom-color:#a08a5a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(160,138,90,0.35)}
+    body[data-tab="crafting"] #main-nav-bar{border-bottom-color:#8a6a3a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(138,106,58,0.35)}
+    body[data-tab="store"] #main-nav-bar{border-bottom-color:#b8863a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(184,134,58,0.35)}
+    body[data-tab="sessions-main"] #main-nav-bar{border-bottom-color:#b06a8a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(176,106,138,0.35)}
+    body[data-tab="rumours-main"] #main-nav-bar{border-bottom-color:#9a4a7a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(154,74,122,0.35)}
+    body[data-tab="factions"] #main-nav-bar{border-bottom-color:#8a2a4a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(138,42,74,0.35)}
+    body[data-tab="music"] #main-nav-bar{border-bottom-color:#d46a9a !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(212,106,154,0.35)}
+    body[data-tab="tokens"] #main-nav-bar{border-bottom-color:#8a95b0 !important;box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 12px -6px rgba(138,149,176,0.35)}
   }
 
   /* ═══ TOKEN LIBRARY — file cards for 3D print files and PNG token sheets ═══ */
@@ -509,18 +553,19 @@ select option{background:#1a1208}
   body{--motif-icon:none;--motif-color:var(--gold)}
   body[data-tab="welcome"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M15 72 L15 34 L30 50 L50 18 L70 50 L85 34 L85 72 Z'/></svg>")}
   body[data-tab="forge"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='46' y='18' width='8' height='68' rx='3'/><path d='M50 14 L82 24 Q88 40 70 49 L50 40 Z'/><path d='M50 14 L18 24 Q12 40 30 49 L50 40 Z'/></svg>");--motif-color:#d4763a}
-  body[data-tab="settlement"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='18' y='42' width='64' height='46'/><rect x='18' y='24' width='13' height='18'/><rect x='43' y='24' width='14' height='18'/><rect x='69' y='24' width='13' height='18'/></svg>")}
-  body[data-tab="pcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g stroke='black' stroke-width='7' stroke-linecap='round' fill='none'><path d='M14 14 L86 86 M14 22 L14 14 L22 14'/><path d='M86 14 L14 86 M86 22 L86 14 L78 14'/></g></svg>")}
-  body[data-tab="npcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='17'/><path d='M18 90 Q18 54 50 54 Q82 54 82 90 Z'/></svg>")}
-  body[data-tab="timeline"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M24 12 H76 L54 50 L76 88 H24 L46 50 Z' fill='none' stroke='black' stroke-width='7'/></svg>")}
+  body[data-tab="settlement"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='18' y='42' width='64' height='46'/><rect x='18' y='24' width='13' height='18'/><rect x='43' y='24' width='14' height='18'/><rect x='69' y='24' width='13' height='18'/></svg>");--motif-color:#4a8a5a}
+  body[data-tab="pcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g stroke='black' stroke-width='7' stroke-linecap='round' fill='none'><path d='M14 14 L86 86 M14 22 L14 14 L22 14'/><path d='M86 14 L14 86 M86 22 L86 14 L78 14'/></g></svg>");--motif-color:#7a5ac9}
+  body[data-tab="npcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='17'/><path d='M18 90 Q18 54 50 54 Q82 54 82 90 Z'/></svg>");--motif-color:#3aa8a8}
+  body[data-tab="timeline"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M24 12 H76 L54 50 L76 88 H24 L46 50 Z' fill='none' stroke='black' stroke-width='7'/></svg>");--motif-color:#a08a5a}
   body[data-tab="combat"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='38' r='28'/><rect x='34' y='58' width='32' height='22' rx='4'/></svg>");--motif-color:#cd4a4a}
-  body[data-tab="crafting"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 22 Q30 12 12 20 V80 Q30 72 50 80 Q70 72 88 80 V20 Q70 12 50 22 Z' fill='none' stroke='black' stroke-width='6'/></svg>")}
-  body[data-tab="store"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='47' y='10' width='6' height='72'/><rect x='28' y='86' width='44' height='6'/><path d='M18 30 H82' stroke='black' stroke-width='5'/><circle cx='18' cy='44' r='13' fill='none' stroke='black' stroke-width='5'/><circle cx='82' cy='44' r='13' fill='none' stroke='black' stroke-width='5'/></svg>")}
-  body[data-tab="sessions-main"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M88 8 Q42 18 20 70 L14 92 L36 86 Q72 58 88 8 Z'/></svg>")}
-  body[data-tab="rumours-main"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M8 50 Q50 8 92 50 Q50 92 8 50 Z' fill='none' stroke='black' stroke-width='6'/><circle cx='50' cy='50' r='15'/></svg>")}
-  body[data-tab="factions"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 8 L88 50 L50 92 L12 50 Z'/></svg>")}
-  body[data-tab="music"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='28' cy='76' r='14'/><rect x='40' y='12' width='7' height='64'/><path d='M47 12 Q78 24 78 46 L69 46 Q69 30 47 21 Z'/></svg>")}
+  body[data-tab="crafting"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 22 Q30 12 12 20 V80 Q30 72 50 80 Q70 72 88 80 V20 Q70 12 50 22 Z' fill='none' stroke='black' stroke-width='6'/></svg>");--motif-color:#8a6a3a}
+  body[data-tab="store"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='47' y='10' width='6' height='72'/><rect x='28' y='86' width='44' height='6'/><path d='M18 30 H82' stroke='black' stroke-width='5'/><circle cx='18' cy='44' r='13' fill='none' stroke='black' stroke-width='5'/><circle cx='82' cy='44' r='13' fill='none' stroke='black' stroke-width='5'/></svg>");--motif-color:#b8863a}
+  body[data-tab="sessions-main"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M88 8 Q42 18 20 70 L14 92 L36 86 Q72 58 88 8 Z'/></svg>");--motif-color:#b06a8a}
+  body[data-tab="rumours-main"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M8 50 Q50 8 92 50 Q50 92 8 50 Z' fill='none' stroke='black' stroke-width='6'/><circle cx='50' cy='50' r='15'/></svg>");--motif-color:#9a4a7a}
+  body[data-tab="factions"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 8 L88 50 L50 92 L12 50 Z'/></svg>");--motif-color:#8a2a4a}
+  body[data-tab="music"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='28' cy='76' r='14'/><rect x='40' y='12' width='7' height='64'/><path d='M47 12 Q78 24 78 46 L69 46 Q69 30 47 21 Z'/></svg>");--motif-color:#d46a9a}
   body[data-tab="naval"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='18' r='10' fill='none' stroke='black' stroke-width='6'/><rect x='47' y='26' width='6' height='56'/><path d='M18 55 Q18 88 50 92 Q82 88 82 55' fill='none' stroke='black' stroke-width='6'/><path d='M28 44 H72' stroke='black' stroke-width='6'/></svg>");--motif-color:#4a8acd}
+  body[data-tab="tokens"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill-rule='evenodd' d='M18 18 H82 V82 H18 Z M34 34 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M66 34 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M50 50 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M34 66 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M66 66 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0'/></svg>");--motif-color:#8a95b0}
 
   .motif-rail{display:none}
   @media(min-width:1450px){
@@ -546,19 +591,34 @@ select option{background:#1a1208}
   }
   @media(min-width:1000px){
     .nav-drawer{position:fixed}
-    .nav-drawer::after{
-      content:'';
+    .nav-emblem{
       position:absolute;
       bottom:14px;left:50%;
       transform:translateX(-50%);
       width:120px;height:120px;
+      border-radius:50%;
+      border:2px solid var(--motif-color);
+      background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--motif-color) 55%, white 8%), rgba(0,0,0,.5) 78%);
+      box-shadow:0 0 22px -2px var(--motif-color), inset 0 0 18px -4px rgba(0,0,0,.6);
+      display:flex;align-items:center;justify-content:center;
+      pointer-events:none;
+      transition:box-shadow .3s, border-color .3s;
+    }
+    .nav-emblem::before{
+      content:'';
+      position:absolute;inset:-5px;
+      border-radius:50%;
+      border:1px solid var(--motif-color);
+      opacity:.4;
+    }
+    .nav-emblem-icon{
+      width:58%;height:58%;
+      background:var(--motif-color);
       -webkit-mask-image:var(--motif-icon);mask-image:var(--motif-icon);
       -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
       -webkit-mask-position:center;mask-position:center;
       -webkit-mask-size:contain;mask-size:contain;
-      background:var(--motif-color);
-      opacity:.09;
-      pointer-events:none;
+      filter:drop-shadow(0 0 5px rgba(0,0,0,.7)) brightness(1.3);
     }
   }
 
@@ -660,6 +720,7 @@ select option{background:#1a1208}
   <button class="main-tab" data-tab="music" onclick="enterTab('music')">&#9836;&#xFE0E; Music</button>
   <button class="main-tab" data-tab="naval" onclick="enterTab('naval')">&#9875;&#xFE0E; Naval</button>
   <button class="main-tab" data-tab="tokens" onclick="enterTab('tokens')">&#127922;&#xFE0E; Tokens</button>
+  <div class="nav-emblem" aria-hidden="true"><div class="nav-emblem-icon"></div></div>
 </div>
 
 <div id="tab-welcome" class="tab-pane active">
@@ -758,6 +819,7 @@ select option{background:#1a1208}
 
       <button class="landing-tile" onclick="enterTab('sessions-main')"><span class="landing-icon">&#128221;&#xFE0E;</span><span class="landing-name">Sessions</span></button>
       <button class="landing-tile" onclick="enterTab('rumours-main')"><span class="landing-icon">&#128065;&#xFE0E;</span><span class="landing-name">Rumours</span></button>
+      <button class="landing-tile" onclick="enterTab('tokens')"><span class="landing-icon">&#127922;&#xFE0E;</span><span class="landing-name">Tokens</span></button>
     </div>
   </div>
 </div><!-- /tab-welcome -->
@@ -990,11 +1052,12 @@ select option{background:#1a1208}
       <select id="npc-region-filter" onchange="onRegionFilterChange()" style="font-size:13px;min-width:110px">
         <option value="">All Regions</option>
       </select>
-      <select id="npc-location-filter" onchange="renderNpcs()" style="font-size:13px;min-width:120px">
+      <select id="npc-location-filter" onchange="renderNpcs();updateNpcMapButtons()" style="font-size:13px;min-width:120px">
         <option value="">All Locations</option>
       </select>
-      <button class="btn-ghost btn-sm" onclick="openWorldMapDirect()" title="World Map" style="white-space:nowrap;font-size:15px;padding:7px 12px">&#127760; World</button>
-      <button class="btn-ghost btn-sm" id="npc-map-btn" onclick="openLocationMapModal()" title="View map for selected region/location" style="white-space:nowrap;font-size:15px;padding:7px 12px">&#128506; Map</button>
+      <button class="btn-ghost btn-sm" id="npc-world-btn" onclick="openWorldMapDirect()" title="World Map" style="white-space:nowrap;font-size:15px;padding:7px 12px;border-color:var(--gold-dim);color:var(--gold)">&#127760; World</button>
+      <button class="btn-ghost btn-sm" id="npc-region-btn" onclick="openNpcRegionMap()" title="View this region's map" style="white-space:nowrap;font-size:15px;padding:7px 12px;border-color:var(--gold-dim);color:var(--gold)">&#128506; Region</button>
+      <button class="btn-ghost btn-sm" id="npc-location-btn" onclick="openNpcLocationMap()" title="View this location's map" style="white-space:nowrap;font-size:15px;padding:7px 12px;border-color:var(--gold-dim);color:var(--gold);display:none">&#128204; Location</button>
     </div>
     <div id="pdf-import-status" class="hidden" style="padding:10px;background:rgba(212,168,67,0.08);border:1px solid var(--border);border-radius:4px;margin-bottom:10px;font-size:13px;color:var(--muted);font-style:italic"></div>
     <div id="npc-list"></div>
@@ -5548,7 +5611,7 @@ function enterTab(name) {
   if(typeof TAB_DESCS!=='undefined' && desc) desc.textContent = TAB_DESCS[name]||'';
 
   // Per-tab render calls
-  if(name==='npcs'){ populateRegionFilter(); populateLocationFilterForRegion(''); renderNpcs(); }
+  if(name==='npcs'){ populateRegionFilter(); populateLocationFilterForRegion(''); renderNpcs(); updateNpcMapButtons(); }
   if(name==='pcs'){ renderPcs(); loadPartyVehicleToPanel(); }
   if(name==='tokens') renderTokenLibrary();
   if(name==='settlement'){ renderSettlement(); populateBuildingSelect(); renderConstructedBuildings(); loadGoldToPanel(); }
@@ -8438,12 +8501,15 @@ function renderFactions() {
 function loadRegions() { try{return JSON.parse(localStorage.getItem('fg_regions')||'[]');}catch(e){return[];} }
 function saveRegions(r) { localStorage.setItem('fg_regions', JSON.stringify(r)); }
 
+var _mapForcedLevel = null; // null = auto (most specific selected), 'world'|'region'|'location' = force that level
 function getMapKey() {
   // Returns the localStorage key for the currently selected context
   var locSel = document.getElementById('npc-location-filter');
   var regSel = document.getElementById('npc-region-filter');
   var locId = locSel ? locSel.value : '';
   var regId = regSel ? regSel.value : '';
+  if(_mapForcedLevel==='world') { locId=''; regId=''; }
+  else if(_mapForcedLevel==='region') { locId=''; }
   if(locId) return 'fg_map_loc_' + locId;
   if(regId) return 'fg_map_reg_' + regId;
   return 'fg_map_world';
@@ -8454,6 +8520,8 @@ function getMapContextLabel() {
   var regSel = document.getElementById('npc-region-filter');
   var locId = locSel ? locSel.value : '';
   var regId = regSel ? regSel.value : '';
+  if(_mapForcedLevel==='world') { locId=''; regId=''; }
+  else if(_mapForcedLevel==='region') { locId=''; }
   if(locId) {
     var locs = loadLocations();
     var loc = locs.find(function(l){return l.id===locId;});
@@ -8649,6 +8717,7 @@ function onRegionFilterChange() {
   // Update location filter to show only locations in this region
   populateLocationFilterForRegion(sel.value);
   renderNpcs();
+  updateNpcMapButtons();
 }
 
 function populateLocationFilterForRegion(regionId) {
@@ -9511,7 +9580,8 @@ function migrateLocalStorageMaps() {
 }
 
 // ── Updated map functions (async, use IndexedDB) ──────────────────────
-function openLocationMapModal() {
+function openLocationMapModal(forceLevel) {
+  _mapForcedLevel = forceLevel || null;
   var key   = getMapKey();
   var label = getMapContextLabel();
   var title  = document.getElementById('location-map-title');
@@ -10567,8 +10637,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Reset zoom + pin mode when modal opens
   var origOpen = window.openLocationMapModal;
-  if(origOpen) window.openLocationMapModal = function(){
-    origOpen(); _mapScale=1; _mapPanX=0; _mapPanY=0; updateMapTransform();
+  if(origOpen) window.openLocationMapModal = function(forceLevel){
+    origOpen(forceLevel); _mapScale=1; _mapPanX=0; _mapPanY=0; updateMapTransform();
     _mapPinMode=false; var btn=document.getElementById('map-pin-mode-btn'); if(btn) btn.classList.remove('active');
     wrap.style.cursor='';
     setTimeout(syncMapImgWrap, 50);
@@ -11574,19 +11644,38 @@ function autoRollInitiative() {
 
 // -- World map direct access -----------------------------------
 function openWorldMapDirect() {
-  // Temporarily clear location/region filters to get world map
+  openLocationMapModal('world');
+}
+function openNpcRegionMap() {
+  openLocationMapModal('region');
+}
+function openNpcLocationMap() {
+  openLocationMapModal('location');
+}
+function updateNpcMapButtons() {
   var locSel = document.getElementById('npc-location-filter');
   var regSel = document.getElementById('npc-region-filter');
-  var prevLoc = locSel ? locSel.value : '';
-  var prevReg = regSel ? regSel.value : '';
-  if(locSel) locSel.value = '';
-  if(regSel) regSel.value = '';
-  if(typeof openLocationMapModal !== 'undefined') openLocationMapModal();
-  // Restore after modal opens
-  setTimeout(function(){
-    if(locSel) locSel.value = prevLoc;
-    if(regSel) regSel.value = prevReg;
-  }, 100);
+  var locId = locSel ? locSel.value : '';
+  var regId = regSel ? regSel.value : '';
+  var worldBtn = document.getElementById('npc-world-btn');
+  var regionBtn = document.getElementById('npc-region-btn');
+  var locationBtn = document.getElementById('npc-location-btn');
+  if(locId) {
+    // A specific location is selected: offer both its parent Region and the Location itself; World hidden.
+    if(worldBtn) worldBtn.style.display = 'none';
+    if(regionBtn) regionBtn.style.display = '';
+    if(locationBtn) locationBtn.style.display = '';
+  } else if(regId) {
+    // Only a region selected: just Region; World hidden.
+    if(worldBtn) worldBtn.style.display = 'none';
+    if(regionBtn) regionBtn.style.display = '';
+    if(locationBtn) locationBtn.style.display = 'none';
+  } else {
+    // Nothing selected: World + Region (Region degrades to world map until one is chosen).
+    if(worldBtn) worldBtn.style.display = '';
+    if(regionBtn) regionBtn.style.display = '';
+    if(locationBtn) locationBtn.style.display = 'none';
+  }
 }
 
 // -- Quick ref drawer — add spell slots + conditions -----------
