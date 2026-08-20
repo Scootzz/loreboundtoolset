@@ -454,6 +454,7 @@ select option{background:#1a1208}
 
     /* Turn the stacked Campaign Status list into a control-room grid */
     #dash-status-body{display:grid !important;grid-template-columns:repeat(3,1fr);gap:18px 22px;align-items:start}
+    #dash-status-body.dash-collapsed{display:none !important}
     #dash-status-body>div{margin-bottom:0 !important;padding-bottom:0 !important;border-bottom:none !important;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:5px;padding:14px !important}
     #dash-status-body>div:last-child{grid-column:1/-1;background:none;border:none;padding:14px 0 0 !important;border-top:1px solid var(--border)}
 
@@ -740,7 +741,7 @@ select option{background:#1a1208}
       <div class="panel-label" style="margin:0">&#128214; Campaign Status</div>
       <span id="dash-status-chev" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
     </div>
-    <div id="dash-status-body" style="margin-top:12px;display:none">
+    <div id="dash-status-body" class="dash-collapsed" style="margin-top:12px;display:none">
 
       <!-- Last Session -->
       <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
@@ -12148,7 +12149,7 @@ function toggleDashStatus() {
   _dashStatusOpen = !_dashStatusOpen;
   var body = document.getElementById('dash-status-body');
   var chev = document.getElementById('dash-status-chev');
-  if(body) body.style.display = _dashStatusOpen ? 'block' : 'none';
+  if(body) { body.style.display = _dashStatusOpen ? 'block' : 'none'; body.classList.toggle('dash-collapsed', !_dashStatusOpen); }
   if(chev) chev.style.transform = _dashStatusOpen ? '' : 'rotate(-90deg)';
 }
 
