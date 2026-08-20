@@ -380,7 +380,7 @@ select option{background:#1a1208}
   .gsearch-sub{font-size:11px;color:var(--muted);margin-left:auto}
   .gsearch-empty{padding:20px 18px;font-size:13px;color:var(--muted);font-style:italic}
   .panel-label.collapsible{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
-  .panel-label.collapsible::after{content:'\25B2';font-size:9px;color:var(--muted);transition:transform .2s}
+  .panel-label.collapsible::after{content:'\25B2';flex:none;height:auto;background:none;line-height:1;font-size:9px;color:var(--muted);transition:transform .2s}
   .panel-label.collapsible.collapsed::after{transform:rotate(180deg)}
   .panel-body.collapsed{display:none}
   .tracker-hp-bar{height:3px;border-radius:2px;margin-top:4px;background:var(--border);overflow:hidden}
@@ -10513,6 +10513,10 @@ document.addEventListener('DOMContentLoaded', function(){
       if(collapsible.some(function(t){ return el.textContent.includes(t); })) {
         makeCollapsible(el);
       }
+    });
+    // Every panel in the Combat and Settlement tabs collapses, regardless of its label text
+    document.querySelectorAll('#tab-combat .panel-label, #tab-settlement .panel-label').forEach(function(el){
+      makeCollapsible(el);
     });
   }, 500);
 });
