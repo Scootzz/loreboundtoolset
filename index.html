@@ -244,6 +244,8 @@ select option{background:#1a1208}
 .tracker-card{width:96px;background:var(--panel);border:2px solid var(--border);border-radius:6px;padding:10px 8px;cursor:pointer;transition:all .2s;position:relative;text-align:center}
 .tracker-card:hover{border-color:var(--border-lit);transform:translateY(-2px)}
 .tracker-card.active-turn{border-color:var(--tab-glow);box-shadow:0 0 0 3px var(--tab-glow-soft),0 0 20px var(--tab-glow-soft);background:var(--tab-glow-bg);transform:translateY(-3px)}
+.tracker-card.active-turn::before{content:'';position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--gold);filter:drop-shadow(0 0 4px var(--gold));animation:turnPointerBounce 1s ease-in-out infinite}
+@keyframes turnPointerBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(4px)}}
 .tracker-card.active-turn .tracker-init{color:var(--tab-glow);font-size:26px}
 .tracker-card.active-turn .tracker-name{color:var(--gold)}
 .tracker-card.pc-card-tracker{border-color:rgba(74,138,205,0.5)}
@@ -1213,6 +1215,7 @@ select option{background:#1a1208}
       <button class="btn-gold" id="start-combat-btn" onclick="startCombat()" style="padding:6px 14px;letter-spacing:.12em;font-size:11px;border:2px solid var(--gold)">&#9876; Start Combat</button>
       <button class="btn-ghost btn-sm" onclick="nextTrackerTurn()" id="tracker-next-btn">&#9654; Next Turn</button>
       <button class="btn-ghost btn-sm" onclick="autoRollInitiative()" title="Roll d20 initiative for all enemies" style="font-size:11px">&#127922; Roll Init</button>
+      <button class="btn-ghost btn-sm" onclick="addLairAction()" title="Add a generic Lair Action card at initiative 20" style="font-size:11px">&#127755; Add Lair</button>
       <button class="btn-gold btn-sm" id="end-combat-btn" onclick="endCombat()" style="border-color:#cd4a4a;background:#cd4a4a;color:#fff;display:none">&#9760; End Combat</button>
       <button class="btn-ghost btn-sm" onclick="resetTracker()" style="border-color:var(--danger);color:var(--danger)">&#8635; Reset</button>
     </div>
@@ -1251,7 +1254,7 @@ select option{background:#1a1208}
         <span style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em">CONDITIONS &#8212; </span><span id="condition-reminder-name" style="font-family:Cinzel,serif;font-size:10px;color:var(--gold)"></span>
         <div id="condition-reminder-list" style="margin-top:5px;display:flex;flex-direction:column;gap:4px"></div>
       </div>
-      <div id="tracker-bar-inner" style="display:grid;grid-template-columns:repeat(7,96px);gap:6px;padding:4px 2px;align-items:start"></div>
+      <div id="tracker-bar-inner" style="display:grid;grid-template-columns:repeat(7,96px);gap:6px;padding:18px 2px 4px;align-items:start"></div>
     </div>
   </div>
 
@@ -1608,9 +1611,10 @@ select option{background:#1a1208}
       <div><span class="field-label">Companion</span><input type="text" id="pc-companion" placeholder="e.g. Familiar, animal companion..."></div>
       <div><span class="field-label">Mount</span><input type="text" id="pc-mount" placeholder="e.g. Warhorse, riding pony..."></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:9px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:9px">
       <div><span class="field-label">Max HP</span><input type="number" id="pc-hp" min="1" placeholder="e.g. 44" style="text-align:center"></div>
       <div><span class="field-label">Armour Class</span><input type="number" id="pc-ac" min="1" max="30" placeholder="e.g. 16" style="text-align:center"></div>
+      <div><span class="field-label">Dex Score</span><input type="number" id="pc-dex" min="1" max="30" placeholder="e.g. 14" style="text-align:center" title="Used to break initiative ties in the Combat Tracker"></div>
       <div><span class="field-label">Passive Perception</span><input type="number" id="pc-pp" min="1" max="30" placeholder="e.g. 14" style="text-align:center"></div>
     </div>
     <span class="field-label">Spell Slots (current/max per level, e.g. 4/4 3/3 2/3)</span>
@@ -3827,9 +3831,9 @@ function openPcModal(id) {
   editingPcId=id;
   document.getElementById('pc-modal-title').textContent=id?'EDIT CHARACTER':'ADD CHARACTER';
   $cl('pc-delete-btn').toggle('hidden',!id);
-  if(id){var pc=loadPcs().find(function(p){return p.id===id;});if(pc){document.getElementById('pc-name').value=pc.name||'';document.getElementById('pc-class').value=pc.pcClass||'';document.getElementById('pc-level').value=pc.level||'';document.getElementById('pc-player').value=pc.player||'';document.getElementById('pc-notes').value=pc.notes||'';document.getElementById('pc-hp').value=pc.hp||'';document.getElementById('pc-ac').value=pc.ac||'';document.getElementById('pc-pp').value=pc.pp||'';document.getElementById('pc-companion').value=pc.companion||'';document.getElementById('pc-mount').value=pc.mount||'';
+  if(id){var pc=loadPcs().find(function(p){return p.id===id;});if(pc){document.getElementById('pc-name').value=pc.name||'';document.getElementById('pc-class').value=pc.pcClass||'';document.getElementById('pc-level').value=pc.level||'';document.getElementById('pc-player').value=pc.player||'';document.getElementById('pc-notes').value=pc.notes||'';document.getElementById('pc-hp').value=pc.hp||'';document.getElementById('pc-ac').value=pc.ac||'';document.getElementById('pc-dex').value=pc.dex||'';document.getElementById('pc-pp').value=pc.pp||'';document.getElementById('pc-companion').value=pc.companion||'';document.getElementById('pc-mount').value=pc.mount||'';
   document.getElementById('pc-pp').value=pc.pp||'';}}
-  else{document.getElementById('pc-name').value='';document.getElementById('pc-class').value='';document.getElementById('pc-level').value='';document.getElementById('pc-player').value='';document.getElementById('pc-notes').value='';document.getElementById('pc-hp').value='';document.getElementById('pc-ac').value='';document.getElementById('pc-pp').value='';document.getElementById('pc-companion').value='';document.getElementById('pc-mount').value='';
+  else{document.getElementById('pc-name').value='';document.getElementById('pc-class').value='';document.getElementById('pc-level').value='';document.getElementById('pc-player').value='';document.getElementById('pc-notes').value='';document.getElementById('pc-hp').value='';document.getElementById('pc-ac').value='';document.getElementById('pc-dex').value='';document.getElementById('pc-pp').value='';document.getElementById('pc-companion').value='';document.getElementById('pc-mount').value='';
   document.getElementById('pc-pp').value='';}
   $cl('pc-modal').add('show');
   document.getElementById('pc-name').focus();
@@ -3839,14 +3843,15 @@ function savePc() {
   var pcs=loadPcs();
   var hp=parseInt(document.getElementById('pc-hp').value)||null;
   var ac=parseInt(document.getElementById('pc-ac').value)||null;
+  var dex=parseInt(document.getElementById('pc-dex').value)||null;
   var pp=parseInt(document.getElementById('pc-pp').value)||null;
   var companion=document.getElementById('pc-companion').value.trim();
   var mount=document.getElementById('pc-mount').value.trim();
   if(editingPcId){
     var i=pcs.findIndex(function(p){return p.id===editingPcId;});
-    if(i!==-1){pcs[i].name=name;pcs[i].pcClass=document.getElementById('pc-class').value;pcs[i].level=document.getElementById('pc-level').value;pcs[i].player=document.getElementById('pc-player').value.trim();pcs[i].notes=document.getElementById('pc-notes').value.trim();pcs[i].hp=hp;pcs[i].ac=ac;pcs[i].pp=pp;pcs[i].companion=companion;pcs[i].mount=mount;pcs[i].pp=parseInt(document.getElementById('pc-pp').value)||null;}
+    if(i!==-1){pcs[i].name=name;pcs[i].pcClass=document.getElementById('pc-class').value;pcs[i].level=document.getElementById('pc-level').value;pcs[i].player=document.getElementById('pc-player').value.trim();pcs[i].notes=document.getElementById('pc-notes').value.trim();pcs[i].hp=hp;pcs[i].ac=ac;pcs[i].dex=dex;pcs[i].pp=pp;pcs[i].companion=companion;pcs[i].mount=mount;pcs[i].pp=parseInt(document.getElementById('pc-pp').value)||null;}
   } else {
-    pcs.push({id:'pc_'+Date.now(),name:name,pcClass:document.getElementById('pc-class').value,level:document.getElementById('pc-level').value,player:document.getElementById('pc-player').value.trim(),notes:document.getElementById('pc-notes').value.trim(),plots:[],hp:hp,ac:ac,pp:parseInt(document.getElementById('pc-pp').value)||null,companion:companion,mount:mount});
+    pcs.push({id:'pc_'+Date.now(),name:name,pcClass:document.getElementById('pc-class').value,level:document.getElementById('pc-level').value,player:document.getElementById('pc-player').value.trim(),notes:document.getElementById('pc-notes').value.trim(),plots:[],hp:hp,ac:ac,dex:dex,pp:parseInt(document.getElementById('pc-pp').value)||null,companion:companion,mount:mount});
   }
   savePcs(pcs); closeModal('pc-modal'); renderPcs();
 }
@@ -4728,7 +4733,7 @@ function renderEnemyRows() {
     del.onclick = (function(idx) { return function() { enemyRows.splice(idx,1); renderEnemyRows(); }; })(i);
 
     div.appendChild(sel); div.appendChild(qty);
-    var _ll=document.createElement('label');_ll.style.cssText='display:flex;align-items:center;gap:3px;font-size:10px;color:var(--gold);font-family:Cinzel,serif;cursor:pointer;padding:2px 5px;border:1px solid var(--gold-dim);border-radius:3px;white-space:nowrap';var _lc=document.createElement('input');_lc.type='checkbox';_lc.checked=!!row.legendary;_lc.onchange=(function(ri){return function(){enemyRows[ri].legendary=this.checked;};})(i);_ll.appendChild(_lc);_ll.appendChild(document.createTextNode(' LEG'));div.appendChild(_ll); div.appendChild(del);
+    var _ll=document.createElement('label');_ll.style.cssText='display:flex;align-items:center;gap:3px;font-size:10px;color:var(--gold);font-family:Cinzel,serif;cursor:pointer;padding:7px 8px;border:1px solid var(--gold-dim);border-radius:4px;white-space:nowrap';var _lc=document.createElement('input');_lc.type='checkbox';_lc.style.cssText='width:auto;flex-shrink:0';_lc.checked=!!row.legendary;_lc.onchange=(function(ri){return function(){enemyRows[ri].legendary=this.checked;};})(i);_ll.appendChild(_lc);_ll.appendChild(document.createTextNode(' LEG'));div.appendChild(_ll); div.appendChild(del);
     container.appendChild(div);
   });
 }
@@ -6099,7 +6104,9 @@ function renderTracker() {
       var ai = a.c.initiative!=null ? a.c.initiative : -1;
       var bi = b.c.initiative!=null ? b.c.initiative : -1;
       if(bi !== ai) return bi - ai;
-      return a.i - b.i; // stable: preserve original order on tie
+      var ad = a.c.dex||0, bd = b.c.dex||0;
+      if(bd !== ad) return bd - ad; // tie-break: higher Dex goes first
+      return a.i - b.i; // still tied: preserve original order
     });
 
   sorted.forEach(function(item, si) {
@@ -6119,14 +6126,17 @@ function renderTracker() {
       + (isActive ? ' active-turn' : '')
       + (isDead ? ' dead-card' : '');
 
-    if(hasConditions && !isActive) {
-      card.style.borderColor = firstCondCol;
-      card.style.boxShadow = '0 0 8px ' + firstCondCol + '66';
+    if(hasConditions) {
+      var _fc6 = firstCondCol.length===4 ? '#'+firstCondCol[1]+firstCondCol[1]+firstCondCol[2]+firstCondCol[2]+firstCondCol[3]+firstCondCol[3] : firstCondCol;
+      card.style.borderColor = _fc6;
+      card.style.boxShadow = isActive
+        ? '0 0 0 3px '+_fc6+'55, 0 0 22px '+_fc6+'99, 0 0 20px var(--tab-glow-soft)'
+        : '0 0 14px '+_fc6+'99, 0 0 4px '+_fc6;
     }
 
     var topLabel = '';
     if(isActive) {
-      topLabel = '<div style="font-size:9px;color:var(--gold);letter-spacing:.1em;font-weight:bold;margin-bottom:2px">YOUR TURN</div>';
+      topLabel = '<div style="margin-bottom:5px"><span style="font-size:9px;color:#1a1208;letter-spacing:.08em;font-weight:bold;background:var(--gold);border-radius:9px;padding:2px 8px;box-shadow:0 0 8px rgba(212,168,67,.6);white-space:nowrap">&#9654; YOUR TURN</span></div>';
       
     } else if(hasConditions) {
       topLabel = '<div style="font-size:8px;font-weight:bold;color:'+firstCondCol+';margin-bottom:1px">'
@@ -6137,16 +6147,25 @@ function renderTracker() {
     var initStyle = c.initiative==null ? 'color:var(--muted)' : '';
     var hpClass = hpPct<=0.25 ? 'hp-critical' : hpPct<=0.5 ? 'hp-low' : '';
 
+    if(c.isLair) {
+      card.innerHTML = topLabel
+        + '<div class="tracker-init"' + (initStyle?' style="'+initStyle+'"':'') + '>'+initDisplay+'</div>'
+        + '<div class="tracker-name" title="'+c.name+'">'+c.name+'</div>'
+        + '<div style="font-size:10px;color:var(--muted);font-style:italic;margin-top:2px">Environmental effect</div>';
+    } else {
     card.innerHTML = topLabel
       + '<div class="tracker-init"' + (initStyle?' style="'+initStyle+'"':'') + '>'+initDisplay+'</div>'
       + '<div class="tracker-name" title="'+c.name+'">'+c.name+'</div>'
       + '<div class="tracker-ac">AC '+(c.ac||'?')+'</div>'
       + '<div class="tracker-hp '+hpClass+'">'+(c.hpMax>0 ? c.hpCur+'/'+c.hpMax : '— HP')+'</div>';
+    }
 
-    // HP delta row for all combatants
-    if(c.hpMax > 0) {
-      var hpRow = document.createElement('div');
-      hpRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center';
+    // HP delta row for all combatants (except lair cards, which have no HP/AC concept) — always rendered so every card has the same shape
+    var hpRow = document.createElement('div');
+    hpRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center';
+    if(c.isLair) {
+      // no-op: lair cards skip HP/AC controls entirely
+    } else if(c.hpMax > 0) {
       var hpInput = document.createElement('input');
       hpInput.type = 'number';
       hpInput.min = '1';
@@ -6188,8 +6207,31 @@ function renderTracker() {
       hpRow.appendChild(hpInput);
       hpRow.appendChild(dmgBtn);
       hpRow.appendChild(healBtn);
-      card.appendChild(hpRow);
+    } else {
+      // No max HP known yet — offer an inline way to set it instead of silently hiding controls
+      var setHpInput = document.createElement('input');
+      setHpInput.type = 'number';
+      setHpInput.min = '1';
+      setHpInput.placeholder = 'set HP';
+      setHpInput.style.cssText = 'width:60px;font-size:12px;padding:3px 5px;text-align:center;background:var(--input-bg);border:1px solid var(--border);border-radius:3px;color:var(--text)';
+      var setHpBtn = document.createElement('button');
+      setHpBtn.innerHTML = '&#10003; Set';
+      setHpBtn.style.cssText = 'font-size:10px;padding:3px 7px;background:rgba(212,168,67,0.12);border:1px solid var(--gold-dim);color:var(--gold);border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.04em';
+      (function(oi, inp) {
+        var apply = function() {
+          var amt = parseInt(inp.value);
+          if(!amt || amt <= 0) { inp.focus(); return; }
+          trackerCombatants[oi].hpMax = amt;
+          trackerCombatants[oi].hpCur = amt;
+          renderTracker();
+        };
+        setHpBtn.onclick = apply;
+        inp.onkeydown = function(e) { if(e.key==='Enter') { e.preventDefault(); apply(); } };
+      })(origIdx, setHpInput);
+      hpRow.appendChild(setHpInput);
+      hpRow.appendChild(setHpBtn);
     }
+    if(!c.isLair) card.appendChild(hpRow);
 
     // Legendary / concentration badges on card
     if(c.legendary) {
@@ -6217,15 +6259,15 @@ function renderTracker() {
       rxBadge.textContent = 'REACTION';
       card.appendChild(rxBadge);
     }
+    var hpOuter = document.createElement('div');
+    hpOuter.style.cssText = 'height:3px;background:var(--border);border-radius:2px;margin:3px 0;overflow:hidden';
     if(c.hpMax > 0) {
-      var hpOuter = document.createElement('div');
-      hpOuter.style.cssText = 'height:3px;background:var(--border);border-radius:2px;margin:3px 0;overflow:hidden';
       var hpInner = document.createElement('div');
       var hpCol = hpPct>0.5?'#4a9a4a':hpPct>0.25?'#cd7a4a':'#cd4a4a';
       hpInner.style.cssText = 'height:100%;width:'+Math.max(0,hpPct*100)+'%;background:'+hpCol+';transition:width .3s';
       hpOuter.appendChild(hpInner);
-      card.appendChild(hpOuter);
     }
+    if(!c.isLair) card.appendChild(hpOuter);
 
     if(hasConditions) {
       var chipRow = document.createElement('div');
@@ -6337,6 +6379,15 @@ function renderTracker() {
   }
 }
 
+function addLairAction() {
+  trackerCombatants.push({
+    id:'tc_'+Date.now()+'_'+Math.random().toString(36).slice(2),
+    refId:null, name:'Lair Action', isEnemy:true, isLair:true,
+    initiative:20, hpCur:0, hpMax:0, ac:0, conditions:[]
+  });
+  renderTracker();
+}
+
 function addTrackerPcs() {
   var pcs = loadPcs();
   var selected = pcs.filter(function(p){return selectedCombatPcs[p.id];});
@@ -6346,7 +6397,7 @@ function addTrackerPcs() {
     trackerCombatants.push({
       id:'tc_'+Date.now()+'_'+Math.random().toString(36).slice(2),
       refId:pc.id, name:pc.name, isEnemy:false,
-      initiative:null, hpCur:0, hpMax:0, ac:0, conditions:[]
+      initiative:null, hpCur:pc.hp||0, hpMax:pc.hp||0, ac:pc.ac||0, dex:pc.dex||0, conditions:[]
     });
   });
   renderTracker();
