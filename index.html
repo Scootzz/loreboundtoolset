@@ -634,7 +634,7 @@ select option{background:#1a1208}
 <!-- API Key Modal -->
 <div class="modal-overlay" id="api-key-modal">
   <div class="modal-box" style="max-width:400px">
-    <div class="modal-title">API KEYS</div>
+    <div class="modal-title">SETTINGS</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Required for AI features (statblock generation, item forging, session recaps, etc.). Get yours free at <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">console.anthropic.com</a></p>
     <span class="field-label">Anthropic API Key</span>
     <input type="password" id="api-key-input" placeholder="sk-ant-..." style="margin-bottom:16px;font-family:monospace">
@@ -646,6 +646,16 @@ select option{background:#1a1208}
     <div class="modal-btns" style="margin-top:12px">
       <button class="btn-gold" style="flex:1" onclick="saveApiKey()">Save Keys</button>
       <button class="btn-ghost" onclick="closeModal('api-key-modal')">Cancel</button>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+      <div class="panel-label" style="margin-bottom:8px;font-size:10px">Backup &amp; Switch Devices</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Everything lives only in this browser &mdash; there's no cloud sync. To continue on another device: export a backup here, transfer the file to the other device (email, USB, cloud drive), then open Lorebound there and import it.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-gold btn-sm" onclick="exportData()">&#11015; Export Backup</button>
+        <button class="btn-ghost btn-sm" onclick="document.getElementById('import-input').click()">&#11014; Import Backup</button>
+        <input type="file" id="import-input" accept=".json" style="display:none">
+      </div>
+      <p style="font-size:11px;color:var(--muted);font-style:italic;margin-top:8px">Importing replaces all data on the device you import into &mdash; export from your other device first if it has anything you want to keep.</p>
     </div>
   </div>
 </div>
@@ -729,8 +739,7 @@ select option{background:#1a1208}
         
         
         
-        <button class="btn-ghost btn-sm" onclick="(function(){var m=document.getElementById('module-importer-modal');if(m){m.style.display='flex';m.classList.add('show');}else{alert('module modal not found');}})();" style="letter-spacing:.06em" title="Import a published module">&#128218; Import Module</button>
-        <button class="btn-ghost btn-sm" onclick="(function(){var m=document.getElementById('campaign-selector-modal');if(m){m.style.display='flex';m.classList.add('show');renderCampaignSelector();}else{alert('modal not found');}})();" style="letter-spacing:.06em" title="Switch campaigns">&#9812; Campaigns</button>
+        <button class="btn-ghost btn-sm" onclick="(function(){var m=document.getElementById('campaign-selector-modal');if(m){m.style.display='flex';m.classList.add('show');renderCampaignSelector();}else{alert('modal not found');}})();" style="letter-spacing:.06em" title="Switch campaigns or import a module">&#9812; Campaign</button>
       </div>
     </div>
   </div><!-- /dashboard-header -->
@@ -2475,7 +2484,10 @@ select option{background:#1a1208}
     <div id="campaign-selector-list" style="margin-bottom:12px"></div>
     <div class="modal-btns">
       <button class="btn-gold" style="flex:1" onclick="createCampaign()">+ New Campaign</button>
-      <button class="btn-ghost" id="close-locs-modal-btn" onclick="closeModal('campaign-selector-modal')">Close</button>
+      <button class="btn-ghost" onclick="(function(){closeModal('campaign-selector-modal');var m=document.getElementById('module-importer-modal');if(m){m.style.display='flex';m.classList.add('show');}})();" title="Import a published module (PDF, Word, or text) into the current campaign">&#128218; Import Module</button>
+    </div>
+    <div class="modal-btns" style="margin-top:8px">
+      <button class="btn-ghost" id="close-locs-modal-btn" onclick="closeModal('campaign-selector-modal')" style="flex:1">Close</button>
     </div>
   </div>
 </div>
@@ -5490,48 +5502,76 @@ function useRandomEncounter(creatures) {
 function exportData() {
   var data = {};
   var keys = [
-    'fg_api_key','fg_combat_history','fg_combats','fg_hb_items','fg_hb_components',
+    'fg_api_key','fg_image_api_key','fg_combat_history','fg_combats','fg_hb_items','fg_hb_components',
     'fg_homebrew','fg_locations','fg_npcs','fg_pcs','fg_rules_books','fg_session_notes',
     'fg_sessions','fg_settlement','fg_tlcards','fg_weblinks','fg_webnodes',
     'fg_factions','fg_rumours','fg_regions','fg_naval','fg_naval_crew','fg_naval_upgrades',
     'fg_constructed','fg_scenarios','fg_linear_events','fg_prep_docs','fg_weather',
-    'fg_playlists','fg_last_tab','fg_maps_migrated','fg_inventory','fg_party_gold','fg_gold_log','fg_loot_log','fg_campaign_name','fg_campaign_subtitle'
+    'fg_playlists','fg_last_tab','fg_maps_migrated','fg_inventory','fg_party_gold','fg_gold_log','fg_loot_log','fg_campaign_name','fg_campaign_subtitle',
+    'fg_token_files','fg_statblock_files','fg_party_vehicle'
   ];
   keys.forEach(function(k){ data[k] = localStorage.getItem(k); });
-  // Export IDB map images
-  var doExport = function(mapData) {
-    var blob = new Blob([JSON.stringify({version:2, data:data, maps:mapData})],{type:'application/json'});
+  // NPC map pins are stored under dynamically-named keys (fg_pins_<mapKey>) — sweep localStorage for all of them
+  for(var i=0;i<localStorage.length;i++){
+    var lsKey = localStorage.key(i);
+    if(lsKey && lsKey.indexOf('fg_pins_')===0) data[lsKey] = localStorage.getItem(lsKey);
+  }
+
+  var doExport = function(mapData, tokenFiles, statblockFiles) {
+    var blob = new Blob([JSON.stringify({version:3, data:data, maps:mapData, tokenFiles:tokenFiles, statblockFiles:statblockFiles})],{type:'application/json'});
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'Lorebound_backup_' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
     showToast && showToast('Backup exported ✓','success');
   };
-  if(typeof mapIDBGetAllKeys !== 'undefined') {
-    mapIDBGetAllKeys(function(keys2){
-      var maps = {}; var done = 0;
-      if(!keys2.length) { doExport(maps); return; }
-      keys2.forEach(function(k){
-        mapIDBGet(k,function(v){ maps[k]=v; done++;
-          if(done===keys2.length) doExport(maps);
-        });
+
+  var fetchStore = function(getAllKeysFn, getFn, cb) {
+    if(typeof getAllKeysFn !== 'function') { cb({}); return; }
+    getAllKeysFn(function(ks){
+      var out = {}; var done = 0;
+      if(!ks.length) { cb(out); return; }
+      ks.forEach(function(k){ getFn(k, function(v){ out[k]=v; done++; if(done===ks.length) cb(out); }); });
+    });
+  };
+
+  var maps = {}, tokenFiles = {}, statblockFiles = {};
+  var mapsFn = typeof mapIDBGetAllKeys !== 'undefined' ? function(cb){ mapIDBGetAllKeys(cb); } : null;
+  var tokFn  = typeof tokenDBGetAllKeysFrom !== 'undefined' ? function(cb){ tokenDBGetAllKeysFrom('files', cb); } : null;
+  var sbFn   = typeof tokenDBGetAllKeysFrom !== 'undefined' ? function(cb){ tokenDBGetAllKeysFrom('statblocks', cb); } : null;
+
+  fetchStore(mapsFn, function(k,cb){ mapIDBGet(k,cb); }, function(m){
+    maps = m;
+    fetchStore(tokFn, function(k,cb){ tokenIDBGet(k,cb); }, function(t){
+      tokenFiles = t;
+      fetchStore(sbFn, function(k,cb){ statblockIDBGet(k,cb); }, function(s){
+        statblockFiles = s;
+        doExport(maps, tokenFiles, statblockFiles);
       });
     });
-  } else { doExport({}); }
+  });
 }
 
 function importData(event) {
   var file=event.target.files[0]; if(!file)return;
-  if(!confirm('This will overwrite ALL your current campaign data. Are you sure?')){event.target.value='';return;}
+  if(!confirm('This will overwrite ALL your current campaign data on this device. Are you sure?')){event.target.value='';return;}
   var reader=new FileReader();
   reader.onload=function(e){
     try{
       var data=JSON.parse(e.target.result);
-      var payload=data.version===2?data.data:data;
+      var payload=(data.version>=2)?data.data:data;
       Object.keys(payload).forEach(function(k){if(payload[k]!==null)localStorage.setItem(k,payload[k]);});
-      if(data.version===2&&data.maps&&typeof mapIDBSet!=='undefined'){Object.keys(data.maps).forEach(function(k){if(data.maps[k])mapIDBSet(k,data.maps[k]);});}
+      if(data.version>=2 && data.maps && typeof mapIDBSet!=='undefined'){
+        Object.keys(data.maps).forEach(function(k){if(data.maps[k])mapIDBSet(k,data.maps[k]);});
+      }
+      if(data.version>=3 && data.tokenFiles && typeof tokenIDBSet!=='undefined'){
+        Object.keys(data.tokenFiles).forEach(function(k){if(data.tokenFiles[k])tokenIDBSet(k,data.tokenFiles[k]);});
+      }
+      if(data.version>=3 && data.statblockFiles && typeof statblockIDBSet!=='undefined'){
+        Object.keys(data.statblockFiles).forEach(function(k){if(data.statblockFiles[k])statblockIDBSet(k,data.statblockFiles[k]);});
+      }
       alert('Data imported successfully! Reloading...');
-      location.reload();
+      setTimeout(function(){ location.reload(); }, 300);
     }catch(err){alert('Import failed: '+err.message);}
     event.target.value='';
   };
@@ -9445,6 +9485,9 @@ function statblockIDBGet(key, cb) {
 }
 function statblockIDBDelete(key, cb) {
   getTokenDB(function(db){ var tx=db.transaction('statblocks','readwrite'); var req=tx.objectStore('statblocks').delete(key); req.onsuccess=function(){if(cb)cb();}; req.onerror=function(){if(cb)cb();}; });
+}
+function tokenDBGetAllKeysFrom(storeName, cb) {
+  getTokenDB(function(db){ var tx=db.transaction(storeName,'readonly'); var req=tx.objectStore(storeName).getAllKeys(); req.onsuccess=function(){cb(req.result||[]);}; req.onerror=function(){cb([]);}; });
 }
 
 function loadTokenFilesMeta() { try{return JSON.parse(localStorage.getItem('fg_token_files')||'[]');}catch(e){return [];} }
