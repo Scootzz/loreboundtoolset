@@ -2157,6 +2157,8 @@ select option{background:#1a1208}
     <div class="panel-label">Statblock Library</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">A printable PNG copy of every creature you generate in the Statblock Generator is saved here automatically &mdash; no prompts, no setup.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn-gold btn-sm" onclick="document.getElementById('statblock-file-upload').click()">&#11014; Upload File</button>
+      <input type="file" id="statblock-file-upload" accept=".png,.jpg,.jpeg,.pdf" multiple style="display:none" onchange="handleStatblockFileUpload(event)">
       <input type="text" id="statblock-search" placeholder="Search statblocks..." oninput="renderStatblockLibrary()" style="flex:1;min-width:140px">
     </div>
     <div id="statblock-library-empty" class="hidden" style="color:var(--muted);font-style:italic;font-size:13px;text-align:center;padding:30px 0">No statblocks yet. Generate one from the Statblock Generator in Reference &mdash; it'll show up here automatically.</div>
@@ -9523,17 +9525,45 @@ function renderStatblockLibrary() {
   if(empty) empty.classList.add('hidden');
   list.innerHTML = filtered.map(function(m) {
     var sizeStr = m.size > 1048576 ? (m.size/1048576).toFixed(1)+' MB' : Math.round(m.size/1024)+' KB';
-    return '<div class="token-card"><div class="token-card-thumb" id="sbthumbwrap_'+m.id+'"><img id="sbthumb_'+m.id+'" alt=""></div>'
+    var isImg = m.kind !== 'pdf';
+    var thumbHTML = isImg ? '<img id="sbthumb_'+m.id+'" alt="">' : '&#128196;';
+    return '<div class="token-card"><div class="token-card-thumb" id="sbthumbwrap_'+m.id+'">'+thumbHTML+'</div>'
       + '<div class="token-card-name" title="'+m.name.replace(/"/g,'&quot;')+'">'+m.name.replace(/</g,'&lt;')+'</div>'
-      + '<div class="token-card-meta">PNG &middot; '+sizeStr+'</div>'
+      + '<div class="token-card-meta">'+(m.kind==='pdf'?'PDF':'PNG')+' &middot; '+sizeStr+'</div>'
       + '<div class="token-card-btns"><button class="btn-ghost btn-sm" onclick="downloadStatblockFile(\''+m.id+'\')">&#11015;</button><button class="btn-ghost btn-sm" onclick="deleteStatblockFile(\''+m.id+'\')" style="color:var(--danger);border-color:var(--danger)">&#10005;</button></div></div>';
   }).join('');
   filtered.forEach(function(m) {
+    if(m.kind==='pdf') return;
     statblockIDBGet(m.id, function(data) {
       var img = document.getElementById('sbthumb_'+m.id);
       if(img && data) img.src = data;
     });
   });
+}
+
+function handleStatblockFileUpload(event) {
+  var files = Array.prototype.slice.call(event.target.files||[]);
+  if(!files.length) return;
+  var meta = loadStatblockFilesMeta();
+  var remaining = files.length;
+  files.forEach(function(file) {
+    var ext = (file.name.split('.').pop()||'').toLowerCase();
+    var kind = ext==='pdf' ? 'pdf' : 'png';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var id = 'sb_'+Date.now()+'_'+Math.floor(Math.random()*10000);
+      statblockIDBSet(id, e.target.result, function(ok) {
+        if(ok) {
+          meta.push({id:id, name:file.name, kind:kind, size:file.size, createdAt:Date.now()});
+          saveStatblockFilesMeta(meta);
+        }
+        remaining--;
+        if(remaining===0) renderStatblockLibrary();
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
 }
 
 function downloadStatblockFile(id) {
