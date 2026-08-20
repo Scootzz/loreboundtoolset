@@ -37,7 +37,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .main-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
 .main-tabs::-webkit-scrollbar{display:none}
 .main-tab{flex-shrink:0;padding:10px 12px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Cinzel',serif;font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:color .2s,border-color .2s;margin-bottom:-1px;white-space:nowrap}
-.nav-drawer .main-tab{color:var(--text);border-bottom:none;border-left:2px solid transparent;padding:10px 14px;font-size:10px;letter-spacing:.12em;display:flex;align-items:center;gap:8px;margin-bottom:0;opacity:0.8}.nav-drawer .main-tab:hover{color:var(--gold);opacity:1}.nav-drawer .main-tab.active{color:var(--gold);border-left-color:var(--gold);opacity:1;background:rgba(212,168,67,0.07)}
+.nav-drawer .main-tab{color:var(--text);border-bottom:none;border-left:2px solid transparent;padding:10px 14px;font-size:10px;letter-spacing:.12em;display:flex;align-items:center;gap:8px;margin-bottom:0;opacity:0.8}.nav-drawer .main-tab:hover{color:var(--gold);opacity:1}.nav-drawer .main-tab.active{color:var(--gold);border-left-color:var(--gold);opacity:1;background:rgba(212,168,67,0.07);text-shadow:0 0 10px rgba(212,168,67,.7)}
 .main-tab:hover{color:var(--text)}
 .main-tab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:bold}
 .sub-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px}
@@ -56,7 +56,7 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
 select{appearance:none;cursor:pointer}
 select option{background:#1a1208}
 /* Buttons */
-.btn-gold{background:linear-gradient(180deg,#2a1a06,#180e03);border:1px solid var(--border-lit);border-radius:4px;color:var(--gold);font-family:'Cinzel',serif;font-size:12px;letter-spacing:.15em;text-transform:uppercase;padding:10px 16px;cursor:pointer;transition:all .2s}
+.btn-gold{background:linear-gradient(180deg,#2a1a06,#180e03);border:1px solid var(--border-lit);border-radius:4px;color:var(--gold);font-family:'Cinzel',serif;font-size:12px;letter-spacing:.15em;text-transform:uppercase;padding:10px 16px;cursor:pointer;transition:all .2s;box-shadow:0 0 8px rgba(212,168,67,.22),inset 0 1px 0 rgba(255,255,255,.05)}
 .btn-gold:hover:not(:disabled){border-color:var(--gold);background:linear-gradient(180deg,#3a2510,#201408)}
 .btn-gold:disabled{opacity:.35;cursor:not-allowed}
 .btn-ghost{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:'Cinzel',serif;font-size:10px;letter-spacing:.1em;padding:6px 14px;cursor:pointer;transition:all .2s}
@@ -482,21 +482,21 @@ select option{background:#1a1208}
   #tab-tokens{--accent:#a3aec9;--tab-glow:#8a95b0;--tab-glow-soft:rgba(138,149,176,0.4);--tab-glow-bg:rgba(138,149,176,0.08)}
   #tab-statblocks{--accent:#e0b563;--tab-glow:#c9963a;--tab-glow-soft:rgba(201,150,58,0.4);--tab-glow-bg:rgba(201,150,58,0.08)}
   /* Sidebar's "you are here" marker follows the open tab's theme too */
-  body[data-tab="combat"] .nav-drawer .main-tab.active{color:#cd6a5a;border-left-color:#cd4a4a;background:rgba(205,74,74,0.08)}
-  body[data-tab="naval"] .nav-drawer .main-tab.active{color:#5a9adf;border-left-color:#4a8acd;background:rgba(74,138,205,0.08)}
-  body[data-tab="forge"] .nav-drawer .main-tab.active{color:#d4903a;border-left-color:#d4763a;background:rgba(212,118,58,0.08)}
-  body[data-tab="settlement"] .nav-drawer .main-tab.active{color:#63a373;border-left-color:#4a8a5a;background:rgba(74,138,90,0.08)}
-  body[data-tab="pcs"] .nav-drawer .main-tab.active{color:#9373e2;border-left-color:#7a5ac9;background:rgba(122,90,201,0.08)}
-  body[data-tab="npcs"] .nav-drawer .main-tab.active{color:#53c1c1;border-left-color:#3aa8a8;background:rgba(58,168,168,0.08)}
-  body[data-tab="timeline"] .nav-drawer .main-tab.active{color:#b9a373;border-left-color:#a08a5a;background:rgba(160,138,90,0.08)}
-  body[data-tab="crafting"] .nav-drawer .main-tab.active{color:#a38353;border-left-color:#8a6a3a;background:rgba(138,106,58,0.08)}
-  body[data-tab="store"] .nav-drawer .main-tab.active{color:#d19f53;border-left-color:#b8863a;background:rgba(184,134,58,0.08)}
-  body[data-tab="sessions-main"] .nav-drawer .main-tab.active{color:#c983a3;border-left-color:#b06a8a;background:rgba(176,106,138,0.08)}
-  body[data-tab="rumours-main"] .nav-drawer .main-tab.active{color:#b36393;border-left-color:#9a4a7a;background:rgba(154,74,122,0.08)}
-  body[data-tab="factions"] .nav-drawer .main-tab.active{color:#a34363;border-left-color:#8a2a4a;background:rgba(138,42,74,0.08)}
-  body[data-tab="music"] .nav-drawer .main-tab.active{color:#ed83b3;border-left-color:#d46a9a;background:rgba(212,106,154,0.08)}
-  body[data-tab="tokens"] .nav-drawer .main-tab.active{color:#a3aec9;border-left-color:#8a95b0;background:rgba(138,149,176,0.08)}
-  body[data-tab="statblocks"] .nav-drawer .main-tab.active{color:#e0b563;border-left-color:#c9963a;background:rgba(201,150,58,0.08)}
+  body[data-tab="combat"] .nav-drawer .main-tab.active{color:#cd6a5a;border-left-color:#cd4a4a;background:rgba(205,74,74,0.08);text-shadow:0 0 10px rgba(205,106,90,.7)}
+  body[data-tab="naval"] .nav-drawer .main-tab.active{color:#5a9adf;border-left-color:#4a8acd;background:rgba(74,138,205,0.08);text-shadow:0 0 10px rgba(90,154,223,.7)}
+  body[data-tab="forge"] .nav-drawer .main-tab.active{color:#d4903a;border-left-color:#d4763a;background:rgba(212,118,58,0.08);text-shadow:0 0 10px rgba(212,144,58,.7)}
+  body[data-tab="settlement"] .nav-drawer .main-tab.active{color:#63a373;border-left-color:#4a8a5a;background:rgba(74,138,90,0.08);text-shadow:0 0 10px rgba(99,163,115,.7)}
+  body[data-tab="pcs"] .nav-drawer .main-tab.active{color:#9373e2;border-left-color:#7a5ac9;background:rgba(122,90,201,0.08);text-shadow:0 0 10px rgba(147,115,226,.7)}
+  body[data-tab="npcs"] .nav-drawer .main-tab.active{color:#53c1c1;border-left-color:#3aa8a8;background:rgba(58,168,168,0.08);text-shadow:0 0 10px rgba(83,193,193,.7)}
+  body[data-tab="timeline"] .nav-drawer .main-tab.active{color:#b9a373;border-left-color:#a08a5a;background:rgba(160,138,90,0.08);text-shadow:0 0 10px rgba(185,163,115,.7)}
+  body[data-tab="crafting"] .nav-drawer .main-tab.active{color:#a38353;border-left-color:#8a6a3a;background:rgba(138,106,58,0.08);text-shadow:0 0 10px rgba(163,131,83,.7)}
+  body[data-tab="store"] .nav-drawer .main-tab.active{color:#d19f53;border-left-color:#b8863a;background:rgba(184,134,58,0.08);text-shadow:0 0 10px rgba(209,159,83,.7)}
+  body[data-tab="sessions-main"] .nav-drawer .main-tab.active{color:#c983a3;border-left-color:#b06a8a;background:rgba(176,106,138,0.08);text-shadow:0 0 10px rgba(201,131,163,.7)}
+  body[data-tab="rumours-main"] .nav-drawer .main-tab.active{color:#b36393;border-left-color:#9a4a7a;background:rgba(154,74,122,0.08);text-shadow:0 0 10px rgba(179,99,147,.7)}
+  body[data-tab="factions"] .nav-drawer .main-tab.active{color:#a34363;border-left-color:#8a2a4a;background:rgba(138,42,74,0.08);text-shadow:0 0 10px rgba(163,67,99,.7)}
+  body[data-tab="music"] .nav-drawer .main-tab.active{color:#ed83b3;border-left-color:#d46a9a;background:rgba(212,106,154,0.08);text-shadow:0 0 10px rgba(237,131,179,.7)}
+  body[data-tab="tokens"] .nav-drawer .main-tab.active{color:#a3aec9;border-left-color:#8a95b0;background:rgba(138,149,176,0.08);text-shadow:0 0 10px rgba(163,174,201,.7)}
+  body[data-tab="statblocks"] .nav-drawer .main-tab.active{color:#e0b563;border-left-color:#c9963a;background:rgba(201,150,58,0.08);text-shadow:0 0 10px rgba(224,181,99,.7)}
 
   /* The page's etched relief edge (added above for desktop) glows with the same theme */
   @media(min-width:1000px){
@@ -556,6 +556,7 @@ select option{background:#1a1208}
   /* Each tab defines its own icon (as an SVG mask, so it's fully colourable) and colour via CSS variables on <body>. */
   body{--motif-icon:none;--motif-color:var(--gold)}
   body[data-tab="welcome"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M15 72 L15 34 L30 50 L50 18 L70 50 L85 34 L85 72 Z'/></svg>")}
+  body[data-tab="welcome"] .nav-emblem{display:none}
   body[data-tab="forge"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='46' y='18' width='8' height='68' rx='3'/><path d='M50 14 L82 24 Q88 40 70 49 L50 40 Z'/><path d='M50 14 L18 24 Q12 40 30 49 L50 40 Z'/></svg>");--motif-color:#d4763a}
   body[data-tab="settlement"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='18' y='42' width='64' height='46'/><rect x='18' y='24' width='13' height='18'/><rect x='43' y='24' width='14' height='18'/><rect x='69' y='24' width='13' height='18'/></svg>");--motif-color:#4a8a5a}
   body[data-tab="pcs"]{--motif-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 4 L92 27 V73 L50 96 L8 73 V27 Z' fill='none' stroke='black' stroke-width='7'/><path d='M50 40 L58 46 L55 56 L45 56 L42 46 Z'/></svg>");--motif-color:#7a5ac9}
