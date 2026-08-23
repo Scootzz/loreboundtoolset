@@ -3731,13 +3731,20 @@ function handlePcUpdateUpload(event) {
   if(!apiKey){ var _s=document.getElementById('pc-import-status'); if(_s){_s.classList.remove('hidden');_s.textContent='No API key set. Click ⚙ Settings to add your key.';} return; }
   var status = document.getElementById('pc-import-status');
   status.classList.remove('hidden'); status.textContent = 'Reading updated character sheet...';
+  var isImage = /^image\//.test(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name);
   var reader = new FileReader();
   reader.onload = function(e) {
     var base64 = e.target.result.split(',')[1];
-    var prompt = 'This is an updated D&D character sheet PDF. Extract the current character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name","level":"level as number string","player":"player name if shown, else empty","hp":"MAXIMUM hit points only (not current HP) - the highest number in the HP box","ac":"armour class as a number","pp":"passive perception as a number (10 + Perception modifier, or read directly from sheet)","notes":"1-2 sentences covering race, background, subclass if visible, and any notable new abilities or features from their current level"}';
-    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},{type:'text',text:prompt}]}]})})
+    var prompt = 'This is an updated D&D character sheet. Extract the current character information and return ONLY valid JSON, no markdown: {"name":"character name","pcClass":"class name","level":"level as number string","player":"player name if shown, else empty","hp":"MAXIMUM hit points only (not current HP) - the highest number in the HP box","ac":"armour class as a number","pp":"passive perception as a number (10 + Perception modifier, or read directly from sheet)","notes":"1-2 sentences covering race, background, subclass if visible, and any notable new abilities or features from their current level"}';
+    var mediaType = isImage ? (file.type && file.type.indexOf('image/')===0 ? file.type : 'image/png') : 'application/pdf';
+    var docBlock = isImage
+      ? {type:'image', source:{type:'base64', media_type:mediaType, data:base64}}
+      : {type:'document', source:{type:'base64', media_type:'application/pdf', data:base64}};
+    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:[docBlock,{type:'text',text:prompt}]}]})})
     .then(function(res){return res.json();})
     .then(function(data){
+      if(data.error) throw new Error(data.error.message||JSON.stringify(data.error));
+      if(!data.content||!data.content.length) throw new Error('Empty response from API. Check your API key and try again.');
       var text = data.content.map(function(i){return i.text||'';}).join('');
       var clean = text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
       var updated = JSON.parse(clean);
@@ -3752,15 +3759,15 @@ function handlePcUpdateUpload(event) {
         if(updated.hp) pcs[i].hp = parseInt(updated.hp)||pcs[i].hp;
         if(updated.ac) pcs[i].ac = parseInt(updated.ac)||pcs[i].ac;
         if(updated.pp) pcs[i].pp = parseInt(updated.pp)||pcs[i].pp;
-        // Store full PDF base64 for combat analysis
-        pcs[i].pdfData = base64;
+        // Store the source file for combat analysis — only PDFs are reused there today
+        if(!isImage) pcs[i].pdfData = base64;
       }
       savePcs(pcs);
       status.textContent = 'Updated: ' + (updated.name||'character') + ' is now Level ' + (updated.level||'?') + (updated.hp?' | HP '+updated.hp:'');
       renderPcs();
       event.target.value = '';
       setTimeout(function(){status.classList.add('hidden');}, 4000);
-    }).catch(function(err){status.textContent='Update failed: '+err.message; event.target.value='';});
+    }).catch(function(err){status.textContent='Update failed: '+(err.message||String(err)); event.target.value='';});
   };
   reader.readAsDataURL(file);
 }
