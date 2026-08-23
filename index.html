@@ -2602,6 +2602,7 @@ function saveHbComponent() {
   var nameEl = document.getElementById('hbc-name');
   var creatureEl = document.getElementById('hbc-creature');
   var rarEl = document.getElementById('hbc-rarity');
+  var aspectsEl = document.getElementById('hbc-aspects');
   var editEl = document.getElementById('hbc-edit-id');
   var name = nameEl ? nameEl.value.trim() : '';
   if(!name) { if(nameEl) nameEl.focus(); return; }
@@ -2618,6 +2619,7 @@ function saveHbComponent() {
     name: name,
     creature: creatureEl ? creatureEl.value.trim() : '',
     rarity: rarEl ? rarEl.value : 'Common',
+    aspects: aspectsEl ? aspectsEl.value.trim() : '',
     owners: owners
   };
   if(editId) {
@@ -2630,6 +2632,7 @@ function saveHbComponent() {
   // Clear form
   if(nameEl) nameEl.value='';
   if(creatureEl) creatureEl.value='';
+  if(aspectsEl) aspectsEl.value='';
   if(editEl) editEl.value='';
   pcs.forEach(function(pc){ var cb=document.getElementById('hbc-own-'+pc.id); if(cb) cb.checked=false; });
   if(typeof renderHomebrewInCraft==='function') renderHomebrewInCraft();
@@ -2655,10 +2658,12 @@ function openEditHbCompForm(comp) {
   var nameEl=document.getElementById('hbc-name');
   var creatureEl=document.getElementById('hbc-creature');
   var rarEl=document.getElementById('hbc-rarity');
+  var aspectsEl=document.getElementById('hbc-aspects');
   var editEl=document.getElementById('hbc-edit-id');
   if(nameEl) nameEl.value=comp.name||'';
   if(creatureEl) creatureEl.value=comp.creature||'';
   if(rarEl) rarEl.value=comp.rarity||'Common';
+  if(aspectsEl) aspectsEl.value=comp.aspects||'';
   if(editEl) editEl.value=comp.id;
   var pcs=loadPcs();
   pcs.forEach(function(pc){ var cb=document.getElementById('hbc-own-'+pc.id); if(cb) cb.checked=!!(comp.owners&&comp.owners[pc.id]); });
@@ -5863,7 +5868,8 @@ function renderHomebrewInCraft() {
     + '<select id="hbc-rarity" style="font-size:13px;padding:7px">'
     + '<option>Common</option><option>Uncommon</option><option>Rare</option><option>Very Rare</option><option>Legendary</option>'
     + '</select>'
-    + '</div>';
+    + '</div>'
+    + '<input type="text" id="hbc-aspects" placeholder="Aspects (e.g. Toughness, Venomous, Ethereal...)" style="font-size:13px;margin-bottom:8px">';
 
   if(compPcs.length) {
     compFormHtml += '<div style="margin-bottom:8px"><span class="field-label" style="display:block;margin-bottom:4px">Held by</span>'
@@ -5901,29 +5907,16 @@ function renderHomebrewInCraft() {
         var info = document.createElement('div');
         info.style.cssText = 'flex:1;min-width:150px';
         info.innerHTML = '<div style="font-family:Cinzel,serif;font-size:12px;font-weight:bold;color:var(--gold)">'+comp.name+'</div>'
-          + (comp.creature?'<div style="font-size:12px;color:var(--text);opacity:0.7">from '+comp.creature+'</div>':'');
+          + (comp.creature?'<div style="font-size:12px;color:var(--text);opacity:0.7">from '+comp.creature+'</div>':'')
+          + (comp.aspects?'<div style="font-size:12px;color:var(--accent);font-style:italic;margin-top:2px">'+comp.aspects+'</div>':'');
         card.appendChild(info);
 
-        // Owner checkboxes
-        if(compPcs.length) {
-          var ownerDiv = document.createElement('div');
-          ownerDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center';
-          compPcs.forEach(function(pc) {
-            var checked = !!(comp.owners&&comp.owners[pc.id]);
-            var lbl = document.createElement('label');
-            lbl.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:'+(checked?'var(--gold)':'var(--muted)');
-            var cb = document.createElement('input');
-            cb.type='checkbox'; cb.checked=checked; cb.style.cssText='width:13px;height:13px';
-            cb.onchange=(function(cid,pid,lbl2,cb2){return function(){
-              toggleHbCompOwner(cid,pid);
-              lbl2.style.color=cb2.checked?'var(--gold)':'var(--muted)';
-            };})(comp.id,pc.id,lbl,cb);
-            lbl.appendChild(cb);
-            lbl.appendChild(document.createTextNode(' '+pc.name));
-            ownerDiv.appendChild(lbl);
-          });
-          card.appendChild(ownerDiv);
-        }
+        // Allocated owner + aspects summary (read-only here — use Edit to reassign)
+        var ownerNames = compPcs.filter(function(pc){ return comp.owners&&comp.owners[pc.id]; }).map(function(pc){return pc.name;});
+        var ownerDiv = document.createElement('div');
+        ownerDiv.style.cssText = 'font-size:12px;color:'+(ownerNames.length?'var(--gold)':'var(--muted)')+';font-style:'+(ownerNames.length?'normal':'italic')+';white-space:nowrap';
+        ownerDiv.textContent = ownerNames.length ? ownerNames.join(', ') : 'Unassigned';
+        card.appendChild(ownerDiv);
 
         // Buttons
         var btnDiv = document.createElement('div');
