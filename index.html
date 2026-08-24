@@ -1205,57 +1205,36 @@ select option{background:#1a1208}
 <!-- ═══ COMBAT TAB ═══ -->
 <div id="tab-combat" class="tab-pane">
 
-  <!-- SECTION 1: Combat Tracker -->
+  <!-- SECTION 1: Random Encounter Generator -->
   <div class="panel">
-    <div class="panel-label">Combat Tracker</div>
-    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Initiative order 20&rarr;1. Click any combatant to set stats and conditions.</p>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <button class="btn-gold btn-sm" onclick="addTrackerPcs()">+ Add Selected PCs</button>
-      <button class="btn-ghost btn-sm" onclick="openAddEnemyTracker()">+ Add Enemy</button>
-      <button class="btn-gold" id="start-combat-btn" onclick="startCombat()" style="padding:6px 14px;letter-spacing:.12em;font-size:11px;border:2px solid var(--gold)">&#9876; Start Combat</button>
-      <button class="btn-ghost btn-sm" onclick="nextTrackerTurn()" id="tracker-next-btn">&#9654; Next Turn</button>
-      <button class="btn-ghost btn-sm" onclick="autoRollInitiative()" title="Roll d20 initiative for all enemies" style="font-size:11px">&#127922; Roll Init</button>
-      <button class="btn-ghost btn-sm" onclick="addLairAction()" title="Add a generic Lair Action card at initiative 20" style="font-size:11px">&#127755; Add Lair</button>
-      <button class="btn-gold btn-sm" id="end-combat-btn" onclick="endCombat()" style="border-color:#cd4a4a;background:#cd4a4a;color:#fff;display:none">&#9760; End Combat</button>
-      <button class="btn-ghost btn-sm" onclick="resetTracker()" style="border-color:var(--danger);color:var(--danger)">&#8635; Reset</button>
-    </div>
-
-<!-- SECTION 6: Loot Generator -->
-  <div class="panel" id="loot-generator-panel" style="margin-top:12px;display:none">
-    <div class="panel-label">Loot Generator</div>
-    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Generate contextual loot based on defeated enemies. Considers creature type, CR, and components.</p>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end">
-      <div style="flex:1">
-        <span class="field-label" style="display:block;margin-bottom:3px">Enemies defeated</span>
-        <input type="text" id="loot-enemies" placeholder="e.g. 3x Bandit, 1x Bandit Captain" style="width:100%;box-sizing:border-box">
+    <div class="panel-label">Random Encounter Generator</div>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Generate a balanced encounter from your creature compendium based on biome and difficulty.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <span class="field-label">Biome</span>
+        <select id="regen-biome" style="font-size:13px;padding:7px 10px">
+          <option value="Forest">Forest</option>
+          <option value="Mountain">Mountain</option>
+          <option value="Plains">Plains</option>
+          <option value="Coast">Coast</option>
+          <option value="Desert">Desert</option>
+          <option value="Marshland">Marshland</option>
+          <option value="Dungeon">Dungeon</option>
+          <option value="Urban">Urban</option>
+        </select>
       </div>
       <div>
-        <span class="field-label" style="display:block;margin-bottom:3px">Party level</span>
-        <input type="number" id="loot-party-level" value="3" min="1" max="20" style="width:70px">
-      </div>
-      <button class="btn-gold btn-sm" onclick="generateLoot()">&#127775; Generate Loot</button>
-        <button class="btn-ghost btn-sm" onclick="resetLootGenerator()" style="white-space:nowrap">&#10005; Clear</button>
-    </div>
-    <div id="loot-status" class="hidden" style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">Generating...</div>
-    <div id="loot-result" class="hidden" style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:12px">
-      <div id="loot-content"></div>
-      <div style="margin-top:10px;display:flex;gap:8px">
-        <button class="btn-ghost btn-sm" onclick="resetLootGenerator()">&#10005; Clear &amp; Close</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn-ghost btn-sm" onclick="copyLoot()">&#128203; Copy</button>
-        <button class="btn-ghost btn-sm" onclick="saveLootToSession()" style="color:var(--gold);border-color:var(--gold-dim)">&#128190; Save</button>
-        <button class="btn-ghost btn-sm" onclick="document.getElementById('loot-result').classList.add('hidden')">Clear</button>
+        <span class="field-label">Difficulty</span>
+        <select id="regen-diff" style="font-size:13px;padding:7px 10px">
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+          <option value="Deadly">Deadly</option>
+        </select>
       </div>
     </div>
-  </div>
-    <div style="font-sisize:13px;color:var(--gold);letter-spacing:.1em;font-family:Cinzel,serif;margin-bottom:10px">ROUND <span id="tracker-round">1</span> &nbsp;<span id="tracker-active-name" style="font-size:12px;color:var(--muted);font-style:italic;font-family:EB Garamond,serif;letter-spacing:0"></span></div-initiative-bar" style="overflow-x:auto;padding-bottom:8px;min-height:80px">
-      <div id="condition-reminder-bar" class="hidden" style="background:rgba(212,168,67,0.06);border:1px solid var(--gold-dim);border-radius:4px;padding:8px 12px;margin-bottom:8px;font-size:12px">
-        <span style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em">CONDITIONS &#8212; </span><span id="condition-reminder-name" style="font-family:Cinzel,serif;font-size:10px;color:var(--gold)"></span>
-        <div id="condition-reminder-list" style="margin-top:5px;display:flex;flex-direction:column;gap:4px"></div>
-      </div>
-      <div id="tracker-bar-inner" style="display:grid;grid-template-columns:repeat(7,96px);gap:6px;padding:18px 2px 4px;align-items:start"></div>
-    </div>
+    <button class="btn-ghost" style="width:100%;padding:10px;letter-spacing:.15em;font-size:11px" onclick="generateRandomEncounter()">&#127922;&ensp;Generate Random Encounter</button>
+    <div id="regen-result" class="hidden" style="margin-top:10px;padding:12px;background:rgba(5,3,1,0.8);border:1px solid var(--border-lit);border-radius:4px;font-size:14px;line-height:1.8;color:var(--text)"></div>
   </div>
 
   <!-- SECTION 2: Encounter Builder + Analysis -->
@@ -1291,39 +1270,7 @@ select option{background:#1a1208}
     </div>
   </div>
 
-  <!-- SECTION 3: Random Encounter Generator -->
-  <div class="panel">
-    <div class="panel-label">Random Encounter Generator</div>
-    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Generate a balanced encounter from your creature compendium based on biome and difficulty.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div>
-        <span class="field-label">Biome</span>
-        <select id="regen-biome" style="font-size:13px;padding:7px 10px">
-          <option value="Forest">Forest</option>
-          <option value="Mountain">Mountain</option>
-          <option value="Plains">Plains</option>
-          <option value="Coast">Coast</option>
-          <option value="Desert">Desert</option>
-          <option value="Marshland">Marshland</option>
-          <option value="Dungeon">Dungeon</option>
-          <option value="Urban">Urban</option>
-        </select>
-      </div>
-      <div>
-        <span class="field-label">Difficulty</span>
-        <select id="regen-diff" style="font-size:13px;padding:7px 10px">
-          <option value="Easy">Easy</option>
-          <option value="Medium">Medium</option>
-          <option value="Hard">Hard</option>
-          <option value="Deadly">Deadly</option>
-        </select>
-      </div>
-    </div>
-    <button class="btn-ghost" style="width:100%;padding:10px;letter-spacing:.15em;font-size:11px" onclick="generateRandomEncounter()">&#127922;&ensp;Generate Random Encounter</button>
-    <div id="regen-result" class="hidden" style="margin-top:10px;padding:12px;background:rgba(5,3,1,0.8);border:1px solid var(--border-lit);border-radius:4px;font-size:14px;line-height:1.8;color:var(--text)"></div>
-  </div>
-
-  <!-- SECTION 4: Statblock Generator -->
+  <!-- SECTION 3: Statblock Generator -->
   <div class="panel">
     <div class="panel-label">Statblock Generator</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">Describe a creature and Claude generates a full 5e statblock. Download as PNG with a token for printing.</p>
@@ -1353,10 +1300,65 @@ select option{background:#1a1208}
     </div>
   </div>
 
+  <!-- SECTION 4: Loot Generator -->
+  <div class="panel" id="loot-generator-panel">
+    <div class="panel-label">Loot Generator</div>
+    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Generate contextual loot based on defeated enemies. Considers creature type, CR, and components.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1">
+        <span class="field-label" style="display:block;margin-bottom:3px">Enemies defeated</span>
+        <input type="text" id="loot-enemies" placeholder="e.g. 3x Bandit, 1x Bandit Captain" style="width:100%;box-sizing:border-box">
+      </div>
+      <div>
+        <span class="field-label" style="display:block;margin-bottom:3px">Party level</span>
+        <input type="number" id="loot-party-level" value="3" min="1" max="20" style="width:70px">
+      </div>
+      <button class="btn-gold btn-sm" onclick="generateLoot()">&#127775; Generate Loot</button>
+      <button class="btn-ghost btn-sm" onclick="resetLootGenerator()" style="white-space:nowrap">&#10005; Clear</button>
+    </div>
+    <div id="loot-status" class="hidden" style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">Generating...</div>
+    <div id="loot-result" class="hidden" style="background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:12px">
+      <div id="loot-content"></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn-ghost btn-sm" onclick="resetLootGenerator()">&#10005; Clear &amp; Close</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-ghost btn-sm" onclick="copyLoot()">&#128203; Copy</button>
+        <button class="btn-ghost btn-sm" onclick="saveLootToSession()" style="color:var(--gold);border-color:var(--gold-dim)">&#128190; Save</button>
+        <button class="btn-ghost btn-sm" onclick="document.getElementById('loot-result').classList.add('hidden')">Clear</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SECTION 5: Encounter History -->
   <div id="combat-history-panel" class="panel hidden">
     <div class="panel-label">Encounter History</div>
     <div id="combat-history-list"></div>
+  </div>
+
+  <!-- SECTION 6: Combat Tracker (bottom, per requested flow) -->
+  <div class="panel">
+    <div class="panel-label">Combat Tracker</div>
+    <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Initiative order 20&rarr;1. Click any combatant to set stats and conditions.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="btn-gold btn-sm" onclick="addTrackerPcs()">+ Add Selected PCs</button>
+      <button class="btn-ghost btn-sm" onclick="openAddEnemyTracker()">+ Add Enemy</button>
+      <button class="btn-gold" id="start-combat-btn" onclick="startCombat()" style="padding:6px 14px;letter-spacing:.12em;font-size:11px;border:2px solid var(--gold)">&#9876; Start Combat</button>
+      <button class="btn-ghost btn-sm" onclick="nextTrackerTurn()" id="tracker-next-btn">&#9654; Next Turn</button>
+      <button class="btn-ghost btn-sm" onclick="autoRollInitiative()" title="Roll d20 initiative for all enemies" style="font-size:11px">&#127922; Roll Init</button>
+      <button class="btn-ghost btn-sm" onclick="addLairAction()" title="Add a generic Lair Action card at initiative 20" style="font-size:11px">&#127755; Add Lair</button>
+      <button class="btn-ghost btn-sm" id="second-screen-btn" onclick="openSecondScreen()" title="Open a moveable turn-order window for a second monitor / battlemap display" style="font-size:11px">&#128421; Second Screen</button>
+      <button class="btn-gold btn-sm" id="end-combat-btn" onclick="endCombat()" style="border-color:#cd4a4a;background:#cd4a4a;color:#fff;display:none">&#9760; End Combat</button>
+      <button class="btn-ghost btn-sm" onclick="resetTracker()" style="border-color:var(--danger);color:var(--danger)">&#8635; Reset</button>
+    </div>
+    <div style="font-size:13px;color:var(--gold);letter-spacing:.1em;font-family:Cinzel,serif;margin-bottom:10px">ROUND <span id="tracker-round">1</span> &nbsp;<span id="tracker-active-name" style="font-size:12px;color:var(--muted);font-style:italic;font-family:EB Garamond,serif;letter-spacing:0"></span></div>
+    <div id="tracker-initiative-bar" style="overflow-x:auto;padding-bottom:8px;min-height:80px">
+      <div id="condition-reminder-bar" class="hidden" style="background:rgba(212,168,67,0.06);border:1px solid var(--gold-dim);border-radius:4px;padding:8px 12px;margin-bottom:8px;font-size:12px">
+        <span style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em">CONDITIONS &#8212; </span><span id="condition-reminder-name" style="font-family:Cinzel,serif;font-size:10px;color:var(--gold)"></span>
+        <div id="condition-reminder-list" style="margin-top:5px;display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+      <div id="tracker-bar-inner" style="display:grid;grid-template-columns:repeat(7,96px);gap:6px;padding:18px 2px 4px;align-items:start"></div>
+    </div>
   </div>
 
 </div>
@@ -6099,7 +6101,14 @@ function renderTracker() {
     bar.innerHTML = '<div style="color:var(--muted);font-style:italic;font-size:13px;padding:20px">Add combatants to start tracking.</div>';
     var an = document.getElementById('tracker-active-name');
     if(an) an.textContent = '';
+    updateSecondScreen();
     return;
+  }
+
+  // First time combatants land in the tracker, tuck the other combat tools away so the tracker has the room
+  if(!window._trackerAutoCollapsedOnce) {
+    window._trackerAutoCollapsedOnce = true;
+    setTimeout(collapseOtherCombatPanels, 60);
   }
 
   var sorted = trackerCombatants.slice().map(function(c,i){return {c:c,i:i};})
@@ -6380,6 +6389,61 @@ function renderTracker() {
       activeNameEl.style.color = 'var(--muted)';
     }
   }
+  updateSecondScreen();
+}
+
+function collapseOtherCombatPanels() {
+  document.querySelectorAll('#tab-combat .panel-label.collapsible').forEach(function(el) {
+    if(el.textContent.indexOf('Combat Tracker') !== -1) return; // leave the tracker itself expanded
+    if(!el.classList.contains('collapsed')) el.click();
+  });
+}
+
+// ── Second Screen: a separate, moveable window mirroring turn order for a battlemap display ──
+var _secondScreenWin = null;
+function openSecondScreen() {
+  if(_secondScreenWin && !_secondScreenWin.closed) { _secondScreenWin.focus(); updateSecondScreen(); return; }
+  _secondScreenWin = window.open('', 'LoreboundSecondScreen', 'width=1000,height=420,menubar=no,toolbar=no,location=no,status=no');
+  if(!_secondScreenWin) { alert('Pop-up blocked. Please allow pop-ups for this site to use Second Screen.'); return; }
+  _secondScreenWin.document.write(
+    '<!DOCTYPE html><html><head><title>Turn Order — Lorebound</title><meta charset="UTF-8">' +
+    '<style>' +
+    '@import url(\'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap\');' +
+    'html,body{margin:0;height:100%;background:#0e0b07;color:#e8d5a8;font-family:Georgia,serif;overflow:hidden}' +
+    '#ss-wrap{display:flex;gap:14px;align-items:center;height:100%;padding:20px;overflow-x:auto;box-sizing:border-box}' +
+    '.ss-card{flex-shrink:0;min-width:130px;background:rgba(6,4,2,0.92);border:2px solid #4a3420;border-radius:8px;padding:16px 14px;text-align:center;transition:all .3s}' +
+    '.ss-card.active{border-color:#d4a843;box-shadow:0 0 0 4px rgba(212,168,67,.3),0 0 30px rgba(212,168,67,.5);background:rgba(212,168,67,0.08);transform:translateY(-6px) scale(1.05)}' +
+    '.ss-init{font-family:Cinzel,serif;font-size:30px;color:#c8a86a;line-height:1}' +
+    '.ss-card.active .ss-init{color:#d4a843}' +
+    '.ss-name{font-size:17px;margin-top:8px;color:#e8d5a8}' +
+    '.ss-card.active .ss-name{color:#d4a843;font-weight:bold}' +
+    '.ss-empty{font-size:18px;color:#c8a86a;font-style:italic;padding:20px}' +
+    '</style></head><body><div id="ss-wrap"><div class="ss-empty">Waiting for combatants...</div></div></body></html>'
+  );
+  _secondScreenWin.document.close();
+  updateSecondScreen();
+}
+function updateSecondScreen() {
+  if(!_secondScreenWin || _secondScreenWin.closed) return;
+  var wrap;
+  try { wrap = _secondScreenWin.document.getElementById('ss-wrap'); } catch(e) { return; }
+  if(!wrap) return;
+  if(!trackerCombatants.length) { wrap.innerHTML = '<div class="ss-empty">Waiting for combatants...</div>'; return; }
+  var sorted = trackerCombatants.slice().map(function(c,i){return {c:c,i:i};})
+    .sort(function(a,b){
+      var ai = a.c.initiative!=null ? a.c.initiative : -1;
+      var bi = b.c.initiative!=null ? b.c.initiative : -1;
+      if(bi !== ai) return bi - ai;
+      var ad = a.c.dex||0, bd = b.c.dex||0;
+      if(bd !== ad) return bd - ad;
+      return a.i - b.i;
+    });
+  wrap.innerHTML = sorted.map(function(s) {
+    var isActive = trackerStarted && s.i === trackerActiveTurn;
+    var initDisplay = s.c.initiative!=null ? s.c.initiative : '?';
+    // Explicitly no HP, AC, or conditions here — this view is player-facing only.
+    return '<div class="ss-card' + (isActive?' active':'') + '"><div class="ss-init">' + initDisplay + '</div><div class="ss-name">' + s.c.name.replace(/</g,'&lt;') + '</div></div>';
+  }).join('');
 }
 
 function addLairAction() {
