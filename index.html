@@ -12369,7 +12369,7 @@ function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
     headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }]
     })
   })
@@ -12378,7 +12378,20 @@ function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
     var text = (data.content||[]).map(function(c){ return c.text||''; }).join('');
     try {
       var clean = text.replace(/```json|```/g,'').trim();
-      var parsed = JSON.parse(clean);
+      var parsed;
+      try {
+        parsed = JSON.parse(clean);
+      } catch(parseErr) {
+        // Response likely got cut off mid-string before finishing (hit the token limit).
+        // Salvage the annotated text directly rather than showing a raw JSON error.
+        var annMatch = clean.match(/"annotated"\s*:\s*"((?:[^"\\]|\\.)*)/);
+        if(annMatch) {
+          var salvaged = annMatch[1].replace(/\\n/g,'\n').replace(/\\"/g,'"').replace(/\\\\/g,'\\');
+          parsed = { annotated: salvaged, oversights: [], considerations: [], _truncated: true };
+        } else {
+          throw parseErr;
+        }
+      }
 
       // Annotated text - style [INSIGHT: ...] markers
       var annotated = (parsed.annotated || prepText).replace(
@@ -12390,18 +12403,24 @@ function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
 
       // Oversights
       var ovEl = document.getElementById('sn-oversights');
-      if(ovEl && parsed.oversights) {
-        ovEl.innerHTML = parsed.oversights.map(function(o){
-          return '<div style="margin-bottom:8px;padding:8px;background:rgba(205,74,74,0.08);border-left:2px solid rgba(205,74,74,0.5);border-radius:0 4px 4px 0;font-size:12px">&#9888; ' + o + '</div>';
-        }).join('');
+      if(ovEl) {
+        if(parsed._truncated) {
+          ovEl.innerHTML = '<div style="font-size:12px;color:var(--muted);font-style:italic">Response was cut off before oversights/considerations finished generating — the annotated text above is still complete. Try again, or shorten your prep notes, for the full analysis.</div>';
+        } else if(parsed.oversights) {
+          ovEl.innerHTML = parsed.oversights.map(function(o){
+            return '<div style="margin-bottom:8px;padding:8px;background:rgba(205,74,74,0.08);border-left:2px solid rgba(205,74,74,0.5);border-radius:0 4px 4px 0;font-size:12px">&#9888; ' + o + '</div>';
+          }).join('');
+        }
       }
 
       // Considerations
       var conEl = document.getElementById('sn-considerations');
-      if(conEl && parsed.considerations) {
+      if(conEl && !parsed._truncated && parsed.considerations) {
         conEl.innerHTML = parsed.considerations.map(function(c){
           return '<div style="margin-bottom:8px;padding:8px;background:rgba(212,168,67,0.06);border-left:2px solid var(--gold-dim);border-radius:0 4px 4px 0;font-size:12px">&#128161; ' + c + '</div>';
         }).join('');
+      } else if(conEl && parsed._truncated) {
+        conEl.innerHTML = '';
       }
 
       if(statusEl) statusEl.style.display = 'none';
