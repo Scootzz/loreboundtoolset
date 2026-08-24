@@ -1370,7 +1370,7 @@ select option{background:#1a1208}
     <div class="panel-label" style="margin-bottom:8px">&#128221; Upcoming Session</div>
     <span class="field-label">Quick Notes</span>
     <textarea id="sn-quick-notes" placeholder="Jot down ideas, hooks, rolled events..." style="height:100px;resize:vertical;margin-bottom:12px" oninput="saveQuickSessionNotes()"></textarea>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Or upload full prep notes. Claude will annotate the text with insights, flag oversights based on your party composition, and highlight key considerations.</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Or upload full prep notes. Claude will annotate the text with insights, flag oversights based on your party composition and continuity with your last 2 sessions, and highlight key considerations.</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn-gold btn-sm" onclick="document.getElementById('sn-upcoming-upload').click()">&#128196; Upload Notes</button>
       <input type="file" id="sn-upcoming-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleUpcomingSessionUpload(event)">
@@ -12351,8 +12351,18 @@ function handleUpcomingSessionUpload(event) {
 function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
   var apiKey=getApiKey(); if(!apiKey){showToast('No API key set','error');return;}
   if(statusEl) statusEl.textContent = 'Analysing session prep...';
-  
-  var prompt = 'You are an expert DM assistant. Analyse this session prep.\n\nParty: ' + pcContext + '\n\nPrep:\n' + prepText.slice(0,5000) + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills), considerations (array of 3-5 tips). No markdown.';;
+
+  // Pull the two most recent Past Sessions in for continuity context
+  var pastNotes = typeof loadSessionNotes !== 'undefined' ? loadSessionNotes() : [];
+  pastNotes = pastNotes.slice().sort(function(a,b){ return (b.created||0)-(a.created||0); }).slice(0,2);
+  var recapContext = pastNotes.length
+    ? pastNotes.map(function(n,i){
+        var label = n.title || ('Session '+(i+1));
+        return 'Recent Session ('+label+'):\n' + (n.content||'').slice(0,2500);
+      }).join('\n\n')
+    : 'No past session notes recorded yet.';
+
+  var prompt = 'You are an expert DM assistant. Analyse this session prep for continuity with recent sessions and fit with the party.\n\nParty: ' + pcContext + '\n\nRecent session context (most recent first):\n' + recapContext + '\n\nUpcoming session prep:\n' + prepText.slice(0,5000) + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills or continuity gaps with recent sessions), considerations (array of 3-5 tips). No markdown.';;
 
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
