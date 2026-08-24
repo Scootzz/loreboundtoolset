@@ -4804,17 +4804,50 @@ async function analyseEncounter() {
     var res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:800, messages:[{role:'user',content:messageContent}]})
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1600, messages:[{role:'user',content:messageContent}]})
     });
     if (!res.ok) { var t = await res.text(); throw new Error(res.status + ': ' + t.slice(0,200)); }
     var data = await res.json();
     var text = data.content.map(function(i){return i.text||'';}).join('');
     var clean = text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
-    var analysis = JSON.parse(clean);
+    var analysis;
+    try {
+      analysis = JSON.parse(clean);
+    } catch(parseErr) {
+      // Response likely got cut off mid-string before finishing (hit the token limit).
+      // Try to repair it by closing any open string/array/object rather than failing outright.
+      try {
+        analysis = JSON.parse(repairTruncatedJson(clean));
+        analysis._truncated = true;
+      } catch(e2) {
+        throw parseErr;
+      }
+    }
     renderCombatResult(analysis, selected, enemyRows);
+    if(analysis._truncated) {
+      content.innerHTML += '<p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:10px">Response was cut off before finishing &mdash; some suggestions above may be incomplete. Try again for the full analysis.</p>';
+    }
   } catch(e) {
     content.innerHTML = '<p class="text-center" style="color:var(--danger);font-style:italic">Analysis failed.<br><small style="opacity:.7">' + e.message + '</small></p>';
   }
+}
+
+function repairTruncatedJson(str) {
+  var s = str;
+  var quoteCount = 0;
+  for (var i=0; i<s.length; i++) {
+    if (s[i] === '"' && s[i-1] !== '\\') quoteCount++;
+  }
+  if (quoteCount % 2 === 1) s += '"';
+  var opens = [];
+  for (var j=0; j<s.length; j++) {
+    var ch = s[j];
+    if (ch==='{' || ch==='[') opens.push(ch);
+    else if (ch==='}' && opens[opens.length-1]==='{') opens.pop();
+    else if (ch===']' && opens[opens.length-1]==='[') opens.pop();
+  }
+  while(opens.length) { s += (opens.pop()==='{' ? '}' : ']'); }
+  return s;
 }
 
 function saveCombatEncounter(analysis, players, enemies) {
