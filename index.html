@@ -2803,20 +2803,16 @@ function saveCurrentScenario() {
   var name = prompt('Name this combat scenario:');
   if(!name) return;
   var scenarios = loadScenarios();
-  // Collect current encounter builder state
-  var rows = [];
-  document.querySelectorAll('.enemy-row').forEach(function(row) {
-    var cr = row.querySelector('.enemy-cr-sel');
-    var qty = row.querySelector('.enemy-qty');
-    var creature = row.querySelector('.enemy-creature-sel');
-    if(creature && creature.value) rows.push({creature:creature.value, qty:parseInt(qty&&qty.value||1), cr:cr&&cr.value});
-  });
+  // Collect current encounter builder state directly from the live enemyRows array (source of truth)
+  var rows = enemyRows.map(function(r){ return {creature:r.creature, qty:r.qty||1, legendary:!!r.legendary}; });
   var pcChecks = {};
   document.querySelectorAll('.pc-combat-check').forEach(function(cb) {
     if(cb.checked) pcChecks[cb.dataset.id] = true;
   });
   var id = 'sc_'+Date.now();
-  scenarios.push({id:id, name:name, enemies:rows, pcs:pcChecks});
+  var entry = {id:id, name:name, enemies:rows, pcs:pcChecks};
+  if(window._lastAnalysis) entry.analysis = window._lastAnalysis;
+  scenarios.push(entry);
   saveScenarios(scenarios);
   renderScenarioSelect();
   document.getElementById('scenario-select').value = id;
@@ -2833,23 +2829,25 @@ function loadScenario(id) {
       selectedCombatPcs[cb.dataset.id] = !!scenario.pcs[cb.dataset.id];
     });
   }
-  // Restore enemy rows - re-render encounter builder with these enemies
-  // Clear current rows and re-add
-  var container = document.getElementById('enemy-rows');
-  if(container && scenario.enemies) {
-    container.innerHTML = '';
-    enemyRows = [];
-    scenario.enemies.forEach(function(e) {
-      addEnemyRow();
-      var rows = container.querySelectorAll('.enemy-row');
-      var last = rows[rows.length-1];
-      if(last) {
-        var cs = last.querySelector('.enemy-creature-sel');
-        var qs = last.querySelector('.enemy-qty');
-        if(cs) cs.value = e.creature;
-        if(qs) qs.value = e.qty;
-      }
-    });
+  // Restore enemy rows directly into the array (the actual source of truth for Analyse Encounter),
+  // then render once — patching the DOM after repeated addEnemyRow() calls doesn't work because each
+  // call re-renders the whole list from the array, wiping out any prior DOM-only patch.
+  if(scenario.enemies) {
+    enemyRows = scenario.enemies.map(function(e){ return {creature:e.creature, qty:e.qty||1, legendary:!!e.legendary}; });
+    renderEnemyRows();
+  }
+  // Restore the saved analysis result, if one was captured, instead of requiring a re-run
+  var result = document.getElementById('combat-result');
+  var content = document.getElementById('combat-result-content');
+  if(scenario.analysis && result && content) {
+    var pcs = loadPcs();
+    var selected = pcs.filter(function(p){ return scenario.pcs && scenario.pcs[p.id]; });
+    result.classList.remove('hidden');
+    window._lastAnalysis = scenario.analysis;
+    renderCombatResult(scenario.analysis, selected, enemyRows);
+  } else if(result) {
+    result.classList.add('hidden');
+    window._lastAnalysis = null;
   }
 }
 
@@ -4825,6 +4823,7 @@ async function analyseEncounter() {
         throw parseErr;
       }
     }
+    window._lastAnalysis = analysis;
     renderCombatResult(analysis, selected, enemyRows);
     if(analysis._truncated) {
       content.innerHTML += '<p style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;margin-top:10px">Response was cut off before finishing &mdash; some suggestions above may be incomplete. Try again for the full analysis.</p>';
@@ -10248,6 +10247,7 @@ var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanne
   if(resetBtn) resetBtn.addEventListener('click', function(){
     $cl('combat-result').add('hidden');
     ($id('combat-result-content')).innerHTML = '';
+    window._lastAnalysis = null;
   });
 })();
 
@@ -13273,6 +13273,7 @@ function onScenarioSelect(id) {
     document.querySelectorAll('.pc-combat-check').forEach(function(cb){ cb.checked=false; selectedCombatPcs[cb.dataset.id]=false; });
     var result = document.getElementById('combat-result');
     if(result) result.classList.add('hidden');
+    window._lastAnalysis = null;
   } else { loadScenario(id); }
 }
 
