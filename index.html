@@ -3753,7 +3753,8 @@ function handlePcUpdateUpload(event) {
       if(data.error) throw new Error(data.error.message||JSON.stringify(data.error));
       if(!data.content||!data.content.length) throw new Error('Empty response from API. Check your API key and try again.');
       var text = data.content.map(function(i){return i.text||'';}).join('');
-      var clean = text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
+      var jStart = text.indexOf('{'); var jEnd = text.lastIndexOf('}');
+      var clean = (jStart!==-1 && jEnd!==-1) ? text.slice(jStart, jEnd+1) : text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
       var updated = JSON.parse(clean);
       var pcs = loadPcs();
       var i = pcs.findIndex(function(p){return p.id===pcId;});
@@ -4809,7 +4810,8 @@ async function analyseEncounter() {
     if (!res.ok) { var t = await res.text(); throw new Error(res.status + ': ' + t.slice(0,200)); }
     var data = await res.json();
     var text = data.content.map(function(i){return i.text||'';}).join('');
-    var clean = text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
+    var jStart = text.indexOf('{'); var jEnd = text.lastIndexOf('}');
+    var clean = (jStart!==-1 && jEnd!==-1) ? text.slice(jStart, jEnd+1) : text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
     var analysis;
     try {
       analysis = JSON.parse(clean);
@@ -12474,7 +12476,8 @@ function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
   .then(function(data) {
     var text = (data.content||[]).map(function(c){ return c.text||''; }).join('');
     try {
-      var clean = text.replace(/```json|```/g,'').trim();
+      var jStart = text.indexOf('{'); var jEnd = text.lastIndexOf('}');
+      var clean = (jStart!==-1 && jEnd!==-1) ? text.slice(jStart, jEnd+1) : text.replace(/```json|```/g,'').trim();
       var parsed;
       try {
         parsed = JSON.parse(clean);
