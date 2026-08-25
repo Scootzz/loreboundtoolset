@@ -4914,27 +4914,35 @@ function renderCombatResult(analysis, players, enemies) {
   if(genSbBtn) genSbBtn.onclick = (function(enc){
     return function(){
       if(!enc.length) return;
-      // Get unique creature types
+      // Get unique creature type + legendary-status combinations — a normal and a Legendary
+      // version of the same creature are treated as two distinct statblocks to generate.
       var seen = {};
       var unique = enc.filter(function(r){
-        if(seen[r.creature]) return false;
-        seen[r.creature] = true; return true;
+        var key = r.creature + (r.legendary?'|LEG':'|STD');
+        if(seen[key]) return false;
+        seen[key] = true; return true;
       });
       if(unique.length === 1) {
         // Single type - generate directly
         var sbDesc = document.getElementById('statblock-desc');
         if(sbDesc) sbDesc.value = unique[0].creature;
+        var sbLeg = document.getElementById('statblock-legendary');
+        if(sbLeg) sbLeg.checked = !!unique[0].legendary;
         var sbPanel = document.getElementById('statblock-status');
         if(sbPanel) sbPanel.closest('.panel').scrollIntoView({behavior:'smooth',block:'nearest'});
         generateStatblock();
       } else {
-        // Multiple unique types - generate all sequentially, each appends to the list
+        // Multiple unique type/legendary combinations - generate all sequentially, each appends to the list.
+        // Standard versions first, Legendary variant of the same creature generated after.
+        unique.sort(function(a,b){ return (a.legendary?1:0) - (b.legendary?1:0); });
         var queueIdx = 0;
         (function genNextSb() {
           if(queueIdx >= unique.length) return;
           var r = unique[queueIdx++];
           var sbDesc = document.getElementById('statblock-desc');
           if(sbDesc) sbDesc.value = r.creature;
+          var sbLeg = document.getElementById('statblock-legendary');
+          if(sbLeg) sbLeg.checked = !!r.legendary;
           var sbPanel = document.getElementById('statblock-status');
           if(sbPanel) sbPanel.closest('.panel').scrollIntoView({behavior:'smooth',block:'nearest'});
           var prev = window._sbOnComplete;
@@ -7153,20 +7161,39 @@ function generateStatblock() {
 function generateStatblockArt(sb,desc,callback){
   var apiKey=getApiKey(); if(!apiKey){if(callback)callback(null);return;}
   var prompt='Generate SVG token art (viewBox 0 0 180 180) for a D&D creature: '+sb.name+' a '+sb.size+' '+sb.type+'. Description: '+desc+'. Dark background circle, recognisable geometric silhouette, 3-5 creature-appropriate colours. Return ONLY the SVG starting with <svg.';
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]})})
   .then(function(res){return res.json();})
   .then(function(data){
     var svg=data.content.map(function(i){return i.text||'';}).join('').trim();
-    var si=svg.indexOf('<svg'); if(si===-1){if(callback)callback(null);return;}
+    var si=svg.indexOf('<svg'); if(si===-1){if(callback)callback(fallbackTokenSvg(sb));return;}
     svg=svg.slice(si);
     // Ensure the closing tag exists (can be truncated if generation hit the token limit) and that
     // the xmlns attribute is present — SVG without it renders fine inline (lenient HTML parser)
     // but silently fails to load via <img src="blob:..."> (strict XML parser), breaking token sheets.
     if(svg.indexOf('</svg>')===-1) svg += '</svg>';
     if(svg.indexOf('xmlns=')===-1) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    // A missing closer only fixes truncation AFTER a complete tag — truncation mid-tag (e.g. inside
+    // a path's "d" attribute) still produces invalid XML that no amount of tag-patching can save.
+    // Validate for real, and fall back to a guaranteed-valid placeholder rather than pass through
+    // markup that will silently fail later when the Token Sheet tries to load it as an image.
+    if(!isValidSvgMarkup(svg)) svg = fallbackTokenSvg(sb);
     if(callback)callback(svg);
   })
-  .catch(function(){if(callback)callback(null);});
+  .catch(function(){if(callback)callback(fallbackTokenSvg(sb));});
+}
+function isValidSvgMarkup(svgStr) {
+  try {
+    var doc = new DOMParser().parseFromString(svgStr, 'image/svg+xml');
+    return !doc.querySelector('parsererror');
+  } catch(e) { return false; }
+}
+function fallbackTokenSvg(sb) {
+  var initial = ((sb&&sb.name)||'?').trim().charAt(0).toUpperCase() || '?';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">'
+    + '<circle cx="90" cy="90" r="88" fill="#2a1a06"/>'
+    + '<circle cx="90" cy="90" r="88" fill="none" stroke="#d4a843" stroke-width="3"/>'
+    + '<text x="90" y="90" font-family="Georgia,serif" font-size="72" font-weight="bold" fill="#d4a843" text-anchor="middle" dominant-baseline="central">' + initial + '</text>'
+    + '</svg>';
 }
 
 function generateStatblockArtIllustrated(sb,desc,callback){
