@@ -4923,7 +4923,7 @@ function renderCombatResult(analysis, players, enemies) {
       if(unique.length === 1) {
         // Single type - generate directly
         var sbDesc = document.getElementById('statblock-desc');
-        if(sbDesc) sbDesc.value = unique[0].creature + (unique[0].qty>1?' (x'+unique[0].qty+')':'');
+        if(sbDesc) sbDesc.value = unique[0].creature;
         var sbPanel = document.getElementById('statblock-status');
         if(sbPanel) sbPanel.closest('.panel').scrollIntoView({behavior:'smooth',block:'nearest'});
         generateStatblock();
@@ -7088,14 +7088,21 @@ function generateStatblock() {
     +'"traits":[{"name":"Trait","desc":"desc"}],'
     +'"actions":[{"name":"Attack","desc":"Melee Weapon Attack: +X to hit, reach 5 ft., one target. Hit: X (XdX+X) damage."}],'
     +'"bonusActions":[],"reactions":[],"legendaryResistances":3,"legendaryActions":[{"name":"Attack (1 Action)","desc":"The creature makes one attack."}],"lairActions":[]}';  
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2600,messages:[{role:'user',content:prompt}]})})
   .then(function(res){return res.json();})
   .then(function(data){
     if(data.error) throw new Error(data.error.message);
     var text=data.content.map(function(i){return i.text||'';}).join('');
     var s=text.indexOf('{'); var e=text.lastIndexOf('}');
     if(s===-1) throw new Error('No statblock returned');
-    var sb=JSON.parse(text.slice(s,e+1));
+    var sb;
+    try {
+      sb = JSON.parse(text.slice(s,e+1));
+    } catch(parseErr) {
+      // Response likely got cut off before finishing — try to repair rather than fail outright
+      try { sb = JSON.parse(repairTruncatedJson(text.slice(s))); }
+      catch(e2) { throw parseErr; }
+    }
     currentStatblock = sb;
     var rendered = renderStatblockCard(sb, null);
     var artModeEl = document.querySelector('input[name="statblock-art-mode"]:checked');
