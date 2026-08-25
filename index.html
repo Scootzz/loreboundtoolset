@@ -241,7 +241,7 @@ select option{background:#1a1208}
 .main-tab:hover{background:rgba(212,168,67,0.08)}
 .main-tab.active{background:rgba(212,168,67,0.1)}
 /* Combat tracker */
-.tracker-card{width:96px;background:var(--panel);border:2px solid var(--border);border-radius:6px;padding:10px 8px;cursor:pointer;transition:all .2s;position:relative;text-align:center}
+.tracker-card{width:128px;background:var(--panel);border:2px solid var(--border);border-radius:6px;padding:10px 8px;cursor:pointer;transition:all .2s;position:relative;text-align:center}
 .tracker-card:hover{border-color:var(--border-lit);transform:translateY(-2px)}
 .tracker-card.active-turn{border-color:var(--tab-glow);box-shadow:0 0 0 3px var(--tab-glow-soft),0 0 20px var(--tab-glow-soft);background:var(--tab-glow-bg);transform:translateY(-3px)}
 .tracker-card.active-turn::before{content:'';position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--gold);filter:drop-shadow(0 0 4px var(--gold));animation:turnPointerBounce 1s ease-in-out infinite}
@@ -396,7 +396,7 @@ select option{background:#1a1208}
   @media(max-width:600px){
     .landing-grid{grid-template-columns:1fr 1fr !important}
     .panel{padding:10px}
-    #tracker-bar-inner{grid-template-columns:repeat(3,96px) !important}
+    #tracker-bar-inner{grid-template-columns:repeat(3,128px) !important}
     .modal-box{margin:8px;max-width:calc(100vw - 16px) !important}
     #combat-float{bottom:70px;right:8px}
     .sub-tab{font-size:9px;padding:5px 8px}
@@ -1357,7 +1357,7 @@ select option{background:#1a1208}
         <span style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em">CONDITIONS &#8212; </span><span id="condition-reminder-name" style="font-family:Cinzel,serif;font-size:10px;color:var(--gold)"></span>
         <div id="condition-reminder-list" style="margin-top:5px;display:flex;flex-direction:column;gap:4px"></div>
       </div>
-      <div id="tracker-bar-inner" style="display:grid;grid-template-columns:repeat(7,96px);gap:6px;padding:18px 2px 4px;align-items:start"></div>
+      <div id="tracker-bar-inner" style="display:grid;grid-template-columns:repeat(7,128px);gap:6px;padding:18px 2px 4px;align-items:start"></div>
     </div>
   </div>
 
@@ -6250,7 +6250,7 @@ function renderTracker() {
 
     // HP delta row for all combatants (except lair cards, which have no HP/AC concept) — always rendered so every card has the same shape
     var hpRow = document.createElement('div');
-    hpRow.style.cssText = 'display:flex;gap:4px;margin-top:4px;align-items:center';
+    hpRow.style.cssText = 'margin-top:4px';
     if(c.isLair) {
       // no-op: lair cards skip HP/AC controls entirely
     } else if(c.hpMax > 0) {
@@ -6258,13 +6258,15 @@ function renderTracker() {
       hpInput.type = 'number';
       hpInput.min = '1';
       hpInput.placeholder = 'amt';
-      hpInput.style.cssText = 'width:52px;font-size:12px;padding:3px 5px;text-align:center;background:var(--input-bg);border:1px solid var(--border);border-radius:3px;color:var(--text)';
+      hpInput.style.cssText = 'width:100%;box-sizing:border-box;font-size:12px;padding:4px 5px;text-align:center;background:var(--input-bg);border:1px solid var(--border);border-radius:3px;color:var(--text);margin-bottom:4px';
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:4px';
       var dmgBtn = document.createElement('button');
       dmgBtn.innerHTML = '&#9876; DMG';
-      dmgBtn.style.cssText = 'font-size:10px;padding:3px 7px;background:rgba(205,74,74,0.15);border:1px solid rgba(205,74,74,0.5);color:#cd4a4a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.04em';
+      dmgBtn.style.cssText = 'flex:1;font-size:10px;padding:4px 2px;background:rgba(205,74,74,0.15);border:1px solid rgba(205,74,74,0.5);color:#cd4a4a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.03em';
       var healBtn = document.createElement('button');
       healBtn.innerHTML = '&#10084; HEAL';
-      healBtn.style.cssText = 'font-size:10px;padding:3px 7px;background:rgba(74,205,74,0.12);border:1px solid rgba(74,205,74,0.4);color:#4acd7a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.04em';
+      healBtn.style.cssText = 'flex:1;font-size:10px;padding:4px 2px;background:rgba(74,205,74,0.12);border:1px solid rgba(74,205,74,0.4);color:#4acd7a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.03em';
       (function(oi, inp) {
         dmgBtn.onclick = function() {
           var amt = parseInt(inp.value);
@@ -6292,9 +6294,10 @@ function renderTracker() {
           if(e.key==='Enter') { e.preventDefault(); dmgBtn.click(); }
         };
       })(origIdx, hpInput);
+      btnRow.appendChild(dmgBtn);
+      btnRow.appendChild(healBtn);
       hpRow.appendChild(hpInput);
-      hpRow.appendChild(dmgBtn);
-      hpRow.appendChild(healBtn);
+      hpRow.appendChild(btnRow);
     } else {
       // No max HP known yet — offer an inline way to set it instead of silently hiding controls
       var setHpInput = document.createElement('input');
