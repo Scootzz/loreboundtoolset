@@ -295,7 +295,7 @@ select option{background:#1a1208}
 .pc-combat-check:hover{border-color:var(--border-lit)}
 .pc-combat-check.selected{border-color:var(--pc-color);background:rgba(74,138,205,0.1);color:var(--pc-color)}
 .pc-combat-check input[type=checkbox]{accent-color:var(--pc-color);width:14px;height:14px;cursor:pointer}
-.enemy-row{display:grid;grid-template-columns:1fr 80px 36px;gap:6px;align-items:center;margin-bottom:6px}
+.enemy-row{display:grid;grid-template-columns:minmax(0,1fr) 62px 58px 58px 36px;gap:6px;align-items:center;margin-bottom:6px}
 .difficulty-badge{display:inline-block;font-family:Cinzel,serif;font-size:12px;letter-spacing:.12em;padding:4px 14px;border-radius:4px;border:1px solid;margin-bottom:10px}
 .diff-easy{color:#4a9a4a;border-color:#2a5a2a;background:rgba(74,154,74,0.1)}
 .diff-medium{color:#d4a843;border-color:#8a6020;background:rgba(212,168,67,0.1)}
@@ -2804,7 +2804,7 @@ function saveCurrentScenario() {
   if(!name) return;
   var scenarios = loadScenarios();
   // Collect current encounter builder state directly from the live enemyRows array (source of truth)
-  var rows = enemyRows.map(function(r){ return {creature:r.creature, qty:r.qty||1, legendary:!!r.legendary}; });
+  var rows = enemyRows.map(function(r){ return {creature:r.creature, qty:r.qty||1, legendary:!!r.legendary, lair:!!r.lair}; });
   var pcChecks = {};
   document.querySelectorAll('.pc-combat-check').forEach(function(cb) {
     if(cb.checked) pcChecks[cb.dataset.id] = true;
@@ -2833,7 +2833,7 @@ function loadScenario(id) {
   // then render once — patching the DOM after repeated addEnemyRow() calls doesn't work because each
   // call re-renders the whole list from the array, wiping out any prior DOM-only patch.
   if(scenario.enemies) {
-    enemyRows = scenario.enemies.map(function(e){ return {creature:e.creature, qty:e.qty||1, legendary:!!e.legendary}; });
+    enemyRows = scenario.enemies.map(function(e){ return {creature:e.creature, qty:e.qty||1, legendary:!!e.legendary, lair:!!e.lair}; });
     renderEnemyRows();
   }
   // Restore the saved analysis result, if one was captured, instead of requiring a re-run
@@ -4708,6 +4708,7 @@ function renderEnemyRows() {
   var allNames = Object.keys(CREATURES).sort();
   enemyRows.forEach(function(row, i) {
     if(!row.legendary) row.legendary = false;
+    if(!row.lair) row.lair = false;
     var div = document.createElement('div'); div.className = 'enemy-row';
 
     // Searchable creature combobox (replaces the old plain <select>, which had no search
@@ -4775,7 +4776,25 @@ function renderEnemyRows() {
     del.onclick = (function(idx) { return function() { enemyRows.splice(idx,1); renderEnemyRows(); }; })(i);
 
     div.appendChild(comboWrap); div.appendChild(qty);
-    var _ll=document.createElement('label');_ll.style.cssText='display:flex;align-items:center;gap:3px;font-size:10px;color:var(--gold);font-family:Cinzel,serif;cursor:pointer;padding:7px 8px;border:1px solid var(--gold-dim);border-radius:4px;white-space:nowrap';var _lc=document.createElement('input');_lc.type='checkbox';_lc.style.cssText='width:auto;flex-shrink:0';_lc.checked=!!row.legendary;_lc.onchange=(function(ri){return function(){enemyRows[ri].legendary=this.checked;};})(i);_ll.appendChild(_lc);_ll.appendChild(document.createTextNode(' LEG'));div.appendChild(_ll); div.appendChild(del);
+    var legBtn = document.createElement('button');
+    legBtn.type = 'button';
+    legBtn.textContent = 'LEG';
+    legBtn.title = 'Legendary — gets Legendary Actions, Resistances, and a beefed-up statblock';
+    var legStyle = function(){ return 'width:100%;font-size:9px;font-family:Cinzel,serif;letter-spacing:.04em;padding:7px 2px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:all .15s;'
+      + (row.legendary ? 'background:var(--gold);border:1px solid var(--gold);color:#1a1208;font-weight:bold' : 'background:none;border:1px solid var(--gold-dim);color:var(--gold)'); };
+    legBtn.style.cssText = legStyle();
+    legBtn.onclick = (function(ri){ return function(){ enemyRows[ri].legendary = !enemyRows[ri].legendary; row.legendary = enemyRows[ri].legendary; legBtn.style.cssText = legStyle(); }; })(i);
+
+    var lairBtn = document.createElement('button');
+    lairBtn.type = 'button';
+    lairBtn.textContent = 'LAIR';
+    lairBtn.title = 'This encounter includes Lair Actions';
+    var lairStyle = function(){ return 'width:100%;font-size:9px;font-family:Cinzel,serif;letter-spacing:.04em;padding:7px 2px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:all .15s;'
+      + (row.lair ? 'background:#d4763a;border:1px solid #d4763a;color:#1a1208;font-weight:bold' : 'background:none;border:1px solid #8a5a2a;color:#d4903a'); };
+    lairBtn.style.cssText = lairStyle();
+    lairBtn.onclick = (function(ri){ return function(){ enemyRows[ri].lair = !enemyRows[ri].lair; row.lair = enemyRows[ri].lair; lairBtn.style.cssText = lairStyle(); }; })(i);
+
+    div.appendChild(legBtn); div.appendChild(lairBtn); div.appendChild(del);
     container.appendChild(div);
   });
 }
@@ -4807,7 +4826,8 @@ async function analyseEncounter() {
   var enemySummary = enemyRows.map(function(r) {
     var c = CREATURES[r.creature];
     var legFlag = r.legendary ? ' [LEGENDARY]' : '';
-    return r.qty + 'x ' + r.creature + legFlag + ' (CR ' + (c?c.cr:'?') + ', Type: ' + (c?c.type:'?') + ', Primary: ' + (c?c.primary:'?') + ')';
+    var lairFlag = r.lair ? ' [LAIR ACTIONS]' : '';
+    return r.qty + 'x ' + r.creature + legFlag + lairFlag + ' (CR ' + (c?c.cr:'?') + ', Type: ' + (c?c.type:'?') + ', Primary: ' + (c?c.primary:'?') + ')';
   }).join(', ');
 
   var jsonSchema = '{"difficulty":"Easy OR Medium OR Hard OR Deadly","xp_note":"brief XP/milestone note","tips":["tip 1","tip 2","tip 3"],"scaling_warning":"EMPTY STRING unless enemies are significantly under-levelled (CR 3+ below party level), then suggest specific upgrades","scale_suggestions":["specific enemy to add or upgrade","e.g. replace Bandits with Veterans CR3","add a named leader with legendary actions"],"if_too_easy":["suggestion 1","suggestion 2"],"if_too_hard":["suggestion 1","suggestion 2"]}';
