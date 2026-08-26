@@ -5917,7 +5917,7 @@ function renderHomebrewInCraft() {
         var card = document.createElement('div');
         card.style.cssText = 'background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:10px;margin-bottom:8px';
         card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-          + '<span style="font-family:Cinzel,serif;font-size:12px;font-weight:bold;color:var(--gold);flex:1">'+item.n+'</span>'
+          + '<span style="font-family:Cinzel,serif;font-size:12px;font-weight:bold;color:var(--gold);flex:1">'+(item.name||item.n||'Unnamed Item')+'</span>'
           + (item.type?'<span style="font-size:10px;color:var(--muted)">'+item.type+'</span>':'')
           + (item.source==='forge'?'<span style="font-size:9px;color:var(--accent);border:1px solid var(--accent);padding:1px 4px;border-radius:2px">FORGED</span>':'')
           + '</div>'
