@@ -1891,6 +1891,7 @@ select option{background:#1a1208}
         <span class="store-chip" data-group="shop" data-val="Jeweller" onclick="this.classList.toggle('active');renderStore()">&#128142; Jeweller</span>
         <span class="store-chip" data-group="shop" data-val="Temple" onclick="this.classList.toggle('active');renderStore()">&#10024; Temple</span>
         <span class="store-chip" data-group="shop" data-val="Magic Shop" onclick="this.classList.toggle('active');renderStore()">&#9998; Magic Shop</span>
+        <span class="store-chip" data-group="shop" data-val="Components" onclick="this.classList.toggle('active');renderStore()">&#129514; Components</span>
       </div></div>
     <div style="margin-bottom:10px"><span class="field-label" style="display:block;margin-bottom:5px">Type</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -7939,6 +7940,31 @@ function initStoreChips(){
   var t=document.getElementById("store-tier"); if(t) t.addEventListener("change",renderStore);
   var s=document.getElementById("store-search"); if(s) s.addEventListener("input",renderStore);
 }
+var _componentStoreItemsCache = null;
+function getComponentStoreItems() {
+  if(_componentStoreItemsCache) return _componentStoreItemsCache;
+  var priceByRarity = {Common:15, Uncommon:75, Rare:400, 'Very Rare':2000, Legendary:10000, Artifact:50000};
+  var items = [];
+  Object.keys(CREATURES).forEach(function(creatureName) {
+    var creature = CREATURES[creatureName];
+    (creature.components||[]).forEach(function(comp) {
+      // Skip "CR X — Type" metadata rows mixed into some creatures' component lists — not real sellable items
+      if(!comp.rarity || /^CR\s/.test(comp.name||'')) return;
+      var displayCreature = creatureName.charAt(0) + creatureName.slice(1).toLowerCase();
+      items.push({
+        n: comp.name + ' (from ' + displayCreature + ')',
+        c: priceByRarity[comp.rarity] || 50,
+        r: comp.rarity,
+        cat: 'Creature Component',
+        t: ['component', (comp.aspect||'').toLowerCase()],
+        s: 'Components'
+      });
+    });
+  });
+  _componentStoreItemsCache = items;
+  return items;
+}
+
 function renderStore() {
   var list = document.getElementById('store-list');
   if(!list) { console.error('store-list not found'); return; }
@@ -7955,7 +7981,8 @@ function renderStore() {
 
   var allowR = TIER_RARITY ? TIER_RARITY[tier] : null;
 
-  var filtered = STORE_ITEMS.filter(function(x) {
+  var allItems = STORE_ITEMS.concat(getComponentStoreItems());
+  var filtered = allItems.filter(function(x) {
     if(allowR && tier > 0 && allowR.indexOf(x.r) === -1) return false;
     if(ar.length && ar.indexOf(x.r) === -1) return false;
     if(at.length && !at.some(function(v){ return x.t && x.t.indexOf(v) !== -1; })) return false;
@@ -8003,7 +8030,7 @@ function renderStore() {
 
       var costSpan = document.createElement('span');
       costSpan.style.cssText = 'font-size:12px;color:var(--gold);white-space:nowrap';
-      costSpan.textContent = item.c >= 1000 ? (item.c/100).toFixed(0) + ' gp' : item.c + ' gp';
+      costSpan.textContent = item.c.toLocaleString() + ' gp';
 
       row.appendChild(nameDiv);
       row.appendChild(raritySpan);
@@ -11105,6 +11132,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }, {passive:false});
 
   container.addEventListener('pointerdown', function(e){
+    if(e.target.closest('.map-pin')) return; // let the pin's own click/contextmenu handlers run undisturbed — capturing the pointer here would redirect their events to the container instead
     _mapDragging=true; _mapDragStartX=e.clientX-_mapPanX; _mapDragStartY=e.clientY-_mapPanY;
     _mapPointerDownX=e.clientX; _mapPointerDownY=e.clientY;
     container.style.cursor='grabbing'; container.setPointerCapture(e.pointerId);
