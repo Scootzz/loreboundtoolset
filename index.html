@@ -2853,13 +2853,26 @@ function loadScenario(id) {
 
 function deleteScenario() {
   var sel = document.getElementById('scenario-select');
-  if(!sel || !sel.value) return;
-  var id = sel.value;
-  var scenario = loadScenarios().find(function(s){return s.id===id;});
-  if(!scenario) return;
-  if(!confirm('Delete scenario "'+scenario.name+'"?')) return;
-  saveScenarios(loadScenarios().filter(function(s){return s.id!==id;}));
-  renderScenarioSelect();
+  if(sel && sel.value) {
+    // A saved scenario is loaded — delete it
+    var id = sel.value;
+    var scenario = loadScenarios().find(function(s){return s.id===id;});
+    if(!scenario) return;
+    if(!confirm('Delete scenario "'+scenario.name+'"?')) return;
+    saveScenarios(loadScenarios().filter(function(s){return s.id!==id;}));
+    renderScenarioSelect();
+  } else {
+    // No saved scenario selected — this is a work-in-progress encounter, so wipe it back to default
+    if(!confirm('Clear the current encounter builder? This resets players, enemies, and any analysis shown.')) return;
+    var container = document.getElementById('enemy-rows');
+    if(container){ container.innerHTML=''; enemyRows=[]; }
+    document.querySelectorAll('.pc-combat-check').forEach(function(cb){ cb.checked=false; selectedCombatPcs[cb.dataset.id]=false; });
+    var result = document.getElementById('combat-result');
+    if(result) result.classList.add('hidden');
+    var content = document.getElementById('combat-result-content');
+    if(content) content.innerHTML = '';
+    window._lastAnalysis = null;
+  }
 }
 
 
@@ -6492,6 +6505,8 @@ function openSecondScreen() {
     '.ss-card.active .ss-init{color:#d4a843}' +
     '.ss-name{font-size:17px;margin-top:8px;color:#e8d5a8}' +
     '.ss-card.active .ss-name{color:#d4a843;font-weight:bold}' +
+    '.ss-conds{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:8px}' +
+    '.ss-cond-chip{font-size:10px;font-family:Cinzel,serif;letter-spacing:.04em;padding:3px 7px;border-radius:10px;color:#fff;white-space:nowrap}' +
     '.ss-empty{font-size:18px;color:#c8a86a;font-style:italic;padding:20px}' +
     '</style></head><body><div id="ss-wrap"><div class="ss-empty">Waiting for combatants...</div></div></body></html>'
   );
@@ -6516,8 +6531,15 @@ function updateSecondScreen() {
   wrap.innerHTML = sorted.map(function(s) {
     var isActive = trackerStarted && s.i === trackerActiveTurn;
     var initDisplay = s.c.initiative!=null ? s.c.initiative : '?';
-    // Explicitly no HP, AC, or conditions here — this view is player-facing only.
-    return '<div class="ss-card' + (isActive?' active':'') + '"><div class="ss-init">' + initDisplay + '</div><div class="ss-name">' + s.c.name.replace(/</g,'&lt;') + '</div></div>';
+    var condsHtml = '';
+    if(s.c.conditions && s.c.conditions.length) {
+      condsHtml = '<div class="ss-conds">' + s.c.conditions.map(function(cond) {
+        var col = (typeof CONDITION_COLORS!=='undefined' && CONDITION_COLORS[cond.name]) || '#888';
+        return '<span class="ss-cond-chip" style="background:'+col+'">' + cond.name.replace(/</g,'&lt;') + '</span>';
+      }).join('') + '</div>';
+    }
+    // HP and AC are intentionally never shown here — this view is player-facing only.
+    return '<div class="ss-card' + (isActive?' active':'') + '"><div class="ss-init">' + initDisplay + '</div><div class="ss-name">' + s.c.name.replace(/</g,'&lt;') + '</div>' + condsHtml + '</div>';
   }).join('');
 }
 
