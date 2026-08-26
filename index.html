@@ -717,7 +717,7 @@ select option{background:#1a1208}
 <div class="nav-drawer hidden" id="nav-drawer">
   <button class="main-tab" data-tab="forge" onclick="enterTab('forge')">&#9874;&#xFE0E; Forge</button>
   <button class="main-tab" data-tab="settlement" onclick="enterTab('settlement')">&#127963;&#xFE0E; Settlement</button>
-  <button class="main-tab" data-tab="pcs" onclick="enterTab('pcs')">&#11041;&#xFE0E; Characters</button>
+  <button class="main-tab" data-tab="pcs" onclick="enterTab('pcs')">&#11041;&#xFE0E; Players</button>
   <button class="main-tab" data-tab="npcs" onclick="enterTab('npcs')">&#128101;&#xFE0E; NPCs</button>
   <button class="main-tab" data-tab="timeline" onclick="enterTab('timeline')">&#128337;&#xFE0E; Timeline</button>
   <button class="main-tab" data-tab="combat" onclick="enterTab('combat')">&#9876;&#xFE0E; Combat</button>
@@ -817,7 +817,7 @@ select option{background:#1a1208}
     <div id="landing-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
       <button class="landing-tile" onclick="enterTab('forge')"><span class="landing-icon">&#9874;</span><span class="landing-name">Forge</span></button>
       <button class="landing-tile" onclick="enterTab('settlement')"><span class="landing-icon">&#127963;</span><span class="landing-name">Settlement</span></button>
-      <button class="landing-tile" onclick="enterTab('pcs')"><span class="landing-icon">&#11041;&#xFE0E;</span><span class="landing-name">Characters</span></button>
+      <button class="landing-tile" onclick="enterTab('pcs')"><span class="landing-icon">&#11041;&#xFE0E;</span><span class="landing-name">Players</span></button>
       <button class="landing-tile" onclick="enterTab('npcs')"><span class="landing-icon">&#128101;&#xFE0E;</span><span class="landing-name">NPCs</span></button>
       <button class="landing-tile" onclick="enterTab('timeline')"><span class="landing-icon">&#128337;&#xFE0E;</span><span class="landing-name">Timeline</span></button>
       <button class="landing-tile" onclick="enterTab('combat')"><span class="landing-icon">&#9876;&#xFE0E;</span><span class="landing-name">Combat</span></button>
@@ -1019,7 +1019,7 @@ select option{background:#1a1208}
 <!-- ═══ PLAYER CHARACTERS TAB ═══ -->
 <div id="tab-pcs" class="tab-pane">
   <div class="panel">
-    <div class="panel-label">Player Characters</div>
+    <div class="panel-label">Players</div>
     <p style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">Track each player character and their personal story plot points.</p>
     <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <button class="btn-gold btn-sm" onclick="openPcModal(null)">+ Add Character</button>
@@ -1028,7 +1028,7 @@ select option{background:#1a1208}
       <input type="file" id="pc-update-input" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple style="display:none" onchange="handlePcUpdateUpload(event)">
     </div>
     <div id="pc-import-status" class="hidden" style="padding:10px;background:rgba(74,138,205,0.08);border:1px solid var(--border);border-radius:4px;margin-bottom:10px;font-size:13px;color:var(--muted);font-style:italic"></div>
-    <input type="text" id="pc-search" placeholder="Search characters..." oninput="renderPcs()" style="margin-bottom:12px">
+    <input type="text" id="pc-search" placeholder="Search players..." oninput="renderPcs()" style="margin-bottom:12px">
     <div id="pc-list"></div>
   </div>
   <div class="panel" style="margin-top:12px">
@@ -5788,7 +5788,7 @@ function enterTab(name) {
   // Update label bar
   var label = document.getElementById('current-tab-label');
   var desc = document.getElementById('current-tab-desc');
-  var labels = {forge:'FORGE',settlement:'SETTLEMENT',pcs:'CHARACTERS',npcs:'NPCS',
+  var labels = {forge:'FORGE',settlement:'SETTLEMENT',pcs:'PLAYERS',npcs:'NPCS',
     timeline:'TIMELINE',combat:'COMBAT',crafting:'REFERENCE',homebrew:'HOMEBREW',
     store:'STORE',inventory:'INVENTORY',factions:'FACTIONS',music:'MUSIC',naval:'NAVAL',
     welcome:'HOME','sessions-main':'SESSIONS','rumours-main':'RUMOURS'};
@@ -5842,7 +5842,7 @@ function patchSwitchTab() {
     orig(name, btn);
     var label = document.getElementById('current-tab-label');
     var desc = document.getElementById('current-tab-desc');
-    var labels = {forge:'FORGE',settlement:'SETTLEMENT',pcs:'CHARACTERS',npcs:'NPCS',timeline:'TIMELINE',combat:'COMBAT',crafting:'REFERENCE',homebrew:'HOMEBREW',store:'STORE',inventory:'INVENTORY',factions:'FACTIONS',music:'MUSIC',naval:'NAVAL',welcome:'HOME','sessions-main':'SESSIONS','rumours-main':'RUMOURS'};
+    var labels = {forge:'FORGE',settlement:'SETTLEMENT',pcs:'PLAYERS',npcs:'NPCS',timeline:'TIMELINE',combat:'COMBAT',crafting:'REFERENCE',homebrew:'HOMEBREW',store:'STORE',inventory:'INVENTORY',factions:'FACTIONS',music:'MUSIC',naval:'NAVAL',welcome:'HOME','sessions-main':'SESSIONS','rumours-main':'RUMOURS'};
     if(label) label.textContent = labels[name]||name.toUpperCase();
     if(desc) desc.textContent = TAB_DESCS[name]||'';
     closeNavDrawer();
