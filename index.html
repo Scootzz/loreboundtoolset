@@ -246,6 +246,12 @@ select option{background:#1a1208}
 .tracker-card.active-turn{border-color:var(--tab-glow);box-shadow:0 0 0 3px var(--tab-glow-soft),0 0 20px var(--tab-glow-soft);background:var(--tab-glow-bg);transform:translateY(-3px)}
 .tracker-card.active-turn::before{content:'';position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--gold);filter:drop-shadow(0 0 4px var(--gold));animation:turnPointerBounce 1s ease-in-out infinite}
 @keyframes turnPointerBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(4px)}}
+.npc-card-pin-highlight{animation:npcPinHighlight 2.2s ease-out}
+@keyframes npcPinHighlight{
+  0%{box-shadow:0 0 0 3px var(--gold),0 0 30px 6px rgba(212,168,67,.7);border-color:var(--gold)}
+  70%{box-shadow:0 0 0 3px var(--gold),0 0 30px 6px rgba(212,168,67,.7);border-color:var(--gold)}
+  100%{box-shadow:none;}
+}
 .tracker-card.active-turn .tracker-init{color:var(--tab-glow);font-size:26px}
 .tracker-card.active-turn .tracker-name{color:var(--gold)}
 .tracker-card.pc-card-tracker{border-color:rgba(74,138,205,0.5)}
@@ -8915,6 +8921,27 @@ function syncMapImgWrap() {
   renderMapPins();
 }
 
+function goToNpcCard(npcId) {
+  enterTab('npcs');
+  var searchEl = document.getElementById('npc-search');
+  if(searchEl) searchEl.value = '';
+  var locFilter = document.getElementById('npc-location-filter');
+  if(locFilter) locFilter.value = '';
+  var regFilter = document.getElementById('npc-region-filter');
+  if(regFilter) regFilter.value = '';
+  if(typeof populateLocationFilterForRegion==='function') populateLocationFilterForRegion('');
+  renderNpcs();
+  setTimeout(function(){
+    var card = document.getElementById('npc-card-'+npcId);
+    if(!card) return;
+    card.scrollIntoView({behavior:'smooth', block:'center'});
+    card.classList.remove('npc-card-pin-highlight');
+    void card.offsetWidth; // force reflow so the animation restarts even on repeat clicks
+    card.classList.add('npc-card-pin-highlight');
+    setTimeout(function(){ card.classList.remove('npc-card-pin-highlight'); }, 2300);
+  }, 60);
+}
+
 function renderMapPins() {
   var layer = document.getElementById('map-pins-layer');
   if(!layer) return;
@@ -8937,7 +8964,7 @@ function renderMapPins() {
         }
       } else if(npc) {
         closeModal('location-map-modal');
-        openNpcModal(npc.id);
+        goToNpcCard(npc.id);
       }
     });
     layer.appendChild(dot);
