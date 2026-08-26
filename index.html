@@ -6660,15 +6660,28 @@ function nextTrackerTurn() {
   var sorted = trackerCombatants.slice().map(function(c,i){return i;})
     .sort(function(a,b){return (trackerCombatants[b].initiative||0)-(trackerCombatants[a].initiative||0);});
   var currentPos = sorted.indexOf(trackerActiveTurn);
+  var endingIdx = trackerActiveTurn; // the combatant whose turn is about to end
   var nextPos = (currentPos+1) % sorted.length;
   if(nextPos===0) trackerRound++;
   trackerActiveTurn = sorted[nextPos];
+  var startingIdx = trackerActiveTurn; // the combatant whose turn is about to begin
+
+  // Expire conditions tied to this turn boundary. "End of turn" clears on the creature whose
+  // turn just finished; "Start of next turn" clears on the creature whose turn is now beginning.
+  var ending = trackerCombatants[endingIdx];
+  if(ending && ending.conditions && ending.conditions.length) {
+    ending.conditions = ending.conditions.filter(function(c){ return c.duration!=='End of turn'; });
+  }
+  var starting = trackerCombatants[startingIdx];
+  if(starting && starting.conditions && starting.conditions.length) {
+    starting.conditions = starting.conditions.filter(function(c){ return c.duration!=='Start of next turn'; });
+  }
+
   renderTracker();
 
   // Reset reaction on new turn, legendary action recharge, lair action warning
   if(trackerStarted && trackerCombatants.length) {
-    var _sorted = trackerCombatants.slice().sort(function(a,b){return (b.initiative||0)-(a.initiative||0);});
-    var _active = _sorted[trackerActiveTurn % _sorted.length];
+    var _active = trackerCombatants[trackerActiveTurn];
     if(_active) {
       _active.reactionUsed = false;
       if(_active.legendary && _active.legActCur!=null) _active.legActCur = _active.legActMax||3;
@@ -6677,15 +6690,6 @@ function nextTrackerTurn() {
       var hasLair = trackerCombatants.some(function(c){return c.lairActions;});
       if(hasLair && typeof showToast!=='undefined') showToast('Initiative 20 — Lair Action!');
     }
-  }
-
-  // Turn-start resets
-  if(trackerStarted && trackerCombatants.length) {
-    var _s=trackerCombatants.slice().sort(function(a,b){return (b.initiative||0)-(a.initiative||0);});
-    var _a=_s[trackerActiveTurn%_s.length];
-    if(_a){_a.reactionUsed=false; if(_a.legendary&&_a.legActCur!=null)_a.legActCur=_a.legActMax||3;}
-    if(trackerActiveTurn===0&&trackerCombatants.some(function(c){return c.lairActions;})&&typeof showToast!=='undefined')
-      showToast('Initiative 20 — Lair Action!');
   }
 }
 
@@ -6718,16 +6722,26 @@ function endCombat() {
   trackerCombatants=[]; trackerRound=1; trackerActiveTurn=0; trackerStarted=false;
   renderTracker();
   var ecb=document.getElementById('end-combat-btn'); if(ecb) ecb.style.display='none';
-  // Scroll to loot generator and pre-fill enemies
+  // Collapse the tracker (combat's over) and expand Loot Generator (time to hand out spoils)
   setTimeout(function(){
     var lootEl = document.getElementById('loot-enemies');
-    var lootPanel = document.getElementById('loot-generator-panel');
     if(lootEl && enemyText) lootEl.value = enemyText;
-    if(lootPanel) {
-      lootPanel.style.display = 'block';
-      lootPanel.scrollIntoView({behavior:'smooth', block:'start'});
-    }
+    setCombatPanelCollapsed('Combat Tracker', true);
+    setCombatPanelCollapsed('Loot Generator', false);
+    var lootPanel = document.getElementById('loot-generator-panel');
+    if(lootPanel) lootPanel.scrollIntoView({behavior:'smooth', block:'start'});
   }, 300);
+}
+
+function setCombatPanelCollapsed(labelText, collapsed) {
+  var labels = document.querySelectorAll('#tab-combat .panel-label.collapsible');
+  for(var i=0; i<labels.length; i++) {
+    if(labels[i].textContent.indexOf(labelText) !== -1) {
+      var isCollapsed = labels[i].classList.contains('collapsed');
+      if(isCollapsed !== collapsed) labels[i].click();
+      break;
+    }
+  }
 }
 
 function resetTracker() {
