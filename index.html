@@ -1905,7 +1905,10 @@ select option{background:#1a1208}
         <span class="store-chip" data-group="type" data-val="potion" onclick="this.classList.toggle('active');renderStore()">Potions</span>
         <span class="store-chip" data-group="type" data-val="scroll" onclick="this.classList.toggle('active');renderStore()">Scrolls</span>
       </div></div>
-    <div id="store-count" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div id="store-count" style="font-size:12px;color:var(--muted)"></div>
+      <button class="btn-ghost btn-sm" onclick="clearStoreFilters()" style="font-size:11px">&#10005; Clear All Filters</button>
+    </div>
     <div id="store-list"></div>
   </div>
 </div>
@@ -2346,7 +2349,7 @@ select option{background:#1a1208}
       <button class="btn-gold btn-sm" id="ct-add-condition-btn" style="padding:6px 16px;font-size:14px;font-weight:bold">+ Add</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div>
+      <div id="ct-death-saves-wrap">
         <span class="field-label">Death Saves</span>
         <div style="display:flex;gap:6px;margin-top:4px;align-items:center">
           <input type="checkbox" id="ct-ds1"><input type="checkbox" id="ct-ds2"><input type="checkbox" id="ct-ds3">
@@ -6254,6 +6257,15 @@ function renderTracker() {
       + (isActive ? ' active-turn' : '')
       + (isDead ? ' dead-card' : '');
 
+    // Bloodied indicator — a blood-drop badge when at or below half HP but not dead/lair
+    if(!c.isLair && c.hpMax > 0 && !isDead && hpPct <= 0.5 && hpPct > 0) {
+      var _bloodied = document.createElement('div');
+      _bloodied.title = 'Bloodied (at or below half HP)';
+      _bloodied.style.cssText = 'position:absolute;top:4px;right:4px;width:14px;height:16px;z-index:5';
+      _bloodied.innerHTML = '<svg viewBox="0 0 24 28" width="14" height="16"><path d="M12 0 C12 0 2 14 2 20 C2 24.4 6.5 28 12 28 C17.5 28 22 24.4 22 20 C22 14 12 0 12 0 Z" fill="#cd2a2a" stroke="#5a0f0f" stroke-width="1"/></svg>';
+      card.appendChild(_bloodied);
+    }
+
     if(hasConditions) {
       var _fc6 = firstCondCol.length===4 ? '#'+firstCondCol[1]+firstCondCol[1]+firstCondCol[2]+firstCondCol[2]+firstCondCol[3]+firstCondCol[3] : firstCondCol;
       card.style.borderColor = _fc6;
@@ -6307,11 +6319,19 @@ function renderTracker() {
           e.stopPropagation();
           var amt = parseInt(prompt('Damage amount:'));
           if(!amt || amt <= 0) return;
-          trackerCombatants[oi].hpCur = Math.max(0, trackerCombatants[oi].hpCur - amt);
-          if(trackerCombatants[oi].hpCur === 0) {
-            var deadCond = {name:'Dead', icon:'&#9760;', color:'#888'};
-            var conds = trackerCombatants[oi].conditions;
-            if(!conds.some(function(x){return x.name==='Dead';})) conds.push(deadCond);
+          var target = trackerCombatants[oi];
+          target.hpCur = Math.max(0, target.hpCur - amt);
+          if(target.hpCur === 0) {
+            var conds = target.conditions;
+            if(target.isEnemy) {
+              // Enemies drop straight to Dead — no death saves for monsters
+              if(!conds.some(function(x){return x.name==='Dead';})) conds.push({name:'Dead', icon:'&#9760;', color:'#888'});
+            } else if(!conds.some(function(x){return x.name==='Dead'||x.name==='Dying (0 HP)';})) {
+              // PCs go Dying instead, with a fresh set of death saves to track
+              conds.push({name:'Dying (0 HP)', icon:'', color:'#cd4a4a'});
+              target.deathSuccesses = [false,false,false];
+              target.deathFails = [false,false,false];
+            }
           }
           renderTracker();
         };
@@ -6320,8 +6340,8 @@ function renderTracker() {
           var amt = parseInt(prompt('Heal amount:'));
           if(!amt || amt <= 0) return;
           trackerCombatants[oi].hpCur = Math.min(trackerCombatants[oi].hpMax, trackerCombatants[oi].hpCur + amt);
-          // Remove dead condition if healed
-          trackerCombatants[oi].conditions = trackerCombatants[oi].conditions.filter(function(x){return x.name!=='Dead' && x.name!=='Dying (0 HP)';});
+          // Remove dead/dying/stabilized conditions if healed back up
+          trackerCombatants[oi].conditions = trackerCombatants[oi].conditions.filter(function(x){return x.name!=='Dead' && x.name!=='Dying (0 HP)' && x.name!=='Stabilized';});
           renderTracker();
         };
       })(origIdx);
@@ -6457,7 +6477,7 @@ function renderTracker() {
       _rb.textContent='RXN USED';
       card.appendChild(_rb);
     }
-    if(c.deathFails&&c.deathFails.some(Boolean)) {
+    if(!c.isEnemy && c.deathFails && c.deathFails.some(Boolean)) {
       var _db=document.createElement('div');
       var _fc=c.deathFails.filter(Boolean).length;
       _db.style.cssText='font-size:9px;color:var(--danger);border:1px solid var(--danger);border-radius:2px;padding:1px 4px;margin-top:2px;text-align:center;font-family:Cinzel,serif';
@@ -6612,6 +6632,8 @@ function openCombatantModal(idx) {
   var df=c.deathFails||[false,false,false];
   ['ct-ds1','ct-ds2','ct-ds3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.checked=!!ds[i];});
   ['ct-df1','ct-df2','ct-df3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.checked=!!df[i];});
+  var dsWrap = document.getElementById('ct-death-saves-wrap');
+  if(dsWrap) dsWrap.style.display = c.isEnemy ? 'none' : ''; // death saves are a PC-only mechanic
   var cEl=document.getElementById('ct-concentration'); if(cEl) cEl.checked=!!c.concentrating;
   var rEl=document.getElementById('ct-reaction-used'); if(rEl) rEl.checked=!!c.reactionUsed;
   var lEl=document.getElementById('ct-legendary'); if(lEl){
@@ -6664,6 +6686,18 @@ function saveCombatant() {
   c.ac = parseInt(document.getElementById('ct-ac').value)||c.ac||0;
   c.deathSuccesses=[document.getElementById('ct-ds1').checked,document.getElementById('ct-ds2').checked,document.getElementById('ct-ds3').checked];
   c.deathFails=[document.getElementById('ct-df1').checked,document.getElementById('ct-df2').checked,document.getElementById('ct-df3').checked];
+  if(!c.isEnemy) {
+    var wasDying = pendingConditions.some(function(x){return x.name==='Dying (0 HP)';});
+    if(wasDying && c.deathFails.every(Boolean)) {
+      // 3 failed death saves — the character has died
+      pendingConditions = pendingConditions.filter(function(x){return x.name!=='Dying (0 HP)';});
+      pendingConditions.push({name:'Dead', icon:'&#9760;', color:'#888'});
+    } else if(wasDying && c.deathSuccesses.every(Boolean)) {
+      // 3 successful death saves — stabilized (unconscious, but no longer at risk of dying)
+      pendingConditions = pendingConditions.filter(function(x){return x.name!=='Dying (0 HP)';});
+      if(!pendingConditions.some(function(x){return x.name==='Stabilized';})) pendingConditions.push({name:'Stabilized', icon:'', color:'#4a9a4a'});
+    }
+  }
   c.concentrating=document.getElementById('ct-concentration').checked;
   c.reactionUsed=document.getElementById('ct-reaction-used').checked;
   c.legendary=document.getElementById('ct-legendary').checked;
@@ -7963,6 +7997,15 @@ function getComponentStoreItems() {
   });
   _componentStoreItemsCache = items;
   return items;
+}
+
+function clearStoreFilters() {
+  document.querySelectorAll('.store-chip.active').forEach(function(chip){ chip.classList.remove('active'); });
+  var search = document.getElementById('store-search');
+  if(search) search.value = '';
+  var tier = document.getElementById('store-tier');
+  if(tier) tier.value = '0';
+  renderStore();
 }
 
 function renderStore() {
