@@ -6274,49 +6274,39 @@ function renderTracker() {
     if(c.isLair) {
       // no-op: lair cards skip HP/AC controls entirely
     } else if(c.hpMax > 0) {
-      var hpInput = document.createElement('input');
-      hpInput.type = 'number';
-      hpInput.min = '1';
-      hpInput.placeholder = 'amt';
-      hpInput.style.cssText = 'width:100%;box-sizing:border-box;font-size:12px;padding:4px 5px;text-align:center;background:var(--input-bg);border:1px solid var(--border);border-radius:3px;color:var(--text);margin-bottom:4px';
       var btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:4px';
       var dmgBtn = document.createElement('button');
       dmgBtn.innerHTML = '&#9876; DMG';
-      dmgBtn.style.cssText = 'flex:1;font-size:10px;padding:4px 2px;background:rgba(205,74,74,0.15);border:1px solid rgba(205,74,74,0.5);color:#cd4a4a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.03em';
+      dmgBtn.style.cssText = 'flex:1;font-size:10px;padding:5px 2px;background:rgba(205,74,74,0.15);border:1px solid rgba(205,74,74,0.5);color:#cd4a4a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.03em';
       var healBtn = document.createElement('button');
       healBtn.innerHTML = '&#10084; HEAL';
-      healBtn.style.cssText = 'flex:1;font-size:10px;padding:4px 2px;background:rgba(74,205,74,0.12);border:1px solid rgba(74,205,74,0.4);color:#4acd7a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.03em';
-      (function(oi, inp) {
-        dmgBtn.onclick = function() {
-          var amt = parseInt(inp.value);
-          if(!amt || amt <= 0) { inp.focus(); return; }
+      healBtn.style.cssText = 'flex:1;font-size:10px;padding:5px 2px;background:rgba(74,205,74,0.12);border:1px solid rgba(74,205,74,0.4);color:#4acd7a;border-radius:3px;cursor:pointer;white-space:nowrap;font-family:Cinzel,serif;letter-spacing:.03em';
+      (function(oi) {
+        dmgBtn.onclick = function(e) {
+          e.stopPropagation();
+          var amt = parseInt(prompt('Damage amount:'));
+          if(!amt || amt <= 0) return;
           trackerCombatants[oi].hpCur = Math.max(0, trackerCombatants[oi].hpCur - amt);
           if(trackerCombatants[oi].hpCur === 0) {
             var deadCond = {name:'Dead', icon:'&#9760;', color:'#888'};
             var conds = trackerCombatants[oi].conditions;
             if(!conds.some(function(x){return x.name==='Dead';})) conds.push(deadCond);
           }
-          inp.value = '';
           renderTracker();
         };
-        healBtn.onclick = function() {
-          var amt = parseInt(inp.value);
-          if(!amt || amt <= 0) { inp.focus(); return; }
+        healBtn.onclick = function(e) {
+          e.stopPropagation();
+          var amt = parseInt(prompt('Heal amount:'));
+          if(!amt || amt <= 0) return;
           trackerCombatants[oi].hpCur = Math.min(trackerCombatants[oi].hpMax, trackerCombatants[oi].hpCur + amt);
           // Remove dead condition if healed
           trackerCombatants[oi].conditions = trackerCombatants[oi].conditions.filter(function(x){return x.name!=='Dead' && x.name!=='Dying (0 HP)';});
-          inp.value = '';
           renderTracker();
         };
-        // Also allow Enter key on the input to deal damage
-        inp.onkeydown = function(e) {
-          if(e.key==='Enter') { e.preventDefault(); dmgBtn.click(); }
-        };
-      })(origIdx, hpInput);
+      })(origIdx);
       btnRow.appendChild(dmgBtn);
       btnRow.appendChild(healBtn);
-      hpRow.appendChild(hpInput);
       hpRow.appendChild(btnRow);
     } else {
       // No max HP known yet — offer an inline way to set it instead of silently hiding controls
@@ -6453,20 +6443,6 @@ function renderTracker() {
       _db.style.cssText='font-size:9px;color:var(--danger);border:1px solid var(--danger);border-radius:2px;padding:1px 4px;margin-top:2px;text-align:center;font-family:Cinzel,serif';
       _db.textContent='DEATH: '+'\u25A0'.repeat(_fc)+'\u25A1'.repeat(3-_fc);
       card.appendChild(_db);
-    }
-    // Condition chips on card
-    if(c.conditions && c.conditions.length) {
-      var chipRow = document.createElement('div');
-      chipRow.style.cssText = 'display:flex;gap:3px;flex-wrap:wrap;margin-top:3px';
-      c.conditions.forEach(function(cond) {
-        var chip = document.createElement('span');
-        var col = CONDITION_COLORS[cond.name] || '#888';
-        chip.style.cssText = 'font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid '+col+';color:'+col+';font-family:Cinzel,serif;letter-spacing:.04em;white-space:nowrap';
-        chip.textContent = cond.name.slice(0,5).toUpperCase();
-        chip.title = cond.name;
-        chipRow.appendChild(chip);
-      });
-      card.appendChild(chipRow);
     }
     bar.appendChild(card);
 
@@ -6757,6 +6733,7 @@ function endCombat() {
 function resetTracker() {
   if(!confirm('Reset the combat tracker? This clears all combatants and initiative.')) return;
   trackerCombatants=[]; trackerRound=1; trackerActiveTurn=0;
+  window._trackerAutoCollapsedOnce = false; // let the next combat re-trigger the auto-collapse
   renderTracker();
 }
 var _el_combatant_modal=document.getElementById('combatant-modal'); if(_el_combatant_modal) _el_combatant_modal.addEventListener('click',function(e){if(e.target===this)closeModal('combatant-modal');});
@@ -10718,22 +10695,12 @@ function updateFloatWidget() {
 })();
 
 // -- HP bars in combat tracker --------------------------------
-// Patch renderTracker to append hp bars after rendering
+// (Duplicate HP bar injection removed — renderTracker() already builds the health bar
+// inline for each card; this used to append a second one on top of it.)
 (function(){
   var _origRender = window.renderTracker;
   if(_origRender) window.renderTracker = function() {
     _origRender();
-    document.querySelectorAll('#tracker-bar-inner > div').forEach(function(card, i) {
-      var sorted = trackerCombatants.slice().sort(function(a,b){ return (b.initiative||0)-(a.initiative||0); });
-      var c = sorted[i];
-      if(!c || !c.hpMax) return;
-      var pct = Math.max(0, Math.min(100, Math.round((c.hpCur/c.hpMax)*100)));
-      var col = pct > 50 ? '#4a9a4a' : pct > 25 ? '#cd8a4a' : '#cd4a4a';
-      var bar = document.createElement('div');
-      bar.className = 'tracker-hp-bar';
-      bar.innerHTML = '<div class="tracker-hp-fill" style="width:'+pct+'%;background:'+col+'"></div>';
-      card.appendChild(bar);
-    });
     updateFloatWidget();
   };
 })();
