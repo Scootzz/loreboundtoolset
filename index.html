@@ -8954,6 +8954,7 @@ function renderMapPins() {
     dot.className = 'map-pin';
     dot.style.left = pin.x+'%';
     dot.style.top = pin.y+'%';
+    dot.title = (npc?npc.name:'(deleted NPC)') + ' — right-click to remove';
     dot.innerHTML = '<div class="map-pin-tooltip">'+(npc?npc.name.replace(/</g,'&lt;'):'(deleted NPC)')+'</div>';
     dot.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -8965,6 +8966,14 @@ function renderMapPins() {
       } else if(npc) {
         closeModal('location-map-modal');
         goToNpcCard(npc.id);
+      }
+    });
+    dot.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if(confirm('Remove this pin'+(npc?' ('+npc.name+')':'')+'?')) {
+        saveMapPins(loadMapPins().filter(function(p){return p.id!==pin.id;}));
+        renderMapPins();
       }
     });
     layer.appendChild(dot);
