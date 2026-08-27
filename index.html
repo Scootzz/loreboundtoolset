@@ -10778,7 +10778,7 @@ function renderGSearchResults(q) {
   // NPCs
   if(typeof loadNpcs !== 'undefined') loadNpcs().forEach(function(n){
     if(!q || n.name.toLowerCase().includes(q) || (n.role||'').toLowerCase().includes(q) || (n.notes||'').toLowerCase().includes(q)) {
-      results.push({cat:'NPC',name:n.name,sub:n.role||'',action:function(){ closeGSearch(); enterTab('npcs'); setTimeout(function(){ var s=document.getElementById('npc-search'); if(s){s.value=n.name; renderNpcs();} },200); }});
+      results.push({cat:'NPC',name:n.name,sub:n.role||'',action:function(){ closeGSearch(); goToNpcCard(n.id); }});
     }
   });
   // Locations
