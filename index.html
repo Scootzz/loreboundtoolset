@@ -9014,11 +9014,31 @@ function goToNpcCard(npcId) {
   enterTab('npcs');
   var searchEl = document.getElementById('npc-search');
   if(searchEl) searchEl.value = '';
+
+  // Only touch the region/location filters if they'd actually hide the target NPC — otherwise
+  // leave the DM's current browsing context alone (they may be deliberately viewing that area).
   var locFilter = document.getElementById('npc-location-filter');
-  if(locFilter) locFilter.value = '';
   var regFilter = document.getElementById('npc-region-filter');
-  if(regFilter) regFilter.value = '';
-  if(typeof populateLocationFilterForRegion==='function') populateLocationFilterForRegion('');
+  var locId = locFilter ? locFilter.value : '';
+  var regId = regFilter ? regFilter.value : '';
+  var npc = loadNpcs().find(function(n){return n.id===npcId;});
+  var wouldBeHidden = false;
+  if(locId) {
+    wouldBeHidden = !npc || npc.locationId !== locId;
+  } else if(regId) {
+    if(!npc || !npc.locationId) {
+      wouldBeHidden = true;
+    } else {
+      var loc = loadLocations().find(function(l){return l.id===npc.locationId;});
+      wouldBeHidden = !loc || loc.regionId !== regId;
+    }
+  }
+  if(wouldBeHidden) {
+    if(locFilter) locFilter.value = '';
+    if(regFilter) regFilter.value = '';
+    if(typeof populateLocationFilterForRegion==='function') populateLocationFilterForRegion('');
+  }
+
   renderNpcs();
   setTimeout(function(){
     var card = document.getElementById('npc-card-'+npcId);
