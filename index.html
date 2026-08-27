@@ -1382,6 +1382,18 @@ select option{background:#1a1208}
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn-gold btn-sm" onclick="document.getElementById('sn-upcoming-upload').click()">&#128196; Upload Notes</button>
       <input type="file" id="sn-upcoming-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleUpcomingSessionUpload(event)">
+      <select id="sn-theme-select" onchange="saveSessionTheme()" style="font-size:12px;padding:6px 10px;width:auto" title="Analysis will draw thematic inspiration from your chosen influence">
+        <option value="">No specific theme</option>
+        <option value="Brandon Sanderson (Cosmere)">Brandon Sanderson (Cosmere)</option>
+        <option value="Harry Potter">Harry Potter</option>
+        <option value="A Song of Ice and Fire / Game of Thrones">Game of Thrones</option>
+        <option value="The Witcher">The Witcher</option>
+        <option value="The Lord of the Rings">Lord of the Rings</option>
+        <option value="Dark Souls">Dark Souls</option>
+        <option value="Critical Role">Critical Role</option>
+        <option value="Grimdark / Warhammer">Grimdark / Warhammer</option>
+        <option value="Studio Ghibli">Studio Ghibli</option>
+      </select>
       <span style="font-size:11px;color:var(--muted)">PDF, Word or text</span>
     </div>
     <div id="sn-upcoming-status" style="display:none;margin-top:10px;padding:9px 12px;background:rgba(212,168,67,0.07);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted)"></div>
@@ -5651,7 +5663,7 @@ function exportData() {
     'fg_factions','fg_rumours','fg_regions','fg_naval','fg_naval_crew','fg_naval_upgrades',
     'fg_constructed','fg_scenarios','fg_linear_events','fg_prep_docs','fg_weather',
     'fg_playlists','fg_last_tab','fg_maps_migrated','fg_inventory','fg_party_gold','fg_gold_log','fg_loot_log','fg_campaign_name','fg_campaign_subtitle',
-    'fg_token_files','fg_statblock_files','fg_party_vehicle','fg_upcoming_notes'
+    'fg_token_files','fg_statblock_files','fg_party_vehicle','fg_upcoming_notes','fg_session_theme'
   ];
   keys.forEach(function(k){ data[k] = localStorage.getItem(k); });
   // NPC map pins are stored under dynamically-named keys (fg_pins_<mapKey>) — sweep localStorage for all of them
@@ -6027,7 +6039,7 @@ function renderHomebrewInCraft() {
         // Name + creature
         var info = document.createElement('div');
         info.style.cssText = 'flex:1;min-width:150px';
-        info.innerHTML = '<div style="font-family:Cinzel,serif;font-size:12px;font-weight:bold;color:var(--gold)">'+comp.name+'</div>'
+        info.innerHTML = '<div style="font-family:Cinzel,serif;font-size:12px;font-weight:bold;color:var(--gold)">'+comp.name+(comp.rarity?' <span style="font-size:10px;font-weight:normal;color:'+(RARITY_COLORS[comp.rarity]||'#999')+'">('+comp.rarity+')</span>':'')+'</div>'
           + (comp.creature?'<div style="font-size:12px;color:var(--text);opacity:0.7">from '+comp.creature+'</div>':'')
           + (comp.aspects?'<div style="font-size:12px;color:var(--accent);font-style:italic;margin-top:2px">'+comp.aspects+'</div>':'');
         card.appendChild(info);
@@ -12604,6 +12616,12 @@ function saveQuickSessionNotes() {
 function loadQuickSessionNotes() {
   var el = document.getElementById('sn-quick-notes');
   if(el) el.value = localStorage.getItem('fg_upcoming_notes') || '';
+  var themeEl = document.getElementById('sn-theme-select');
+  if(themeEl) themeEl.value = localStorage.getItem('fg_session_theme') || '';
+}
+function saveSessionTheme() {
+  var themeEl = document.getElementById('sn-theme-select');
+  if(themeEl) localStorage.setItem('fg_session_theme', themeEl.value);
 }
 function addToSessionNotes(text) {
   var current = localStorage.getItem('fg_upcoming_notes') || '';
@@ -12669,7 +12687,12 @@ function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
       }).join('\n\n')
     : 'No past session notes recorded yet.';
 
-  var prompt = 'You are an expert DM assistant. Analyse this session prep for continuity with recent sessions and fit with the party.\n\nParty: ' + pcContext + '\n\nRecent session context (most recent first):\n' + recapContext + '\n\nUpcoming session prep:\n' + prepText.slice(0,5000) + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills or continuity gaps with recent sessions), considerations (array of 3-5 tips). No markdown.';;
+  var theme = localStorage.getItem('fg_session_theme') || '';
+  var themeInstruction = theme
+    ? '\n\nTonal/thematic influence requested by the DM: ' + theme + '. Where genuinely useful, weave in oversights or considerations inspired by specific techniques, tropes, or tonal beats from that influence (e.g. a hard-magic-system consequence, a political intrigue angle, a specific kind of foreshadowing or twist) — but only where it actually fits this prep, never forced.'
+    : '';
+
+  var prompt = 'You are an expert DM assistant. Analyse this session prep for continuity with recent sessions and fit with the party.\n\nParty: ' + pcContext + '\n\nRecent session context (most recent first):\n' + recapContext + '\n\nUpcoming session prep:\n' + prepText.slice(0,5000) + themeInstruction + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills or continuity gaps with recent sessions), considerations (array of 3-5 tips' + (theme ? ', at least one of which should draw a specific thematic parallel or technique from the chosen influence' : '') + '). No markdown.';;
 
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
