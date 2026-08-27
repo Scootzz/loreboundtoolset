@@ -7338,7 +7338,7 @@ function fallbackTokenSvg(sb) {
 
 function generateStatblockArtIllustrated(sb,desc,callback){
   var imgKey=getImageApiKey(); if(!imgKey){if(callback)callback(null);return;}
-  var prompt='Fantasy tabletop RPG character portrait, digital painting style, dramatic lighting, detailed illustration. Subject: '+sb.name+', a '+sb.size+' '+sb.type+'. '+desc+'. Centered composition, plain dark background suitable for cropping into a circular token, no text or watermarks.';
+  var prompt='Fantasy tabletop RPG character portrait, vibrant digital painting style, bright even lighting, rich saturated colors, strong contrast, clearly lit subject with no murky shadows or dark moody lighting — this will be printed on paper as a small token and must read clearly at a glance. Subject: '+sb.name+', a '+sb.size+' '+sb.type+'. '+desc+'. Centered composition, simple light or mid-tone background suitable for cropping into a circular token, no text or watermarks.';
   var done=false;
   var controller = (typeof AbortController!=='undefined') ? new AbortController() : null;
   var timer = setTimeout(function(){
