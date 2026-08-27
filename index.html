@@ -7197,7 +7197,14 @@ function generateStatblock() {
   var isLegendary = (document.getElementById('statblock-legendary')||{}).checked || false;
   status.classList.remove('hidden'); status.textContent = 'Generating '+desc+'...';
   result.classList.remove('hidden');
-  var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'. Choose an appropriate CR based on the description.'+(isLegendary?' THIS IS A LEGENDARY CREATURE: give it 3 Legendary Actions, 3 Legendary Resistances per day as a trait, and at least 1 Lair Action if it has a lair. Make it significantly more powerful than a normal creature of its type.':'')
+  // If the description explicitly states a CR (e.g. "CR5", "CR 5", "CR: 1/2"), the model must
+  // use that exact value rather than picking its own — the generic "choose an appropriate CR"
+  // instruction was letting it override an explicitly requested CR (e.g. request CR5, got CR9).
+  var crMatch = desc.match(/\bCR\s*:?\s*(\d+\/\d+|\d+)\b/i);
+  var crInstruction = crMatch
+    ? ' The description explicitly specifies CR '+crMatch[1]+' — you MUST build this statblock to exactly match CR '+crMatch[1]+' (adjust HP, AC, attack bonus, damage, and save DCs to fit that CR precisely; do not pick a different CR even if the creature\'s name or theme suggests something stronger or weaker).'
+    : ' Choose an appropriate CR based on the description.';
+  var prompt = 'Create a D&D 5e statblock for: '+desc+'. Size: '+size+'.'+crInstruction+(isLegendary?' THIS IS A LEGENDARY CREATURE: give it 3 Legendary Actions, 3 Legendary Resistances per day as a trait, and at least 1 Lair Action if it has a lair. Make it significantly more powerful than a normal creature of its type, but still exactly matching the specified CR if one was given above.':'')
     +' Return ONLY valid JSON, no markdown, no extra text:'
     +'{"name":"creature name","size":"'+size+'","type":"creature type","alignment":"alignment","ac":10,"acNote":"armor",'
     +'"hp":20,"hpDice":"4d8+4","speed":"30 ft","str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10,'
