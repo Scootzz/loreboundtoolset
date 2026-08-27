@@ -3036,11 +3036,11 @@ function renderCreatures() {
   var tf = document.getElementById('type-filter');
   if(tf && tf.options.length <= 1) {
     var types = [];
-    Object.values(CREATURES).forEach(function(c){ if(c.type && types.indexOf(c.type)===-1) types.push(c.type); });
+    Object.values(CREATURES).forEach(function(c){ if(c.type && c.type!=='Humanoid' && types.indexOf(c.type)===-1) types.push(c.type); });
     types.sort().forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; tf.appendChild(o); });
   }
   var entries = Object.entries(CREATURES)
-    .filter(function(e){ return (!q || e[0].toLowerCase().indexOf(q)!==-1) && (!type || e[1].type===type); })
+    .filter(function(e){ return e[1].type!=='Humanoid' && (!q || e[0].toLowerCase().indexOf(q)!==-1) && (!type || e[1].type===type); })
     .sort(function(a,b){ return a[0].localeCompare(b[0]); });
   grid.innerHTML = '';
   if(!entries.length){ grid.innerHTML='<span style="color:var(--muted);font-style:italic;font-size:13px">No creatures found</span>'; return; }
@@ -3143,7 +3143,7 @@ function renderResult(item) {
   var properties = item.properties || [];
   var rc = 'rarity-' + rarity.replace(' ', '-');
   var props = properties.map(function(p){ return '<li>' + p + '</li>'; }).join('');
-  var _lastForgedItem = item;
+  window._lastForgedItem = item;
   ($id('result-content')).innerHTML =
     '<p class="item-name">' + name + '</p>'
     + '<div class="item-meta"><span>' + type + '</span><span class="rarity ' + rc + '">' + rarity + '</span><span>' + attunement + '</span></div>'
@@ -5051,7 +5051,8 @@ function renderCombatResult(analysis, players, enemies) {
         var stats = getCreatureStats(r.creature);
         for(var q=0;q<(r.qty||1);q++){
           var sfx=r.qty>1?' '+(q+1):'';
-          trackerCombatants.push({id:'tc_'+Date.now()+'_'+Math.random().toString(36).slice(2),refId:null,name:r.creature.charAt(0)+r.creature.slice(1).toLowerCase()+sfx,isEnemy:true,initiative:null,hpCur:stats.hp,hpMax:stats.hp,ac:stats.ac,conditions:[]});
+          var rolledHp = rollHp(stats.crKey); // each instance gets its own hit-dice roll, not a shared flat average
+          trackerCombatants.push({id:'tc_'+Date.now()+'_'+Math.random().toString(36).slice(2),refId:null,name:r.creature.charAt(0)+r.creature.slice(1).toLowerCase()+sfx,isEnemy:true,initiative:null,hpCur:rolledHp,hpMax:rolledHp,ac:stats.ac,conditions:[]});
         }
       });
       renderTracker();
@@ -6158,6 +6159,16 @@ var CLASS_AC = {
   Rogue:14,Warlock:13,Wizard:12,Sorcerer:12
 };
 
+function normalizeCrKey(cr) {
+  // CR_STATS/CR_HIT_DICE use fraction-string keys ('1/2','1/4','1/8'), but many creatures in the
+  // compendium store CR as a decimal (0.5, 0.25, 0.125) — without this, those lookups silently miss
+  // and fall back to CR_STATS['1'], which is why unrelated low-CR creatures all showed 37 HP.
+  var s = String(cr==null?'1':cr).trim();
+  if(s==='0.5') return '1/2';
+  if(s==='0.25') return '1/4';
+  if(s==='0.125') return '1/8';
+  return s;
+}
 function rollHp(crKey) {
   var dice = CR_HIT_DICE[crKey]||[8,5,10];
   var total = dice[2];
@@ -6167,9 +6178,10 @@ function rollHp(crKey) {
 function getCreatureStats(name) {
   var key = (name||'').toUpperCase();
   var cr_data = CREATURES[key];
-  if(!cr_data) return {hp:10,ac:12};
-  var stats = CR_STATS[String(cr_data.cr||'1')]||CR_STATS['1'];
-  return {hp:stats.hp,ac:stats.ac};
+  if(!cr_data) return {hp:10,ac:12,crKey:'1'};
+  var crKey = normalizeCrKey(cr_data.cr);
+  var stats = CR_STATS[crKey]||CR_STATS['1'];
+  return {hp:stats.hp,ac:stats.ac,crKey:crKey};
 }
 function getPcStats(pc) {
   if(pc.hp && pc.ac) return {hp:pc.hp,ac:pc.ac};
@@ -8312,7 +8324,7 @@ function autoFillEnemyStats(val) {
   var key = (val||'').toUpperCase().trim();
   var creature = CREATURES[key];
   if(!creature) return;
-  var stats = CR_STATS[String(creature.cr||'1')] || {hp:10, ac:12};
+  var stats = CR_STATS[normalizeCrKey(creature.cr)] || {hp:10, ac:12};
   var hpEl = document.getElementById('aet-hp');
   var acEl = document.getElementById('aet-ac');
   if(hpEl && !hpEl.value) hpEl.value = stats.hp;
@@ -8372,13 +8384,21 @@ function applyDamageFromModal() {
   var c = trackerCombatants.find(function(x){ return x.id===id; });
   if(!c) return;
   c.hpCur = Math.max(0, c.hpCur - amt);
+  if(c.hpCur === 0) {
+    if(!c.conditions) c.conditions = [];
+    var conds = c.conditions;
+    if(c.isEnemy) {
+      // Enemies drop straight to Dead — no death saves for monsters
+      if(!conds.some(function(x){return x.name==='Dead';})) conds.push({name:'Dead', icon:'&#9760;', color:'#888'});
+    } else if(!conds.some(function(x){return x.name==='Dead'||x.name==='Dying (0 HP)';})) {
+      // PCs go Dying instead, with a fresh set of death saves to track
+      conds.push({name:'Dying (0 HP)', icon:'', color:'#cd4a4a'});
+      c.deathSuccesses = [false,false,false];
+      c.deathFails = [false,false,false];
+    }
+  }
   closeModal('damage-modal');
   renderTracker();
-  if(c.hpCur === 0) {
-    setTimeout(function(){
-      alert(c.name + ' has dropped to 0 HP!');
-    }, 100);
-  }
 }
 
 function applyHealingFromModal() {
@@ -8392,6 +8412,8 @@ function applyHealingFromModal() {
   var c = trackerCombatants.find(function(x){ return x.id===id; });
   if(!c) return;
   c.hpCur = Math.min(c.hpMax, c.hpCur + amt);
+  // Remove dead/dying/stabilized conditions if healed back up
+  if(c.conditions) c.conditions = c.conditions.filter(function(x){return x.name!=='Dead' && x.name!=='Dying (0 HP)' && x.name!=='Stabilized';});
   closeModal('damage-modal');
   renderTracker();
 }
