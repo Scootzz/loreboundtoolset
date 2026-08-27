@@ -1293,7 +1293,7 @@ select option{background:#1a1208}
         <option value="Medium" selected>Medium</option><option value="Large">Large</option>
         <option value="Huge">Huge</option><option value="Gargantuan">Gargantuan</option>
       </select>
-      <button class="btn-gold" style="flex:1;letter-spacing:.15em;font-size:11px" onclick="generateStatblock()">&#9878; Generate Statblock</button>
+      <button class="btn-gold" id="generate-statblock-btn" style="flex:1;letter-spacing:.15em;font-size:11px" onclick="generateStatblock()">&#9878; Generate Statblock</button>
     
       <label style="display:flex;align-items:center;gap:6px;font-family:Cinzel,serif;font-size:11px;color:var(--gold);padding:7px 10px;border:1px solid var(--gold-dim);border-radius:4px;cursor:pointer;white-space:nowrap">
         <input type="checkbox" id="statblock-legendary"> LEGENDARY
@@ -2789,9 +2789,9 @@ function openEditHbItemForm(item) {
   var descEl = document.getElementById('hbi-desc');
   var rarEl = document.getElementById('hbi-rarity');
   var editEl = document.getElementById('hbi-edit-id');
-  if(nameEl) nameEl.value = item.n||'';
+  if(nameEl) nameEl.value = item.name||'';
   if(descEl) descEl.value = item.description||'';
-  if(rarEl) rarEl.value = item.r||'Common';
+  if(rarEl) rarEl.value = item.rarity||'Common';
   if(editEl) editEl.value = item.id;
   var pcs = loadPcs();
   pcs.forEach(function(pc){
@@ -7199,11 +7199,15 @@ function addPlotToTimeline(pcName, plotText) {
 }
 
 function generateStatblock() {
+  if(window._statblockGenerating) return; // ignore a second click while one is already in flight
   var desc = document.getElementById('statblock-desc').value.trim();
   if(!desc){ document.getElementById('statblock-desc').focus(); return; }
   var size = document.getElementById('statblock-size').value;
   var apiKey = getApiKey();
   if(!apiKey){ (document.getElementById('api-banner')||document.createElement('div')).classList.add('show'); return; }
+  window._statblockGenerating = true;
+  var genBtn = document.getElementById('generate-statblock-btn');
+  if(genBtn) { genBtn.disabled = true; genBtn.style.opacity = '0.55'; genBtn.style.cursor = 'not-allowed'; }
   var status = document.getElementById('statblock-status');
   var result = document.getElementById('statblock-result');
   var isLegendary = (document.getElementById('statblock-legendary')||{}).checked || false;
@@ -7262,6 +7266,7 @@ function generateStatblock() {
       }
       if(artStatus) artStatus.style.display='none';
       status.classList.add('hidden');
+      unlockStatblockGenerate();
       if(typeof window._sbOnComplete==='function') window._sbOnComplete();
       autoSaveStatblockPng(sb, art);
       if(art) openTokenSheetPrompt(sb, art);
@@ -7284,7 +7289,13 @@ function generateStatblock() {
       generateStatblockArt(sb, desc, function(svg){ onArt(svg?{type:'svg',data:svg}:null); });
     }
   })
-  .catch(function(e){status.textContent='Failed: '+e.message;});
+  .catch(function(e){status.textContent='Failed: '+e.message; unlockStatblockGenerate();});
+}
+
+function unlockStatblockGenerate() {
+  window._statblockGenerating = false;
+  var genBtn = document.getElementById('generate-statblock-btn');
+  if(genBtn) { genBtn.disabled = false; genBtn.style.opacity = ''; genBtn.style.cursor = ''; }
 }
 
 function generateStatblockArt(sb,desc,callback){
@@ -7473,7 +7484,7 @@ function renderStatblockToCanvas(sb, art, callback) {
     var sy = y; y += 22;
     var itemData = [];
     sec.items.forEach(function(item) {
-      var full = item.n+'. '+item.desc;
+      var full = item.name+'. '+item.desc;
       ctx.font = '12px Georgia';
       var ls = wrap(full, INNER);
       itemData.push({item:item, lines:ls, y:y});
@@ -7593,7 +7604,7 @@ function renderStatblockToCanvas(sb, art, callback) {
         if(li === 0) {
           // Bold name part
           ctx.font = 'bold italic 12px Georgia';
-          var nameStr = d.item.n+'.';
+          var nameStr = d.item.name+'.';
           var nw = ctx.measureText(nameStr+' ').width;
           ctx.fillStyle = RED; ctx.fillText(nameStr, PAD, d.y + li*16);
           ctx.fillStyle = DARK; ctx.font = '12px Georgia';
@@ -11883,7 +11894,7 @@ function saveForgedToInventory(item) {
   items.push({
     id:'forge_'+Date.now(), name:item.n||item.name||'Forged Item',
     cat:'crafted', value:'', owner:'party',
-    notes:(item.r||'')+(item.attunement?' · '+item.attunement:''),
+    notes:(item.rarity||item.r||'')+(item.attunement?' · '+item.attunement:''),
     addedAt:new Date().toLocaleDateString()
   });
   localStorage.setItem('fg_inventory', JSON.stringify(items));
