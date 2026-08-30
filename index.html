@@ -1455,7 +1455,7 @@ select option{background:#1a1208}
       <option>Tavern gossip</option><option>NPC tip-off</option><option>Quest hook</option>
       <option>Overheard</option><option>Letter/document</option><option>Party intel</option>
     </select>
-    <button class="btn-gold btn-sm" onclick="addRumourStandalone()">+ Add</button>
+    <button class="btn-gold btn-sm" onclick="openAddRumourModal()">+ Add</button>
   </div>
   <div id="rumours-standalone-list"></div>
 </div>
@@ -2428,6 +2428,44 @@ select option{background:#1a1208}
     <div class="modal-btns">
       <button class="btn-gold" style="flex:1" id="aet-save-btn">Add to Tracker</button>
       <button class="btn-ghost" id="aet-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Rumour Modal -->
+<div class="modal-overlay" id="add-rumour-modal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-title">ADD RUMOUR</div>
+    <span class="field-label">Rumour *</span>
+    <textarea id="ar-text" rows="3" placeholder="What did the party hear?" style="margin-bottom:9px;width:100%;resize:vertical;font-family:inherit;font-size:13px;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:8px"></textarea>
+
+    <span class="field-label">Source</span>
+    <select id="ar-source" style="margin-bottom:12px">
+      <option>Tavern gossip</option><option>NPC tip-off</option><option>Quest hook</option>
+      <option>Overheard</option><option>Letter/document</option><option>Party intel</option>
+    </select>
+
+    <span class="field-label">Who knows this?</span>
+    <div style="display:flex;gap:8px;margin-bottom:9px">
+      <label class="pc-combat-check" style="flex:1;justify-content:center" id="ar-audience-party-label">
+        <input type="radio" name="ar-audience" id="ar-audience-party" value="party" checked onchange="toggleRumourAudience()">
+        Whole party
+      </label>
+      <label class="pc-combat-check" style="flex:1;justify-content:center" id="ar-audience-individual-label">
+        <input type="radio" name="ar-audience" id="ar-audience-individual" value="individual" onchange="toggleRumourAudience()">
+        Secret — specific PCs
+      </label>
+    </div>
+    <div id="ar-pc-list" class="hidden" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+
+    <span class="field-label">Discovered from/at (optional)</span>
+    <input type="text" id="ar-link-search" placeholder="Search NPCs or locations..." style="margin-bottom:4px" oninput="filterRumourLinkSearch(this.value)" autocomplete="off">
+    <div id="ar-link-results" class="hidden" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;margin-bottom:6px;background:var(--panel)"></div>
+    <div id="ar-link-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+
+    <div class="modal-btns">
+      <button class="btn-gold" style="flex:1" id="ar-save-btn" onclick="saveRumourModal()">Add Rumour</button>
+      <button class="btn-ghost" id="ar-cancel-btn" onclick="closeModal('add-rumour-modal')">Cancel</button>
     </div>
   </div>
 </div>
@@ -5082,11 +5120,19 @@ function renderCombatResult(analysis, players, enemies) {
     return function(){
       enc.forEach(function(r){
         var stats = getCreatureStats(r.creature);
-        for(var q=0;q<(r.qty||1);q++){
-          var sfx=r.qty>1?' '+(q+1):'';
-          // Real per-creature hit dice roll when we have one; otherwise fall back to the generic CR-tier formula.
-          var rolledHp = stats.hitDice ? rollFromHitDiceFormula(stats.hitDice) : rollHp(stats.crKey);
-          trackerCombatants.push({id:'tc_'+Date.now()+'_'+Math.random().toString(36).slice(2),refId:null,name:r.creature.charAt(0)+r.creature.slice(1).toLowerCase()+sfx,isEnemy:true,initiative:null,hpCur:rolledHp,hpMax:rolledHp,ac:stats.ac,conditions:[]});
+        var qty = r.qty||1;
+        for(var q=0;q<qty;q++){
+          var sfx=qty>1?' '+(q+1):'';
+          // A single copy uses the verified flat HP from the compendium, matching its statblock exactly.
+          // Only when there are multiple of the same creature do we roll individual hit-dice variance,
+          // so a pack doesn't all share one HP total.
+          var hpValue;
+          if(qty>1) {
+            hpValue = stats.hitDice ? rollFromHitDiceFormula(stats.hitDice) : rollHp(stats.crKey);
+          } else {
+            hpValue = stats.hp;
+          }
+          trackerCombatants.push({id:'tc_'+Date.now()+'_'+Math.random().toString(36).slice(2),refId:null,name:r.creature.charAt(0)+r.creature.slice(1).toLowerCase()+sfx,isEnemy:true,initiative:null,hpCur:hpValue,hpMax:hpValue,ac:stats.ac,conditions:[]});
         }
       });
       renderTracker();
@@ -8812,98 +8858,139 @@ function deleteFaction() {
 function loadRumours() { try{return JSON.parse(localStorage.getItem('fg_rumours')||'[]');}catch(e){return[];} }
 function saveRumours(r) { localStorage.setItem('fg_rumours', JSON.stringify(r)); }
 
-function renderRumoursInCraft() {
-  var pane = document.getElementById('craft-rumours');
-  if(!pane) return;
-  pane.innerHTML = '';
-
-  var panel = document.createElement('div');
-  panel.className = 'panel';
-  panel.innerHTML = '<div class="panel-label">Rumours & Plot Hooks</div>'
-    + '<p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Track rumours the party has heard. Mark as verified, false, or followed up.</p>';
-
-  var inputRow = document.createElement('div');
-  inputRow.style.cssText = 'display:flex;gap:8px;margin-bottom:10px';
-
-  var inp = document.createElement('input');
-  inp.type = 'text'; inp.id = 'rumour-input'; inp.placeholder = 'Add a rumour the party heard...';
-  inp.style.flex = '1';
-  inp.addEventListener('keydown', function(e){ if(e.keyCode===13) addRumour(); });
-
-  var srcSel = document.createElement('select');
-  srcSel.id = 'rumour-source';
-  srcSel.style.cssText = 'font-size:12px;min-width:100px';
-  ['','Tavern gossip','NPC tip-off','Notice board','Overheard','Letter/scroll','Vision/dream'].forEach(function(s){
-    var o = document.createElement('option'); o.value=s; o.textContent=s||'Source...'; srcSel.appendChild(o);
-  });
-
-  var addBtn = document.createElement('button');
-  addBtn.className = 'btn-gold btn-sm'; addBtn.textContent = '+ Add';
-  addBtn.onclick = addRumour;
-
-  inputRow.appendChild(inp); inputRow.appendChild(srcSel); inputRow.appendChild(addBtn);
-  panel.appendChild(inputRow);
-
-  var rList = document.createElement('div');
-  rList.id = 'rumours-list';
-  panel.appendChild(rList);
-  pane.appendChild(panel);
-  renderRumoursList();
-}
-
-function addRumour() {
-  var inp = document.getElementById('rumour-standalone-input');
-  var src = document.getElementById('rumour-standalone-source');
-  if(!inp || !inp.value.trim()) { if(inp) inp.focus(); return; }
-  var rumours = loadRumours();
-  rumours.push({id:'rum_'+Date.now(), text:inp.value.trim(), source:src?src.value:'', status:'unverified', addedAt:new Date().toLocaleDateString()});
-  saveRumours(rumours);
-  inp.value = ''; if(src) src.value='';
-  renderRumoursList();
-}
+// NOTE: this used to duplicate the Rumours feature with a second, out-of-sync implementation
+// (renderRumoursInCraft/addRumour/renderRumoursList) that pointed at the wrong element IDs and
+// used a different status-key schema than the working standalone tab. Removed in favor of the
+// single canonical implementation below (openAddRumourModal/saveRumourModal/renderRumoursStandalone),
+// which updateRumourStatus and deleteRumour now call into as well.
 
 function updateRumourStatus(id, status) {
   var rumours = loadRumours();
   var r = rumours.find(function(x){return x.id===id;});
-  if(r) { r.status=status; saveRumours(rumours); renderRumoursList(); }
+  if(r) { r.status=status; saveRumours(rumours); renderRumoursStandalone(); }
 }
 
 function deleteRumour(id) {
   saveRumours(loadRumours().filter(function(r){return r.id!==id;}));
-  renderRumoursList();
+  renderRumoursStandalone();
 }
 
-function renderRumoursList() {
-  var list = document.getElementById('rumours-standalone-list');
-  if(!list) return;
-  var rumours = loadRumours();
-  var STATUS_STYLES = {
-    unverified: {col:'var(--muted)', label:'Unverified'},
-    true_rumour: {col:'#4acd9a', label:'Verified True'},
-    false_rumour: {col:'#cd4a4a', label:'Proven False'},
-    followed: {col:'var(--gold)', label:'Followed Up'},
-    pending: {col:'#cd7a4a', label:'In Progress'}
-  };
-  if(!rumours.length) { list.innerHTML='<div class="empty-state">No rumours yet.</div>'; return; }
-  list.innerHTML = '';
-  rumours.forEach(function(r) {
-    var ss = STATUS_STYLES[r.status]||STATUS_STYLES.unverified;
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:9px 10px;background:var(--input-bg);border:1px solid var(--border);border-radius:4px;margin-bottom:6px';
-    var main = '<div style="flex:1">'
-      + '<div style="font-size:13px;color:var(--text);margin-bottom:3px">'+r.text+'</div>'
-      + '<div style="font-size:11px;color:var(--muted)">'+(r.source?r.source+' &middot; ':'')+r.addedAt+'</div>'
-      + '</div>';
-    var sel = '<select style="font-size:11px;background:var(--panel);color:'+ss.col+';border:1px solid '+ss.col+';border-radius:3px;padding:2px 4px">';
-    Object.entries(STATUS_STYLES).forEach(function(e){ sel+='<option value="'+e[0]+'"'+(r.status===e[0]?' selected':'')+'>'+e[1].label+'</option>'; });
-    sel += '</select>';
-    var delBtn = '<button class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger);padding:2px 6px;font-size:11px">&#10005;</button>';
-    row.innerHTML = main + sel + delBtn;
-    row.querySelector('select').onchange = (function(rid){return function(){updateRumourStatus(rid,this.value);};})(r.id);
-    row.querySelector('button').onclick = (function(rid){return function(){deleteRumour(rid);};})(r.id);
-    list.appendChild(row);
-  });
+// -- Add Rumour modal: audience (party/secret) + NPC/location search --
+var _rumourLinkSelection = {};
+
+function openAddRumourModal() {
+  var quickInp = document.getElementById('rumour-standalone-input');
+  var quickSrc = document.getElementById('rumour-standalone-source');
+  document.getElementById('ar-text').value = quickInp ? quickInp.value.trim() : '';
+  document.getElementById('ar-source').value = quickSrc && quickSrc.value ? quickSrc.value : 'Tavern gossip';
+  document.getElementById('ar-audience-party').checked = true;
+  document.getElementById('ar-audience-individual').checked = false;
+  document.getElementById('ar-link-search').value = '';
+  var resultsBox = document.getElementById('ar-link-results');
+  resultsBox.innerHTML = '';
+  resultsBox.classList.add('hidden');
+  _rumourLinkSelection = {};
+  renderRumourLinkChips();
+  renderRumourPcList();
+  toggleRumourAudience();
+  $cl('add-rumour-modal').add('show');
+  document.getElementById('ar-text').focus();
 }
+
+function renderRumourPcList() {
+  var box = document.getElementById('ar-pc-list');
+  if(!box) return;
+  var pcs = typeof loadPcs !== 'undefined' ? loadPcs() : [];
+  if(!pcs.length) { box.innerHTML = '<div style="font-size:12px;color:var(--muted)">No PCs added yet — add some in the Characters tab.</div>'; return; }
+  box.innerHTML = pcs.map(function(pc){
+    return '<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:13px;background:var(--input-bg)">'
+      + '<input type="checkbox" class="ar-pc-check" value="'+pc.id+'" style="width:14px;height:14px;accent-color:var(--gold)"> '+pc.name+'</label>';
+  }).join('');
+}
+
+function toggleRumourAudience() {
+  var individual = document.getElementById('ar-audience-individual').checked;
+  var box = document.getElementById('ar-pc-list');
+  if(box) box.classList.toggle('hidden', !individual);
+}
+
+function filterRumourLinkSearch(query) {
+  var resultsBox = document.getElementById('ar-link-results');
+  query = (query||'').trim().toLowerCase();
+  if(!query) { resultsBox.innerHTML=''; resultsBox.classList.add('hidden'); return; }
+  var npcs = (typeof loadNpcs !== 'undefined' ? loadNpcs() : []).filter(function(n){ return n.name && n.name.toLowerCase().indexOf(query)!==-1; }).slice(0,8);
+  var locs = (typeof loadLocations !== 'undefined' ? loadLocations() : []).filter(function(l){ return l.name && l.name.toLowerCase().indexOf(query)!==-1; }).slice(0,8);
+  if(!npcs.length && !locs.length) { resultsBox.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--muted)">No matches.</div>'; resultsBox.classList.remove('hidden'); return; }
+  var html = '';
+  locs.forEach(function(l){
+    html += '<div style="padding:6px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" onmouseover="this.style.background=\'var(--input-bg)\'" onmouseout="this.style.background=\'\'" onclick="selectRumourLink(\'location\',\''+l.id+'\',\''+String(l.name).replace(/'/g,"\\'")+'\')">&#127968; '+l.name+'</div>';
+  });
+  npcs.forEach(function(n){
+    html += '<div style="padding:6px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" onmouseover="this.style.background=\'var(--input-bg)\'" onmouseout="this.style.background=\'\'" onclick="selectRumourLink(\'npc\',\''+n.id+'\',\''+String(n.name).replace(/'/g,"\\'")+'\')">&#128100; '+n.name+(n.role?' <span style="color:var(--muted)">('+n.role+')</span>':'')+'</div>';
+  });
+  resultsBox.innerHTML = html;
+  resultsBox.classList.remove('hidden');
+}
+
+function selectRumourLink(type, id, name) {
+  if(type==='npc') { _rumourLinkSelection.npcId=id; _rumourLinkSelection.npcName=name; }
+  else { _rumourLinkSelection.locationId=id; _rumourLinkSelection.locationName=name; }
+  document.getElementById('ar-link-search').value = '';
+  var resultsBox = document.getElementById('ar-link-results');
+  resultsBox.innerHTML = '';
+  resultsBox.classList.add('hidden');
+  renderRumourLinkChips();
+}
+
+function clearRumourLink(type) {
+  if(type==='npc') { delete _rumourLinkSelection.npcId; delete _rumourLinkSelection.npcName; }
+  else { delete _rumourLinkSelection.locationId; delete _rumourLinkSelection.locationName; }
+  renderRumourLinkChips();
+}
+
+function renderRumourLinkChips() {
+  var box = document.getElementById('ar-link-chips');
+  if(!box) return;
+  var html = '';
+  if(_rumourLinkSelection.locationName) html += '<span style="font-size:11px;background:var(--panel);border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:2px 6px;display:inline-flex;align-items:center;gap:4px">&#127968; '+_rumourLinkSelection.locationName+' <span style="cursor:pointer" onclick="clearRumourLink(\'location\')">&#10005;</span></span>';
+  if(_rumourLinkSelection.npcName) html += '<span style="font-size:11px;background:var(--panel);border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:2px 6px;display:inline-flex;align-items:center;gap:4px">&#128100; '+_rumourLinkSelection.npcName+' <span style="cursor:pointer" onclick="clearRumourLink(\'npc\')">&#10005;</span></span>';
+  box.innerHTML = html;
+}
+
+function saveRumourModal() {
+  var textEl = document.getElementById('ar-text');
+  var text = textEl.value.trim();
+  if(!text) { textEl.focus(); return; }
+  var src = document.getElementById('ar-source').value;
+  var individual = document.getElementById('ar-audience-individual').checked;
+  var knownBy = [];
+  if(individual) {
+    document.querySelectorAll('.ar-pc-check:checked').forEach(function(cb){ knownBy.push(cb.value); });
+  }
+  var rumour = {
+    id: 'rum_'+Date.now(),
+    text: text,
+    source: src,
+    status: 'unverified',
+    addedAt: new Date().toLocaleDateString(),
+    audience: individual ? 'individual' : 'party'
+  };
+  if(individual) rumour.knownBy = knownBy;
+  if(_rumourLinkSelection.npcId) { rumour.npcId = _rumourLinkSelection.npcId; rumour.npcName = _rumourLinkSelection.npcName; }
+  if(_rumourLinkSelection.locationId) { rumour.locationId = _rumourLinkSelection.locationId; rumour.locationName = _rumourLinkSelection.locationName; }
+
+  var rumours = typeof loadRumours !== 'undefined' ? loadRumours() : [];
+  rumours.push(rumour);
+  if(typeof saveRumours !== 'undefined') saveRumours(rumours);
+  else localStorage.setItem('fg_rumours', JSON.stringify(rumours));
+
+  var quickInp = document.getElementById('rumour-standalone-input');
+  if(quickInp) quickInp.value = '';
+  closeModal('add-rumour-modal');
+  renderRumoursStandalone();
+  if(typeof showToast !== 'undefined') showToast('Rumour added \u2713','success');
+}
+var _el_add_rumour_modal=document.getElementById('add-rumour-modal'); if(_el_add_rumour_modal) _el_add_rumour_modal.addEventListener('click',function(e){if(e.target===this)closeModal('add-rumour-modal');});
 
 // ═══════════════════════════ NPC LOCATION MAP ═══════════════════════════
 
@@ -11504,7 +11591,7 @@ function linkRumourToNpc(rumourId) {
   if(!npc) return;
   var rumours = typeof loadRumours !== 'undefined' ? loadRumours() : [];
   var r = rumours.find(function(x){return x.id===rumourId;});
-  if(r) { r.npcLink=npc.id; r.npcName=npc.name; if(typeof saveRumours!=='undefined') saveRumours(rumours); if(typeof renderRumoursList!=='undefined') renderRumoursList(); }
+  if(r) { r.npcLink=npc.id; r.npcName=npc.name; if(typeof saveRumours!=='undefined') saveRumours(rumours); if(typeof renderRumoursStandalone!=='undefined') renderRumoursStandalone(); }
 }
 
 // -- Loot save to session --------------------------------------
@@ -11837,34 +11924,35 @@ function renderRumoursStandalone() {
   }
   var STATUS_COLORS = {unverified:'#888',in_progress:'#cd8a4a',true:'#4a9a4a',false:'#cd4a4a',followed_up:'#4a7acd'};
   var STATUS_LABELS = {unverified:'Unverified',in_progress:'In Progress',true:'Verified True',false:'Proven False',followed_up:'Followed Up'};
+  var pcs = typeof loadPcs !== 'undefined' ? loadPcs() : [];
   el.innerHTML = '';
   rumours.forEach(function(r) {
     var col = STATUS_COLORS[r.status]||'#888';
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;margin-bottom:6px;background:var(--input-bg)';
+
+    var badgesHtml = '';
+    if(r.audience==='individual') {
+      var names = (r.knownBy||[]).map(function(pid){ var pc=pcs.find(function(p){return p.id===pid;}); return pc?pc.name:null; }).filter(Boolean);
+      badgesHtml += '<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:3px;padding:1px 5px;margin-right:6px;white-space:nowrap">&#129323; Secret'+(names.length?': '+names.join(', '):'')+'</span>';
+    } else {
+      badgesHtml += '<span style="font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-right:6px;white-space:nowrap">&#127881; Party</span>';
+    }
+    if(r.locationName) badgesHtml += '<span style="font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px;margin-right:6px;white-space:nowrap">&#127968; '+r.locationName+'</span>';
+    if(r.npcName) badgesHtml += '<span style="font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px;margin-right:6px;white-space:nowrap">&#128100; '+r.npcName+'</span>';
+
     row.innerHTML = '<div style="width:4px;border-radius:2px;background:'+col+';align-self:stretch;flex-shrink:0"></div>'
       + '<div style="flex:1;min-width:0">'
+      + '<div style="margin-bottom:4px;display:flex;flex-wrap:wrap">'+badgesHtml+'</div>'
       + '<div style="font-size:12px;color:var(--text);line-height:1.5">' + r.text + '</div>'
-      + (r.source?'<div style="font-size:10px;color:var(--muted);margin-top:2px">Source: '+r.source+(r.npcName?' ('+r.npcName+')':'')+'</div>':'')
+      + (r.source?'<div style="font-size:10px;color:var(--muted);margin-top:2px">Source: '+r.source+'</div>':'')
       + '</div>'
       + '<select style="font-size:10px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:2px 4px;flex-shrink:0" onchange="updateRumourStatus(\''+r.id+'\',this.value)">'
       + Object.entries(STATUS_LABELS).map(function(e){ return '<option value="'+e[0]+'"'+(r.status===e[0]?' selected':'')+'>'+e[1]+'</option>'; }).join('')
-      + '</select>';
+      + '</select>'
+      + '<button class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger);padding:2px 6px;font-size:11px;flex-shrink:0" onclick="deleteRumour(\''+r.id+'\')">&#10005;</button>';
     el.appendChild(row);
   });
-}
-
-function addRumourStandalone() {
-  var inp = document.getElementById('rumour-standalone-input');
-  var src = document.getElementById('rumour-standalone-source');
-  if(!inp||!inp.value.trim()) return;
-  var rumours = typeof loadRumours !== 'undefined' ? loadRumours() : [];
-  rumours.push({id:'rum_'+Date.now(), text:inp.value.trim(), source:src?src.value:'', status:'unverified', addedAt:new Date().toLocaleDateString()});
-  if(typeof saveRumours !== 'undefined') saveRumours(rumours);
-  else localStorage.setItem('fg_rumours', JSON.stringify(rumours));
-  inp.value = '';
-  renderRumoursStandalone();
-  if(typeof showToast !== 'undefined') showToast('Rumour added \u2713','success');
 }
 
 // --------------------
