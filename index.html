@@ -2906,6 +2906,16 @@ function deleteScenario() {
     if(!confirm('Delete scenario "'+scenario.name+'"?')) return;
     saveScenarios(loadScenarios().filter(function(s){return s.id!==id;}));
     renderScenarioSelect();
+    // The deleted scenario's enemies/PCs/analysis are still sitting in the builder — reset it back
+    // to a clean "New Encounter" state, same as the else-branch below does for an unsaved encounter.
+    var container = document.getElementById('enemy-rows');
+    if(container){ container.innerHTML=''; enemyRows=[]; }
+    document.querySelectorAll('.pc-combat-check').forEach(function(cb){ cb.checked=false; selectedCombatPcs[cb.dataset.id]=false; });
+    var result = document.getElementById('combat-result');
+    if(result) result.classList.add('hidden');
+    var content = document.getElementById('combat-result-content');
+    if(content) content.innerHTML = '';
+    window._lastAnalysis = null;
   } else {
     // No saved scenario selected — this is a work-in-progress encounter, so wipe it back to default
     if(!confirm('Clear the current encounter builder? This resets players, enemies, and any analysis shown.')) return;
