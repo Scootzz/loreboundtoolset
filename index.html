@@ -2293,6 +2293,8 @@ select option{background:#1a1208}
 <div class="modal-overlay" id="combatant-modal">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-title" id="combatant-modal-title">COMBATANT</div>
+    <span class="field-label">Name</span>
+    <input type="text" id="ct-name" placeholder="Combatant name" style="margin-bottom:10px;font-size:15px">
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
         <span class="field-label">Initiative</span>
@@ -6745,6 +6747,7 @@ function openCombatantModal(idx) {
   var c = trackerCombatants[idx];
   pendingConditions = c.conditions.slice();
   document.getElementById('combatant-modal-title').textContent = c.name.toUpperCase();
+  document.getElementById('ct-name').value = c.name;
   document.getElementById('ct-initiative').value = c.initiative||'';
   document.getElementById('ct-hp-cur').value = c.hpCur||'';
   document.getElementById('ct-hp-max').value = c.hpMax||'';
@@ -6803,6 +6806,8 @@ function removeCondition(idx) {
 function saveCombatant() {
   if(editingCombatantIdx===null) return;
   var c = trackerCombatants[editingCombatantIdx];
+  var newName = document.getElementById('ct-name').value.trim();
+  if(newName) c.name = newName;
   var initVal = document.getElementById('ct-initiative').value;
   c.initiative = initVal!==''?parseInt(initVal):null;
   c.hpMax = parseInt(document.getElementById('ct-hp-max').value)||0;
