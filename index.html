@@ -1239,6 +1239,9 @@ select option{background:#1a1208}
         </select>
       </div>
     </div>
+    <span class="field-label">Players in This Encounter</span>
+    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">Select who's along so the generator can balance the encounter against your actual party. Stays in sync with the builder below.</p>
+    <div id="regen-pc-checkboxes" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
     <button class="btn-ghost" style="width:100%;padding:10px;letter-spacing:.15em;font-size:11px" onclick="generateRandomEncounter()">&#127922;&ensp;Generate Random Encounter</button>
     <div id="regen-result" class="hidden" style="margin-top:10px;padding:12px;background:rgba(5,3,1,0.8);border:1px solid var(--border-lit);border-radius:4px;font-size:14px;line-height:1.8;color:var(--text)"></div>
   </div>
@@ -4785,14 +4788,46 @@ function renderCombatTab() {
         el.classList.toggle('selected', !!selectedCombatPcs[id]);
         el.querySelector('input').checked = !!selectedCombatPcs[id];
         updatePdfNote();
+        renderRegenPcCheckboxes();
       };
     })(pc.id, chip);
     container.appendChild(chip);
   });
   updatePdfNote();
+  renderRegenPcCheckboxes();
   renderEnemyRows();
   renderCombatHistory();
   renderTracker();
+}
+
+function renderRegenPcCheckboxes() {
+  // Mirrors combat-pc-checkboxes above (Section 2) but lives in the Random Encounter
+  // Generator panel — both read/write the same selectedCombatPcs state, so checking a
+  // player in either panel keeps the other in sync.
+  var container = document.getElementById('regen-pc-checkboxes');
+  if(!container) return;
+  var pcs = loadPcs();
+  container.innerHTML = '';
+  if (!pcs || !pcs.length) {
+    container.innerHTML = '<div class="empty-state" style="padding:10px 0">No characters yet. Add some in the Characters tab.</div>';
+    return;
+  }
+  pcs.forEach(function(pc) {
+    var chip = document.createElement('div');
+    chip.className = 'pc-combat-check' + (selectedCombatPcs[pc.id] ? ' selected' : '');
+    chip.innerHTML = '<input type="checkbox"' + (selectedCombatPcs[pc.id] ? ' checked' : '') + '>'
+      + '<span>' + pc.name + (pc.pcClass ? ' <span style="opacity:.6">(' + pc.pcClass + (pc.level ? ' ' + pc.level : '') + ')</span>' : '') + '</span>';
+    chip.onclick = (function(id, el) {
+      return function() {
+        selectedCombatPcs[id] = !selectedCombatPcs[id];
+        el.classList.toggle('selected', !!selectedCombatPcs[id]);
+        el.querySelector('input').checked = !!selectedCombatPcs[id];
+        updatePdfNote();
+        renderCombatTab();
+      };
+    })(pc.id, chip);
+    container.appendChild(chip);
+  });
 }
 
 function updatePdfNote() {
@@ -5698,9 +5733,8 @@ function generateRandomEncounter() {
   var diff = document.getElementById('regen-diff').value;
   var pcs = loadPcs();
   var selected = pcs.filter(function(p){return selectedCombatPcs[p.id];});
-  var partyInfo = selected.length
-    ? 'Party: '+selected.map(function(p){return p.name+' ('+p.pcClass+' Lv'+(p.level||'?')+')';}).join(', ')
-    : 'Party level: unknown (no characters selected)';
+  if(!selected.length){ alert('Select at least one player above — the generator balances the encounter against your party.'); return; }
+  var partyInfo = 'Party: '+selected.map(function(p){return p.name+' ('+p.pcClass+' Lv'+(p.level||'?')+')';}).join(', ');
   var creatureNames = Object.keys(BESTIARY);
   var resultDiv = document.getElementById('regen-result');
   resultDiv.classList.remove('hidden');
@@ -5712,28 +5746,30 @@ function generateRandomEncounter() {
     var text=data.content.map(function(i){return i.text||'';}).join('');
     var clean=text.replace(/^```(?:json)?\s*/m,'').replace(/\s*```\s*$/m,'').trim();
     var enc=JSON.parse(clean);
+
+    // Match case-insensitively — the AI sometimes returns names in different casing
+    // than the BESTIARY keys (which are all uppercase), which previously caused a
+    // silent fallback to the first creature in the compendium.
+    var allNames = Object.keys(BESTIARY);
+    enemyRows = enc.creatures.map(function(c){
+      var raw = (c.name||'').trim().toUpperCase();
+      var match = allNames.indexOf(raw) !== -1 ? raw : null;
+      return {creature: match || allNames[0], qty: parseInt(c.qty)||1};
+    });
+    renderEnemyRows();
+
     var crList=enc.creatures.map(function(c){return '<div style="padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--gold)">'+c.qty+'x '+c.name+'</span><span style="color:var(--muted);font-size:12px"> — '+c.reason+'</span></div>';}).join('');
     resultDiv.innerHTML='<div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:.15em;color:var(--accent);margin-bottom:6px">'+diff.toUpperCase()+' ENCOUNTER — '+biome.toUpperCase()+'</div>'
       +crList
       +'<div style="margin-top:8px;font-size:13px;color:var(--text);line-height:1.6">'+enc.setup+'</div>'
       +(enc.hook?'<div style="margin-top:6px;font-size:12px;color:var(--muted);font-style:italic">Twist: '+enc.hook+'</div>':'')
-      +'<button class="btn-ghost btn-sm" style="margin-top:8px" onclick="useRandomEncounter('+JSON.stringify(enc.creatures).replace(/"/g,'&quot;')+')">Use This Encounter</button>';
-  }).catch(function(e){resultDiv.innerHTML='<span style="color:var(--danger)">Failed: '+e.message+'</span>';});
-}
+      +'<div style="margin-top:8px;font-size:11px;color:var(--muted);font-style:italic">Loaded into the Encounter Builder below — running analysis now&hellip;</div>';
 
-function useRandomEncounter(creatures) {
-  var allNames = Object.keys(BESTIARY);
-  enemyRows = creatures.map(function(c){
-    // Match case-insensitively — the AI sometimes returns names in different
-    // casing than the CREATURES keys (which are all uppercase), which previously
-    // caused a silent fallback to the first creature in the compendium.
-    var raw = (c.name||'').trim().toUpperCase();
-    var match = allNames.indexOf(raw) !== -1 ? raw : null;
-    return {creature: match || allNames[0], qty: parseInt(c.qty)||1};
-  });
-  renderEnemyRows();
-  var _rr=document.getElementById('regen-result'); if(_rr) _rr.classList.add('hidden');
-  document.getElementById('analyse-btn').scrollIntoView({behavior:'smooth',block:'nearest'});
+    // Flows straight into analysis using the same party already selected above,
+    // so the DM lands on a ready-to-use result: generate statblocks/tokens or
+    // load to tracker from there, same as any manually-built encounter.
+    analyseEncounter();
+  }).catch(function(e){resultDiv.innerHTML='<span style="color:var(--danger)">Failed: '+e.message+'</span>';});
 }
 
 // ═══════════════════════════ DATA EXPORT / IMPORT ═══════════════════════════
