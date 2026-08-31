@@ -11952,7 +11952,7 @@ function renderRumoursStandalone() {
       + '<div style="font-size:12px;color:var(--text);line-height:1.5">' + r.text + '</div>'
       + (r.source?'<div style="font-size:10px;color:var(--muted);margin-top:2px">Source: '+r.source+'</div>':'')
       + '</div>'
-      + '<select style="font-size:10px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:2px 4px;flex-shrink:0" onchange="updateRumourStatus(\''+r.id+'\',this.value)">'
+      + '<select style="font-size:10px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:2px 4px;width:118px;flex-shrink:0" onchange="updateRumourStatus(\''+r.id+'\',this.value)">'
       + Object.entries(STATUS_LABELS).map(function(e){ return '<option value="'+e[0]+'"'+(r.status===e[0]?' selected':'')+'>'+e[1]+'</option>'; }).join('')
       + '</select>'
       + '<button class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger);padding:2px 6px;font-size:11px;flex-shrink:0" onclick="deleteRumour(\''+r.id+'\')">&#10005;</button>';
