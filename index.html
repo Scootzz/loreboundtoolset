@@ -10815,13 +10815,12 @@ var _apiBanner=document.getElementById('api-banner'); if(!getApiKey()&&_apiBanne
   renderScenarioSelect();
 })();
 
-// ── Wire NPC select mode buttons ──
-(function(){
-  var selBtn = document.getElementById('npc-select-mode-btn');
-  var delBtn = document.getElementById('npc-delete-selected-btn');
-  if(selBtn) selBtn.addEventListener('click', function(){ toggleNpcSelectMode(); });
-  if(delBtn) delBtn.addEventListener('click', function(){ deleteSelectedNpcs(); });
-})();
+// NOTE: npc-select-mode-btn and npc-delete-selected-btn already have inline onclick
+// attributes in their HTML (toggleNpcSelectMode() / deleteSelectedNpcs()). The
+// addEventListener wiring that used to live here duplicated those same calls, so every
+// click fired toggleNpcSelectMode() twice and the boolean flipped back to its starting
+// value — the Select button looked like it did nothing. Removed; the inline handlers
+// are sufficient on their own, matching how every other button in this file is wired.
 
 // ── Wire combatant modal buttons ──
 (function(){
@@ -13349,14 +13348,14 @@ function openManageLocationsModal() {
       + '</div>'
       + '<div id="manage-locs-list" style="max-height:320px;overflow-y:auto"></div>'
       + '<div class="modal-btns" style="margin-top:12px">'
-      + '<button class="btn-ghost" style="flex:1" id="close-locs-modal-btn">Done</button>'
+      + '<button class="btn-ghost" style="flex:1" id="done-locs-modal-btn">Done</button>'
       + '</div></div>';
     document.body.appendChild(modal);
   }
   renderManageLocationsList();
   modal.style.display = 'flex';
   modal.classList.add('show');
-  var closeBtn = document.getElementById('close-locs-modal-btn');
+  var closeBtn = document.getElementById('done-locs-modal-btn');
   if(closeBtn) closeBtn.onclick = function(){ closeModal('manage-locations-modal'); populateRegionFilter(); renderNpcs(); };
   setTimeout(function(){ var i=document.getElementById('new-loc-name'); if(i) i.focus(); }, 100);
 }
