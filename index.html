@@ -3181,7 +3181,17 @@ function forgeItem() {
   if(!cData){showToast('Select a creature first','error');return;}
   if(!comp){showToast('Select a component first','error');return;}
   var tier=document.getElementById('craft-tier').value;
-  var rg={Common:'minor convenience, no attunement, one simple property',Uncommon:'minor magical benefit, may require attunement, 1-2 properties',Rare:'notable power, usually requires attunement, 2-3 meaningful properties','Very Rare':'powerful ability, requires attunement, 3-4 strong properties',Legendary:'legendary power, requires attunement, 4-5 campaign-defining properties',Artifact:'world-altering artifact, requires attunement, multiple unique legendary properties'};
+  var rg={
+    Common:'exactly 1 simple, minor property. No attunement.',
+    Uncommon:'exactly 1 property — a single, focused magical effect drawn strictly from this component\'s one aspect ('+comp.aspect+'). Do not combine it with the creature\'s other aspect and do not grant a second, unrelated ability. May require attunement.',
+    Rare:'exactly 2 properties, each meaningfully stronger than an Uncommon item\'s single property. This is where the item can start drawing on the creature\'s secondary aspect ('+cData.secondary+') alongside its primary, or grant a more potent version of the component\'s aspect. Usually requires attunement.',
+    'Very Rare':'exactly 3 properties, powerful and interconnected. Requires attunement.',
+    Legendary:'exactly 4 properties, campaign-defining in scope. Requires attunement.',
+    Artifact:'5+ unique legendary properties, world-altering. Requires attunement.'
+  };
+  var propCount={Common:1,Uncommon:1,Rare:2,'Very Rare':3,Legendary:4,Artifact:5}[comp.rarity] || 2;
+  var exampleProps = [];
+  for(var pi=0; pi<propCount; pi++) exampleProps.push('"Full sentence property '+(pi+1)+'"');
   var lines=[
     'You are a master magical item creator for D&D 5e. Generate a complete magic item.',
     'CREATURE: '+selectedCreature+' ('+cData.type+', CR '+cData.cr+')',
@@ -3191,8 +3201,9 @@ function forgeItem() {
     'ITEM CONCEPT: '+concept,
     intent ? 'PLAYER INTENT: '+intent : '',
     'Power level for '+comp.rarity+': '+(rg[comp.rarity]||'powerful and unique'),
+    'The properties array must contain EXACTLY '+propCount+' '+(propCount===1?'entry':'entries')+' — no more, no fewer.',
     'Return ONLY a valid JSON object, no markdown, no backticks, no extra text:',
-    '{"name":"item name","type":"item type","rarity":"'+comp.rarity+'","attunement":"Requires attunement OR Does not require attunement","description":"2-3 sentence vivid description referencing the source creature","properties":["Full sentence property 1","Full sentence property 2"],"lore":"1-2 sentences of in-world lore"}'
+    '{"name":"item name","type":"item type","rarity":"'+comp.rarity+'","attunement":"Requires attunement OR Does not require attunement","description":"2-3 sentence vivid description referencing the source creature","properties":['+exampleProps.join(',')+'],"lore":"1-2 sentences of in-world lore"}'
   ];
   var prompt=lines.filter(function(l){return l!=='';}).join('\n');
   var rp=document.getElementById('result-panel'); var rc=document.getElementById('result-content');
@@ -6687,16 +6698,16 @@ function openSecondScreen() {
     '<style>' +
     '@import url(\'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap\');' +
     'html,body{margin:0;height:100%;background:#0e0b07;color:#e8d5a8;font-family:Georgia,serif;overflow:hidden}' +
-    '#ss-wrap{display:flex;gap:14px;align-items:center;height:100%;padding:20px;overflow-x:auto;box-sizing:border-box}' +
-    '.ss-card{flex-shrink:0;min-width:130px;background:rgba(6,4,2,0.92);border:2px solid #4a3420;border-radius:8px;padding:16px 14px;text-align:center;transition:all .3s}' +
+    '#ss-wrap{display:flex;flex-wrap:wrap;gap:1.4vw;align-items:center;justify-content:center;height:100%;padding:2vh 2vw;overflow-x:auto;overflow-y:auto;box-sizing:border-box}' +
+    '.ss-card{flex-shrink:0;min-width:clamp(130px,12vw,220px);background:rgba(6,4,2,0.92);border:2px solid #4a3420;border-radius:8px;padding:clamp(16px,2vh,32px) clamp(14px,1.8vw,32px);text-align:center;transition:all .3s}' +
     '.ss-card.active{border-color:#d4a843;box-shadow:0 0 0 4px rgba(212,168,67,.3),0 0 30px rgba(212,168,67,.5);background:rgba(212,168,67,0.08);transform:translateY(-6px) scale(1.05)}' +
-    '.ss-init{font-family:Cinzel,serif;font-size:30px;color:#c8a86a;line-height:1}' +
+    '.ss-init{font-family:Cinzel,serif;font-size:clamp(30px,5vw,64px);color:#c8a86a;line-height:1}' +
     '.ss-card.active .ss-init{color:#d4a843}' +
-    '.ss-name{font-size:17px;margin-top:8px;color:#e8d5a8}' +
+    '.ss-name{font-size:clamp(17px,2.2vw,34px);margin-top:8px;color:#e8d5a8}' +
     '.ss-card.active .ss-name{color:#d4a843;font-weight:bold}' +
     '.ss-conds{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:8px}' +
-    '.ss-cond-chip{font-size:10px;font-family:Cinzel,serif;letter-spacing:.04em;padding:3px 7px;border-radius:10px;color:#fff;white-space:nowrap}' +
-    '.ss-empty{font-size:18px;color:#c8a86a;font-style:italic;padding:20px}' +
+    '.ss-cond-chip{font-size:clamp(10px,1vw,16px);font-family:Cinzel,serif;letter-spacing:.04em;padding:clamp(3px,.4vw,8px) clamp(7px,.9vw,16px);border-radius:10px;color:#fff;white-space:nowrap}' +
+    '.ss-empty{font-size:clamp(18px,2.5vw,36px);color:#c8a86a;font-style:italic;padding:20px}' +
     '</style></head><body><div id="ss-wrap"><div class="ss-empty">Waiting for combatants...</div></div></body></html>'
   );
   _secondScreenWin.document.close();
@@ -6889,8 +6900,25 @@ function nextTrackerTurn() {
     .sort(function(a,b){return (trackerCombatants[b].initiative||0)-(trackerCombatants[a].initiative||0);});
   var currentPos = sorted.indexOf(trackerActiveTurn);
   var endingIdx = trackerActiveTurn; // the combatant whose turn is about to end
-  var nextPos = (currentPos+1) % sorted.length;
-  if(nextPos===0) trackerRound++;
+
+  function isDeadIdx(idx) {
+    var c = trackerCombatants[idx];
+    return !!(c && c.conditions && c.conditions.some(function(x){return x.name==='Dead';}));
+  }
+
+  // Advance to the next living combatant, skipping anyone marked Dead (enemies reduced to
+  // 0 HP get the Dead condition and are done). PCs at 0 HP get "Dying (0 HP)" instead, not
+  // "Dead", and still take a turn to roll death saves, so they're never skipped here. If
+  // every other combatant is dead, the loop caps at one full lap so it can't hang.
+  var nextPos = currentPos;
+  var crossedZero = false;
+  var steps = 0;
+  do {
+    nextPos = (nextPos+1) % sorted.length;
+    if(nextPos===0) crossedZero = true;
+    steps++;
+  } while(isDeadIdx(sorted[nextPos]) && steps < sorted.length);
+  if(crossedZero) trackerRound++;
   trackerActiveTurn = sorted[nextPos];
   var startingIdx = trackerActiveTurn; // the combatant whose turn is about to begin
 
@@ -9348,7 +9376,10 @@ function syncMapImgWrap() {
   renderMapPins();
 }
 
-function goToNpcCard(npcId) {
+function goToNpcCard(npcId, backToMapLevel) {
+  // arguments.length distinguishes "came from a map pin" (2nd arg always passed, even as
+  // null for the world-level map) from other callers like global search that only pass npcId.
+  var cameFromMap = arguments.length > 1;
   enterTab('npcs');
   var searchEl = document.getElementById('npc-search');
   if(searchEl) searchEl.value = '';
@@ -9386,6 +9417,17 @@ function goToNpcCard(npcId) {
     void card.offsetWidth; // force reflow so the animation restarts even on repeat clicks
     card.classList.add('npc-card-pin-highlight');
     setTimeout(function(){ card.classList.remove('npc-card-pin-highlight'); }, 2300);
+
+    if(cameFromMap) {
+      var oldBtn = card.querySelector('.back-to-map-btn');
+      if(oldBtn) oldBtn.remove();
+      var backBtn = document.createElement('button');
+      backBtn.className = 'btn-ghost btn-sm back-to-map-btn';
+      backBtn.style.cssText = 'margin-bottom:8px;color:var(--gold);border-color:var(--gold-dim);font-size:11px';
+      backBtn.innerHTML = '&#8617; Back to Map';
+      backBtn.onclick = function(e) { e.stopPropagation(); openLocationMapModal(backToMapLevel); };
+      card.insertBefore(backBtn, card.firstChild);
+    }
   }, 60);
 }
 
@@ -9411,8 +9453,9 @@ function renderMapPins() {
           renderMapPins();
         }
       } else if(npc) {
+        var _fromMapLevel = _mapForcedLevel;
         closeModal('location-map-modal');
-        goToNpcCard(npc.id);
+        goToNpcCard(npc.id, _fromMapLevel);
       }
     });
     dot.addEventListener('contextmenu', function(e) {
