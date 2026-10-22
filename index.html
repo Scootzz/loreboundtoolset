@@ -1398,7 +1398,7 @@ select option{background:#1a1208}
     <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Or upload full prep notes. Claude will annotate the text with insights, flag oversights based on your party composition and continuity with your last 2 sessions, and highlight key considerations.</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn-gold btn-sm" onclick="document.getElementById('sn-upcoming-upload').click()">&#128196; Upload Notes</button>
-      <input type="file" id="sn-upcoming-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleUpcomingSessionUpload(event)">
+      <input type="file" id="sn-upcoming-upload" accept=".doc,.docx,.txt" style="display:none" onchange="handleUpcomingSessionUpload(event)">
       <select id="sn-theme-select" onchange="saveSessionTheme()" style="font-size:12px;padding:6px 10px;width:auto" title="Analysis will draw thematic inspiration from your chosen influence">
         <option value="">No specific theme</option>
         <option value="Brandon Sanderson (Cosmere)">Brandon Sanderson (Cosmere)</option>
@@ -1411,7 +1411,7 @@ select option{background:#1a1208}
         <option value="Grimdark / Warhammer">Grimdark / Warhammer</option>
         <option value="Studio Ghibli">Studio Ghibli</option>
       </select>
-      <span style="font-size:11px;color:var(--muted)">PDF, Word or text</span>
+      <span style="font-size:11px;color:var(--muted)">Word or text</span>
     </div>
     <div id="sn-upcoming-status" style="display:none;margin-top:10px;padding:9px 12px;background:rgba(212,168,67,0.07);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted)"></div>
     <div id="sn-upcoming-result" style="display:none;margin-top:14px">
@@ -13059,11 +13059,13 @@ function handleUpcomingSessionUpload(event) {
         if(typeof mammoth !== 'undefined' && (file.name.endsWith('.docx') || file.name.endsWith('.doc'))) {
           mammoth.extractRawText({arrayBuffer: e.target.result}).then(function(r){
             analyseUpcomingSession(r.value, pcContext, status, result);
+          }).catch(function(err){
+            if(status) status.textContent = 'Could not read file: ' + err.message;
           });
         } else {
-          // PDF - try to get text
-          text = 'Session prep file uploaded: ' + file.name;
-          analyseUpcomingSession(text, pcContext, status, result);
+          // No PDF text extraction is available here, and sending just the filename would
+          // produce a meaningless "analysis" — so say so rather than faking it.
+          if(status) status.textContent = 'PDF text can\'t be read here yet. Save it as .docx or .txt, or paste the text into Quick Notes above.';
         }
       } catch(err) {
         if(status) status.textContent = 'Could not read file: ' + err.message;
@@ -13072,6 +13074,12 @@ function handleUpcomingSessionUpload(event) {
   };
   if(file.name.endsWith('.txt')) reader.readAsText(file);
   else reader.readAsArrayBuffer(file);
+}
+
+function toWellFormedText(str) {
+  str = String(str);
+  if(typeof str.toWellFormed === 'function') return str.toWellFormed();
+  return str.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '\uFFFD');
 }
 
 function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
@@ -13093,7 +13101,8 @@ function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
     ? '\n\nTonal/thematic influence requested by the DM: ' + theme + '. Where genuinely useful, weave in oversights or considerations inspired by specific techniques, tropes, or tonal beats from that influence (e.g. a hard-magic-system consequence, a political intrigue angle, a specific kind of foreshadowing or twist) — but only where it actually fits this prep, never forced.'
     : '';
 
-  var prompt = 'You are an expert DM assistant. Analyse this session prep for continuity with recent sessions and fit with the party.\n\nParty: ' + pcContext + '\n\nRecent session context (most recent first):\n' + recapContext + '\n\nUpcoming session prep:\n' + prepText.slice(0,5000) + themeInstruction + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills or continuity gaps with recent sessions), considerations (array of 3-5 tips' + (theme ? ', at least one of which should draw a specific thematic parallel or technique from the chosen influence' : '') + '). No markdown.';;
+  var prompt = 'You are an expert DM assistant. Analyse this session prep for continuity with recent sessions and fit with the party.\n\nParty: ' + pcContext + '\n\nRecent session context (most recent first):\n' + recapContext + '\n\nUpcoming session prep:\n' + prepText.slice(0,5000) + themeInstruction + '\n\nReturn ONLY valid JSON with keys: annotated (prep text with [INSIGHT: note] tags inline), oversights (array of 3-5 risks given party skills or continuity gaps with recent sessions), considerations (array of 3-5 tips' + (theme ? ', at least one of which should draw a specific thematic parallel or technique from the chosen influence' : '') + '). No markdown.';
+  prompt = toWellFormedText(prompt);
 
   fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -13104,8 +13113,16 @@ function analyseUpcomingSession(prepText, pcContext, statusEl, resultEl) {
       messages: [{ role: 'user', content: prompt }]
     })
   })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, status:r.status, data:d}; }); })
+  .then(function(res) {
+    var data = res.data;
+    if(!res.ok || data.error) {
+      // Previously a rejected request fell through as an empty reply, which then failed
+      // with a confusing "Unexpected end of JSON input". Show what the API actually said.
+      var apiMsg = (data.error && data.error.message) ? data.error.message : 'Request rejected';
+      if(statusEl) statusEl.textContent = 'API error (' + res.status + '): ' + apiMsg;
+      return;
+    }
     var text = (data.content||[]).map(function(c){ return c.text||''; }).join('');
     try {
       var jStart = text.indexOf('{'); var jEnd = text.lastIndexOf('}');
