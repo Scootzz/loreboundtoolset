@@ -1063,7 +1063,7 @@ select option{background:#1a1208}
       <select id="npc-region-filter" onchange="onRegionFilterChange()" style="font-size:13px;min-width:110px">
         <option value="">All Regions</option>
       </select>
-      <select id="npc-location-filter" onchange="renderNpcs();updateNpcMapButtons()" style="font-size:13px;min-width:120px">
+      <select id="npc-location-filter" onchange="onLocationFilterChange()" onfocus="npcLocRememberPrev()" onmousedown="npcLocRememberPrev()" style="font-size:13px;min-width:120px">
         <option value="">All Locations</option>
       </select>
       <button class="btn-ghost btn-sm" id="npc-world-btn" onclick="openWorldMapDirect()" title="World Map" style="white-space:nowrap;font-size:15px;padding:7px 12px;border-color:var(--gold-dim);color:var(--gold)">&#127760; World</button>
@@ -3005,7 +3005,8 @@ function saveLocations(l) { localStorage.setItem('fg_locations',JSON.stringify(l
 function deleteLocation(locId) {
   var npcs = loadNpcs();
   var npcCount = npcs.filter(function(n){ return n.locationId===locId; }).length;
-  var msg = 'Remove this location?';
+  var delLoc = loadLocations().find(function(l){return l.id===locId;});
+  var msg = delLoc ? 'Remove "' + delLoc.name + '"?' : 'Remove this location?';
   if(npcCount > 0) msg += ' This will also delete ' + npcCount + ' NPC' + (npcCount===1?'':'s') + ' assigned here.';
   if(!confirm(msg)) return;
   saveLocations(loadLocations().filter(function(l){return l.id!==locId;}));
@@ -3014,11 +3015,12 @@ function deleteLocation(locId) {
   renderNpcs();
 }
 
-function addLocation(name) {
+function addLocation(name, regionId) {
   name=name.trim(); if(!name)return null;
   var locs=loadLocations();
   if(locs.find(function(l){return l.name.toLowerCase()===name.toLowerCase();})){return null;}
   var loc={id:'loc_'+Date.now(),name:name};
+  if(regionId) loc.regionId=regionId;
   locs.push(loc); saveLocations(locs); return loc;
 }
 function saveNpcs(n) { localStorage.setItem('fg_npcs',JSON.stringify(n)); }
@@ -9614,6 +9616,47 @@ function populateLocationFilterForRegion(regionId) {
     if(loc.id === cur) o.selected = true;
     sel.appendChild(o);
   });
+  if(locs.length) {
+    var delOpt = document.createElement('option');
+    delOpt.value = '__delete__'; delOpt.textContent = '\u{1F5D1} Delete selected location...';
+    sel.appendChild(delOpt);
+  }
+  var mgmtOpt = document.createElement('option');
+  mgmtOpt.value = '__manage__'; mgmtOpt.textContent = '+ Manage Locations...';
+  sel.appendChild(mgmtOpt);
+}
+
+// The location dropdown now carries two action entries ('__delete__' and '__manage__') like the
+// region dropdown's "+ Manage Regions...". The value at the moment the dropdown is opened is
+// remembered so "delete selected" always targets what the user was actually looking at.
+var _npcLocPrev = '';
+function npcLocRememberPrev() {
+  var sel = document.getElementById('npc-location-filter');
+  if(sel && sel.value.indexOf('__') !== 0) _npcLocPrev = sel.value;
+}
+function onLocationFilterChange() {
+  var sel = document.getElementById('npc-location-filter');
+  if(!sel) return;
+  var v = sel.value;
+  if(v === '__manage__') {
+    sel.value = _npcLocPrev;
+    openManageLocationsModal();
+    return;
+  }
+  if(v === '__delete__') {
+    var target = _npcLocPrev;
+    sel.value = target;
+    if(!target) { showToast('Pick a location first, then choose Delete', 'error'); return; }
+    deleteLocation(target);               // confirms, then removes the location and its NPCs
+    _npcLocPrev = '';
+    populateLocationFilter();
+    renderNpcs();
+    updateNpcMapButtons();
+    return;
+  }
+  _npcLocPrev = v;
+  renderNpcs();
+  updateNpcMapButtons();
 }
 
 function populateLocationFilter() {
@@ -13398,7 +13441,8 @@ function openManageLocationsModal() {
     modal.innerHTML = '<div class="modal-box" style="max-width:500px">'
       + '<div class="modal-title">&#127968; LOCATIONS &amp; REGIONS</div>'
       + '<div style="display:flex;gap:8px;margin-bottom:14px">'
-      + '<input type="text" id="new-loc-name" placeholder="New location name..." style="flex:1">'
+      + '<input type="text" id="new-loc-name" placeholder="New location name..." style="flex:1;min-width:0">'
+      + '<select id="new-loc-region" title="Region for this location" style="width:130px;flex-shrink:0;font-size:12px"><option value="">No region</option></select>'
       + '<button class="btn-gold btn-sm" onclick="addLocationFromModal()">+ Add</button>'
       + '</div>'
       + '<div style="font-family:Cinzel,serif;font-size:10px;color:var(--accent);letter-spacing:.1em;margin-bottom:4px">REGIONS</div>'
@@ -13423,7 +13467,8 @@ function openManageLocationsModal() {
 function addLocationFromModal() {
   var inp = document.getElementById('new-loc-name');
   if(!inp || !inp.value.trim()) return;
-  var loc = addLocation(inp.value.trim());
+  var regSelNew = document.getElementById('new-loc-region');
+  var loc = addLocation(inp.value.trim(), regSelNew ? regSelNew.value : '');
   if(!loc) { showToast('Location already exists', 'error'); return; }
   inp.value = '';
   renderManageLocationsList();
@@ -13453,6 +13498,18 @@ function renderManageLocationsList() {
   var regions = loadRegions();
   var npcs = loadNpcs();
   list.innerHTML = '';
+
+  // Keep the "new location" region picker in sync with the current regions
+  var newRegSel = document.getElementById('new-loc-region');
+  if(newRegSel) {
+    var keepReg = newRegSel.value;
+    newRegSel.innerHTML = '<option value="">No region</option>';
+    regions.forEach(function(r){
+      var o = document.createElement('option'); o.value = r.id; o.textContent = r.name;
+      if(r.id === keepReg) o.selected = true;
+      newRegSel.appendChild(o);
+    });
+  }
 
   if(!locs.length) {
     list.innerHTML = '<div class="empty-state">No locations yet. Add one above.</div>';
