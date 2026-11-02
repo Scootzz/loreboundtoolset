@@ -6633,32 +6633,7 @@ function renderTracker() {
         card.appendChild(sbBtn);
       }
     }
-    // Status badges: legendary, concentration, death saves, reaction
-    if(c.legendary) {
-      var _lb=document.createElement('div');
-      _lb.style.cssText='font-size:9px;font-family:Cinzel,serif;letter-spacing:.05em;color:var(--gold);background:rgba(212,168,67,.15);border:1px solid var(--gold-dim);border-radius:2px;padding:1px 4px;margin-top:2px;text-align:center';
-      _lb.textContent='LEG '+(c.legActCur!=null?c.legActCur+'/'+c.legActMax:'3/3');
-      card.appendChild(_lb);
-    }
-    if(c.concentrating) {
-      var _cb=document.createElement('div');
-      _cb.style.cssText='font-size:9px;color:#9a4acd;border:1px solid #6a2a9a;border-radius:2px;padding:1px 4px;margin-top:2px;text-align:center;font-family:Cinzel,serif';
-      _cb.textContent='CONC';
-      card.appendChild(_cb);
-    }
-    if(c.reactionUsed) {
-      var _rb=document.createElement('div');
-      _rb.style.cssText='font-size:9px;color:var(--muted);border:1px solid var(--border);border-radius:2px;padding:1px 4px;margin-top:2px;text-align:center;font-family:Cinzel,serif;opacity:0.6';
-      _rb.textContent='RXN USED';
-      card.appendChild(_rb);
-    }
-    if(!c.isEnemy && c.deathFails && c.deathFails.some(Boolean)) {
-      var _db=document.createElement('div');
-      var _fc=c.deathFails.filter(Boolean).length;
-      _db.style.cssText='font-size:9px;color:var(--danger);border:1px solid var(--danger);border-radius:2px;padding:1px 4px;margin-top:2px;text-align:center;font-family:Cinzel,serif';
-      _db.textContent='DEATH: '+'\u25A0'.repeat(_fc)+'\u25A1'.repeat(3-_fc);
-      card.appendChild(_db);
-    }
+    // (Legendary / concentration / death-save / reaction badges are rendered once, above the HP bar.)
     bar.appendChild(card);
 
     if(si < sorted.length-1 && sorted[si+1].c.initiative !== c.initiative) {
