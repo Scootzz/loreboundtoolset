@@ -6693,23 +6693,23 @@ function collapseOtherCombatPanels() {
 var _secondScreenWin = null;
 function openSecondScreen() {
   if(_secondScreenWin && !_secondScreenWin.closed) { _secondScreenWin.focus(); updateSecondScreen(); return; }
-  _secondScreenWin = window.open('', 'LoreboundSecondScreen', 'width=1000,height=420,menubar=no,toolbar=no,location=no,status=no');
+  _secondScreenWin = window.open('', 'LoreboundSecondScreen', 'width=760,height=170,resizable=yes,menubar=no,toolbar=no,location=no,status=no');
   if(!_secondScreenWin) { alert('Pop-up blocked. Please allow pop-ups for this site to use Second Screen.'); return; }
   _secondScreenWin.document.write(
     '<!DOCTYPE html><html><head><title>Turn Order — Lorebound</title><meta charset="UTF-8">' +
     '<style>' +
     '@import url(\'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap\');' +
     'html,body{margin:0;height:100%;background:#0e0b07;color:#e8d5a8;font-family:Georgia,serif;overflow:hidden}' +
-    '#ss-wrap{display:flex;flex-wrap:wrap;gap:1.4vw;align-items:center;justify-content:center;height:100%;padding:2vh 2vw;overflow-x:auto;overflow-y:auto;box-sizing:border-box}' +
-    '.ss-card{flex-shrink:0;min-width:clamp(130px,12vw,220px);background:rgba(6,4,2,0.92);border:2px solid #4a3420;border-radius:8px;padding:clamp(16px,2vh,32px) clamp(14px,1.8vw,32px);text-align:center;transition:all .3s}' +
-    '.ss-card.active{border-color:#d4a843;box-shadow:0 0 0 4px rgba(212,168,67,.3),0 0 30px rgba(212,168,67,.5);background:rgba(212,168,67,0.08);transform:translateY(-6px) scale(1.05)}' +
-    '.ss-init{font-family:Cinzel,serif;font-size:clamp(30px,5vw,64px);color:#c8a86a;line-height:1}' +
+    '#ss-wrap{display:flex;flex-wrap:nowrap;gap:clamp(6px,4vh,14px);align-items:center;justify-content:safe center;height:100%;padding:1.5vh 1vw;overflow-x:auto;overflow-y:hidden;box-sizing:border-box}' +
+    '.ss-card{flex-shrink:0;min-width:clamp(80px,50vh,140px);max-width:200px;overflow-wrap:anywhere;background:rgba(6,4,2,0.92);border:2px solid #4a3420;border-radius:6px;padding:clamp(4px,4vh,12px) clamp(8px,5vh,16px);text-align:center;transition:all .3s}' +
+    '.ss-card.active{border-color:#d4a843;box-shadow:0 0 0 2px rgba(212,168,67,.3),0 0 12px rgba(212,168,67,.5);background:rgba(212,168,67,0.08);transform:scale(1.04)}' +
+    '.ss-init{font-family:Cinzel,serif;font-size:clamp(16px,13vh,34px);color:#c8a86a;line-height:1}' +
     '.ss-card.active .ss-init{color:#d4a843}' +
-    '.ss-name{font-size:clamp(17px,2.2vw,34px);margin-top:8px;color:#e8d5a8}' +
+    '.ss-name{font-size:clamp(11px,8vh,20px);margin-top:clamp(2px,2vh,6px);color:#e8d5a8}' +
     '.ss-card.active .ss-name{color:#d4a843;font-weight:bold}' +
-    '.ss-conds{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:8px}' +
-    '.ss-cond-chip{font-size:clamp(10px,1vw,16px);font-family:Cinzel,serif;letter-spacing:.04em;padding:clamp(3px,.4vw,8px) clamp(7px,.9vw,16px);border-radius:10px;color:#fff;white-space:nowrap}' +
-    '.ss-empty{font-size:clamp(18px,2.5vw,36px);color:#c8a86a;font-style:italic;padding:20px}' +
+    '.ss-conds{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:4px}' +
+    '.ss-cond-chip{font-size:clamp(8px,5vh,12px);font-family:Cinzel,serif;letter-spacing:.04em;padding:2px 6px;border-radius:10px;color:#fff;white-space:nowrap}' +
+    '.ss-empty{font-size:14px;color:#c8a86a;font-style:italic;padding:10px}' +
     '</style></head><body><div id="ss-wrap"><div class="ss-empty">Waiting for combatants...</div></div></body></html>'
   );
   _secondScreenWin.document.close();
