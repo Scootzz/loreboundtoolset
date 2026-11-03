@@ -442,6 +442,12 @@ select option{background:#1a1208}
     }
     .nav-drawer .main-tab{padding:10px 12px;font-size:10px}
 
+    /* Home screen: the dashboard's Quick Navigation tiles already list every page, so the sidebar
+       shows only the brand plus the Dice and Search shortcuts (the two buttons without a data-tab).
+       Entering any page sets body[data-tab] to something other than "welcome" and the full menu returns. */
+    body:not([data-tab]) .nav-drawer .main-tab[data-tab],
+    body[data-tab="welcome"] .nav-drawer .main-tab[data-tab]{display:none}
+
     /* Give the content column room to breathe next to the (now narrower) sidebar */
     #app{margin:0 0 0 210px;max-width:1040px;padding:0 32px 60px}
 
