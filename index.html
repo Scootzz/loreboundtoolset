@@ -1099,6 +1099,7 @@ select option{background:#1a1208}
       <button class="btn-ghost btn-sm" onclick="openAddLocationNodeModal()">+ Add Location Node</button>
       <button class="btn-ghost btn-sm" onclick="openWebLinkModal(null)">+ Add Connection</button>
       <button class="btn-ghost btn-sm" onclick="resetWebLayout()">&#8635; Reset Layout</button>
+      <button class="btn-ghost btn-sm" onclick="restoreHiddenWebNodes()" title="Bring back player, location and plot nodes you removed">&#8617; Restore Removed</button>
       <button class="btn-ghost btn-sm" onclick="openRelationshipSuggestionsModal()" style="color:var(--gold);border-color:var(--gold-dim)" title="Suggest connections from shared locations/factions">&#128257; Suggest Links</button>
       <button class="btn-ghost btn-sm" onclick="webPanX=0;webPanY=0;webZoom=1.0;drawWeb();" title="Reset view to center">&#8942; Reset View</button>
       <button class="btn-ghost btn-sm" onclick="expandTimeline()" title="Fullscreen timeline">&#x26F6; Expand</button>
@@ -2806,6 +2807,7 @@ function saveForgedItemToHomebrew(item) {
       description:item.description||'', properties:item.properties||[],
       lore:item.lore||'', source:'forge', owners:owners});
     saveHbItems(items);
+    window._lastForgedKept = true;
     document.body.removeChild(overlay);
     if(typeof renderHomebrewInCraft==='function') renderHomebrewInCraft();
     alert((item.name||item.n||'Item')+' saved to Homebrew Items!');
@@ -3239,6 +3241,7 @@ function renderResult(item) {
   var rc = 'rarity-' + rarity.replace(' ', '-');
   var props = properties.map(function(p){ return '<li>' + p + '</li>'; }).join('');
   window._lastForgedItem = item;
+  window._lastForgedKept = false; // flips to true once the item is copied or saved to Homebrew
   ($id('result-content')).innerHTML =
     '<p class="item-name">' + name + '</p>'
     + '<div class="item-meta"><span>' + type + '</span><span class="rarity ' + rc + '">' + rarity + '</span><span>' + attunement + '</span></div>'
@@ -3250,11 +3253,38 @@ function renderResult(item) {
     + '<div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">'
     + '<button class="btn-ghost" onclick="copyResult()">Copy</button>'
     + '<button class="btn-gold btn-sm" onclick="saveForgedItemToHomebrew(_lastForgedItem)">&#128220; Save to Homebrew</button>'
+    + '<button class="btn-ghost btn-sm" onclick="resetForge()" title="Clear this item and start a fresh forge">&#8634; Reset</button>'
     + '</div>';
+}
+
+// Clear the whole Forge flow (creature, component, concept, intent and the generated item) back to the start.
+// Asks first only if the current item was neither copied nor saved, so nothing is lost by accident.
+function resetForge() {
+  if(window._lastForgedItem && !window._lastForgedKept &&
+     !confirm('This item has not been copied or saved to Homebrew yet.\n\nReset the Forge and lose it?')) return;
+  selectedCreature = null; selectedComponent = null;
+  window._lastForgedItem = null; window._lastForgedKept = false;
+  ['creature-search','item-concept','item-intent','type-filter'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  var rc = document.getElementById('result-content'); if(rc) rc.innerHTML = '';
+  var cl = document.getElementById('component-list'); if(cl) cl.innerHTML = '';
+  var ci = document.getElementById('creature-info'); if(ci) ci.textContent = '';
+  ['component-panel','craft-panel','result-panel','tier-warning'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.classList.add('hidden');
+  });
+  var fb = document.getElementById('forge-btn'); if(fb) fb.disabled = false;
+  renderCreatures();
+  var first = document.getElementById('creature-search');
+  if(first) first.scrollIntoView({behavior:'smooth', block:'center'});
 }
 function copyResult() {
   var el=document.getElementById('result-content');
-  navigator.clipboard.writeText(el.innerText).then(function(){var b=el.querySelector('button');b.textContent='Copied!';setTimeout(function(){b.textContent='Copy to Clipboard';},2000);});
+  navigator.clipboard.writeText(el.innerText).then(function(){
+    window._lastForgedKept = true;
+    var b=el.querySelector('button'); var orig=b.textContent;
+    b.textContent='Copied!'; setTimeout(function(){b.textContent=orig;},2000);
+  });
 }
 
 // ═══════════════════════════ SETTLEMENT ═══════════════════════════
@@ -4040,6 +4070,23 @@ function loadWebNodes() { try{return JSON.parse(localStorage.getItem('fg_webnode
 function saveWebNodes(n) { localStorage.setItem('fg_webnodes',JSON.stringify(n)); }
 function loadWebLinks() { try{return JSON.parse(localStorage.getItem('fg_weblinks')||'[]');}catch(e){return [];} }
 function saveWebLinks(l) { localStorage.setItem('fg_weblinks',JSON.stringify(l)); }
+// Players, locations and active plot points are re-created by syncWebNodes() every time the timeline
+// loads, so deleting one of those nodes used to bring it straight back. Removed ones are remembered here
+// as "type:refId" keys and skipped by the sync.
+function loadHiddenWebNodes() { try{return JSON.parse(localStorage.getItem('fg_webnodes_hidden')||'[]');}catch(e){return [];} }
+function saveHiddenWebNodes(h) { localStorage.setItem('fg_webnodes_hidden',JSON.stringify(h)); }
+function unhideWebNode(type, refId) {
+  var key = type+':'+refId, h = loadHiddenWebNodes();
+  if(h.indexOf(key)!==-1) saveHiddenWebNodes(h.filter(function(k){return k!==key;}));
+}
+function restoreHiddenWebNodes() {
+  var h = loadHiddenWebNodes();
+  if(!h.length) { if(typeof showToast==='function') showToast('No removed nodes to restore','error'); return; }
+  saveHiddenWebNodes([]);
+  webNodes = syncWebNodes();
+  drawWeb();
+  if(typeof showToast==='function') showToast(h.length+' node'+(h.length!==1?'s':'')+' restored','success');
+}
 
 var webNodes = [];
 var webLinks = [];
@@ -4066,11 +4113,13 @@ function syncWebNodes() {
   var npcs = loadNpcs();
   var locs = loadLocations();
   var allNodes = stored.slice();
+  var hiddenNodes = loadHiddenWebNodes();
 
   // Sync PCs
   pcs.forEach(function(pc) {
     var existing = allNodes.find(function(n){return n.refId===pc.id && n.type==='pc';});
     if (!existing) {
+      if(hiddenNodes.indexOf('pc:'+pc.id)!==-1) return;
       allNodes.push({id:'wn_pc_'+pc.id, refId:pc.id, type:'pc', label:pc.name, sublabel:(pc.pcClass||'')+(pc.level?' Lv'+pc.level:''), notes:'', x:80+Math.random()*300, y:80+Math.random()*200, collapsed:false});
     } else {
       existing.label = pc.name;
@@ -4083,6 +4132,7 @@ function syncWebNodes() {
     var existing = allNodes.find(function(n){return n.refId===loc.id && n.type==='location';});
     var locNpcs = npcs.filter(function(n){return n.locationId===loc.id;});
     if (!existing) {
+      if(hiddenNodes.indexOf('location:'+loc.id)!==-1) return;
       allNodes.push({id:'wn_loc_'+loc.id, refId:loc.id, type:'location', label:loc.name, sublabel:locNpcs.length+' NPC'+(locNpcs.length!==1?'s':''), notes:'', x:200+Math.random()*300, y:200+Math.random()*200, collapsed:true, locNpcCount:locNpcs.length});
     } else {
       existing.label = loc.name;
@@ -4100,6 +4150,7 @@ function syncWebNodes() {
       var plotNodeId = 'wn_plot_'+pc.id+'_'+idx;
       var existing = allNodes.find(function(n){return n.id===plotNodeId;});
       if(!existing) {
+        if(hiddenNodes.indexOf('plot:'+pc.id+'_'+idx)!==-1) return;
         allNodes.push({id:plotNodeId, refId:pc.id+'_'+idx, type:'plot', label:plot.text.slice(0,30)+(plot.text.length>30?'...':''), sublabel:pc.name, notes:plot.text, x:150+Math.random()*400, y:150+Math.random()*250});
       } else {
         existing.label = plot.text.slice(0,30)+(plot.text.length>30?'...':'');
@@ -4266,16 +4317,18 @@ function selectWebNode(n) {
   var connected = webLinks.filter(function(l){return l.from===n.id||l.to===n.id;}).map(function(l){
     var otherId = l.from===n.id?l.to:l.from;
     var other = webNodes.find(function(x){return x.id===otherId;});
-    return other ? '<span style="color:'+NODE_COLORS[other.type]+'">'+other.label+'</span><span style="color:var(--muted);font-size:11px"> - '+l.label+'</span>' : '';
+    return other ? '<span style="color:'+NODE_COLORS[other.type]+'">'+other.label+'</span><span style="color:var(--muted);font-size:11px"> - '+l.label+'</span> <button class="btn-ghost btn-sm" title="Delete this connection (keeps both nodes)" style="padding:0 6px;font-size:11px;color:var(--danger);border-color:var(--danger);margin-left:6px" onclick="deleteWebLinkById(\''+l.id+'\')">&#10005;</button>' : '';
   }).filter(Boolean);
 
   var isEditable = n.type==='event'||n.type==='plot';
+  var isSynced = n.type==='pc'||n.type==='location'||n.type==='plot';
   content.innerHTML =
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
     +'<span style="color:'+(NODE_COLORS[n.type]||'#888')+';font-size:18px">&#11044;</span>'
     +'<span style="font-family:Cinzel,serif;font-size:15px;color:var(--gold)">'+n.label+'</span>'
     +(n.sublabel?'<span style="color:var(--muted);font-size:12px">'+n.sublabel+'</span>':'')
     +(isEditable?'<button class="btn-ghost btn-sm" id="edit-wn-'+n.id+'">Edit</button>':'')
+    +'<button class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger)" title="'+(isSynced?'Remove this node from the timeline (the '+(n.type==='pc'?'player':n.type==='location'?'location':'plot point')+' itself is kept)':'Delete this node and its connections')+'" onclick="removeWebNode(\''+n.id+'\')">'+(isSynced?'Remove':'Delete')+'</button>'
     +'</div>'
     +(n.notes?'<p style="font-size:13px;color:var(--text);opacity:0.75;margin-bottom:8px">'+n.notes+'</p>':'')
     +(connected.length?'<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Connected to:</div><div style="font-size:13px;line-height:1.8">'+connected.join('<br>')+'</div>':'<div style="font-size:12px;color:var(--text);opacity:0.7">No connections yet.</div>');
@@ -4568,6 +4621,7 @@ function openAddLocationNodeModal() {
       alert(loc.name+' is already on the timeline.');
       document.body.removeChild(dlg); window._addLocDialog=null; return;
     }
+    unhideWebNode('location', locId);
     webNodes.push({id:'wn_loc_'+locId,refId:locId,type:'location',label:loc.name,sublabel:locNpcs.length+' NPC'+(locNpcs.length!==1?'s':''),notes:'',x:200+Math.random()*300,y:200+Math.random()*200,collapsed:true,locNpcCount:locNpcs.length});
     saveWebNodes(webNodes);
     drawWeb();
@@ -4575,14 +4629,44 @@ function openAddLocationNodeModal() {
   };
 }
 
-function deleteWebNode() {
-  if (!editingWebNodeId || !confirm('Delete this node and all its connections?')) return;
-  webNodes = webNodes.filter(function(n){return n.id!==editingWebNodeId;});
-  webLinks = webLinks.filter(function(l){return l.from!==editingWebNodeId&&l.to!==editingWebNodeId;});
+function removeWebNode(id) {
+  var node = webNodes.find(function(n){return n.id===id;});
+  if(!node) return false;
+  var synced = node.type==='pc' || node.type==='location' || node.type==='plot';
+  var what = node.type==='pc' ? 'player' : node.type==='location' ? 'location' : 'plot point';
+  var msg = synced
+    ? 'Remove "'+node.label+'" from the timeline?\n\nOnly this node and its connections go — the '+what+' itself is untouched. You can bring it back with "Restore Removed".'
+    : 'Delete "'+node.label+'" and all its connections?';
+  if(!confirm(msg)) return false;
+  if(synced) {
+    var h = loadHiddenWebNodes(), key = node.type+':'+node.refId;
+    if(h.indexOf(key)===-1) { h.push(key); saveHiddenWebNodes(h); }
+  }
+  webNodes = webNodes.filter(function(n){return n.id!==id;});
+  webLinks = webLinks.filter(function(l){return l.from!==id&&l.to!==id;});
   saveWebNodes(webNodes); saveWebLinks(webLinks);
-  closeModal('web-node-modal');
   deselectWebNode();
   drawWeb();
+  return true;
+}
+
+function deleteWebNode() {
+  if (!editingWebNodeId) return;
+  if (removeWebNode(editingWebNodeId)) closeModal('web-node-modal');
+}
+
+// Delete a single connection without touching either node
+function deleteWebLinkById(id) {
+  var link = webLinks.find(function(l){return l.id===id;});
+  if(!link) return;
+  var a = webNodes.find(function(n){return n.id===link.from;});
+  var b = webNodes.find(function(n){return n.id===link.to;});
+  var names = (a?a.label:'?')+' \u2194 '+(b?b.label:'?');
+  if(!confirm('Delete the connection '+names+'? Both nodes stay.')) return;
+  webLinks = webLinks.filter(function(l){return l.id!==id;});
+  saveWebLinks(webLinks);
+  var sel = webSelectedNode ? webNodes.find(function(n){return n.id===webSelectedNode;}) : null;
+  if(sel) selectWebNode(sel); else drawWeb();
 }
 
 function openWebLinkModal(id) {
